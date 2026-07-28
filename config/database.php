@@ -114,6 +114,15 @@ return [
             // 'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', 'false'),
         ],
 
+        'mongodb' => [
+            'driver' => 'mongodb',
+            'dsn' => env('MONGODB_URI'),
+            'database' => env('MONGODB_DATABASE'),
+            'options' => [
+                'database' => env('MONGODB_AUTH_DATABASE', env('MONGODB_DATABASE')),
+            ],
+        ],
+
     ],
 
     /*
