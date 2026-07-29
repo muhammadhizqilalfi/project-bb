@@ -1,4 +1,5 @@
 <template>
+    <Head title="Login - Sistem ..." />
     <div class="min-h-screen grid place-items-center bg-[#F8F9FA] p-4 relative overflow-hidden">
         <!-- Watermark Background Logo -->
         <img
@@ -152,6 +153,8 @@
 </template>
 
 <script setup>
+
+import { Head } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 defineOptions({
