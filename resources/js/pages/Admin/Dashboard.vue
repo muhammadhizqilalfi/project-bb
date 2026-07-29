@@ -1,5 +1,6 @@
 <template>
     <Head title="Beranda - Admin" />
+    
     <AuthenticatedLayout 
         userRole="admin" 
         v-model:active-menu="activeMenu"
