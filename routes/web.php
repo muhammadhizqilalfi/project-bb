@@ -9,9 +9,9 @@ Route::get('/', function () {
     if (Auth::check()) {
         $user = Auth::user();
         if (strtoupper($user->role) === 'ADMIN') {
-            return redirect()->route('admin.beranda');
+            return redirect()->route('admin.dashboard');
         }
-        return redirect()->route('karyawan.beranda');
+        return redirect()->route('staff.dashboard');
     }
 
     return Inertia::render('Auth/Login');
