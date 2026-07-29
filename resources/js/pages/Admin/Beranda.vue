@@ -3,8 +3,8 @@
     <AuthenticatedLayout 
         userRole="admin" 
         v-model:active-menu="activeMenu"
-        userName="ADMIN KEJAKSAAN"
-        nip="NIP. 19820412 200501 1 002"
+        :userName="page.props.auth?.user?.name ?? '-'"
+        :nip="`NIP. ${page.props.auth?.user?.nip ?? '-'}`"
     >
         <!-- Toast Notification -->
         <Transition
@@ -409,7 +409,7 @@
 </template>
 
 <script setup>
-import { Head } from '@inertiajs/vue3'; 
+import { Head, usePage } from '@inertiajs/vue3'; 
 import { ref, computed } from 'vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import {
@@ -428,6 +428,7 @@ import {
 } from 'lucide-vue-next';
 
 // State Management
+const page = usePage();
 const activeMenu = ref('BERANDA');
 const activeTab = ref('SEMUA KARYAWAN');
 const searchQuery = ref('');

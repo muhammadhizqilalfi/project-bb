@@ -5,6 +5,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Inertia\Inertia;
 
 Route::inertia('/', 'Login')->name('login');
+Route::inertia('/admin/beranda', 'Admin/Beranda')->name('admin.beranda');
 
 // Authentication Routes
 Route::middleware('guest')->group(function () {
@@ -13,9 +14,9 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard');
-    })->name('dashboard');
+    Route::get('/admin/beranda', function () {
+        return Inertia::render('Admin/Beranda');
+    })->name('admin.beranda');
 
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 });
