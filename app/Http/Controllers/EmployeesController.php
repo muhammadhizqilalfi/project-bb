@@ -11,14 +11,32 @@ class EmployeesController extends Controller
 {
     public function index()
     {
-        // 1. Ambil data dari MongoDB dan format ID-nya
-        $employees = User::latest()->get()->map(function ($user) {
+        $sortOrder = request()->query('sort', 'latest');
+
+        $sortColumn = 'created_at';
+        $direction = 'desc';
+
+        if ($sortOrder === 'oldest') {
+            $sortColumn = 'created_at';
+            $direction = 'asc';
+        } elseif ($sortOrder === 'az') {
+            $sortColumn = 'name';
+            $direction = 'asc';
+        } elseif ($sortOrder === 'za') {
+            $sortColumn = 'name';
+            $direction = 'desc';
+        }
+
+        // 1. Ambil data dari MongoDB dengan pagination 6 data per halaman
+        $employees = User::orderBy($sortColumn, $direction)->paginate(6);
+
+        $employees->setCollection($employees->getCollection()->map(function ($user) {
             return [
                 'id'   => (string) $user->_id, // Konversi ObjectId MongoDB ke String
                 'name' => $user->name,
                 'nip'  => $user->nip,
             ];
-        });
+        }));
 
         // 2. Hitung statistik (karena tidak ada kolom 'status', activeStaff disamakan dengan total)
         $totalCount = User::count();
