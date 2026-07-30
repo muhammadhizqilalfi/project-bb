@@ -39,3 +39,7 @@ Route::middleware('auth')->group(function () {
     // Logout
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 });
+
+Route::get('/staff/pengaturan-akun', function () {
+    return Inertia::render('Staff/PengaturanAkun');
+})->name('staff.pengaturan-akun')->middleware('auth', 'role:ADMIN,STAF');
