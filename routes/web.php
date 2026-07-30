@@ -35,3 +35,16 @@ Route::get('/pengaturan-akun', [EmployeesController::class, 'index'])->name('pen
 Route::post('/employees', [EmployeesController::class, 'store']);
 Route::put('/employees/{id}', [EmployeesController::class, 'update']);
 Route::delete('/employees/{id}', [EmployeesController::class, 'destroy']);
+
+// Form routes
+Route::get('/form3a', function () {
+    return Inertia::render('Tabs/Form3A');
+})->name('form3a');
+
+Route::get('/form3b', function () {
+    return Inertia::render('Tabs/Form3B');
+})->name('form3b');
+
+Route::get('/form3c', function () {
+    return Inertia::render('Tabs/Form3C');
+})->name('form3c');

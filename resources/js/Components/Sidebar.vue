@@ -43,16 +43,16 @@
                         leave-active-class="transition duration-100 ease-in"
                         leave-from-class="transform scale-100 opacity-100 translate-y-0"
                         leave-to-class="transform scale-95 opacity-0 -translate-y-1">
-                        <div v-show="isFormDropdownOpen" class="pl-11 pr-3 py-1 space-y-1">
-                            <a href="#"
+                        <div v-show="isFormDropdownOpen" @click="selectMenu('FORM')" :class="['pl-11 pr-3 py-1 space-y-1', activeMenu === 'FORM' ? 'bg-slate-800/70 rounded-lg' : '']">
+                            <a href="form3a"
                                 class="block py-2 px-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors rounded">
                                 FORM 3A
                             </a>
-                            <a href="#"
+                            <a href="form3b"
                                 class="block py-2 px-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors rounded">
                                 FORM 3B
                             </a>
-                            <a href="#"
+                            <a href="form3c"
                                 class="block py-2 px-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors rounded">
                                 FORM 3C
                             </a>
@@ -116,7 +116,8 @@ const activeMenu = computed(() => {
     if (url.startsWith('/pengaturan-akun')) return 'PENGATURAN AKUN';
     if (url.startsWith('/laporan')) return 'LAPORAN';
     if (url.startsWith('/pengaturan-form')) return 'PENGATURAN FORM';
-    
+    if (url.startsWith('/form3a') || url.startsWith('/form3b') || url.startsWith('/form3c')) return 'FORM';
+
     // return default menu if none of the above matches
     return 'BERANDA';
 });
