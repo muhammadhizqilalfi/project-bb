@@ -45,7 +45,7 @@
                     : 'text-slate-500 hover:text-slate-700',
             ]"
         >
-            SEMUA KARYAWAN
+            SEMUA AKUN
             <div
                 v-if="activeTab === 'SEMUA KARYAWAN'"
                 class="absolute right-0 bottom-0 left-0 h-[3px] rounded-t-full bg-[#FFD000]"
@@ -63,14 +63,14 @@
                     : 'text-slate-500 hover:text-slate-700',
             ]"
         >
-            + TAMBAH KARYAWAN BARU
+            + TAMBAH AKUN BARU
             <div
                 v-if="activeTab === '+ TAMBAH KARYAWAN BARU'"
                 class="absolute right-0 bottom-0 left-0 h-[3px] rounded-t-full bg-[#FFD000]"
             ></div>
         </button>
 
-        <!-- Tab 3: EDIT KARYAWAN (HANYA MUNCUL JIKA DITEKAN TOMBOL EDIT) -->
+        <!-- Tab 3: EDIT (SHOW WHILE EDITING ACCOUNT)  -->
         <button
             v-if="editingEmployee"
             type="button"
@@ -167,7 +167,7 @@
                             <tr
                                 class="border-b border-slate-200/80 bg-[#ECEFF1] text-[11px] font-bold tracking-wider text-slate-700 uppercase"
                             >
-                                <th class="px-8 py-3.5">KARYAWAN</th>
+                                <th class="px-8 py-3.5">AKUN</th>
                                 <th class="px-8 py-3.5">AKSI</th>
                             </tr>
                         </thead>
@@ -177,7 +177,7 @@
                                 :key="employee.id"
                                 class="transition-colors hover:bg-slate-50/80"
                             >
-                                <!-- Karyawan -->
+                                <!-- Employee -->
                                 <td class="px-6 py-4">
                                     <div class="flex items-center gap-3.5">
                                         <div
@@ -200,7 +200,7 @@
                                     </div>
                                 </td>
 
-                                <!-- Aksi -->
+                                <!-- Action -->
                                 <td class="px-6 py-4 font-medium">
                                     <div class="flex items-center gap-2">
                                         <button
@@ -229,7 +229,7 @@
                                     colspan="2"
                                     class="py-12 text-center text-slate-400"
                                 >
-                                    Tidak ada data karyawan yang cocok dengan
+                                    Tidak ada data akun yang cocok dengan
                                     pencarian "{{ searchQuery }}"
                                 </td>
                             </tr>
@@ -243,7 +243,7 @@
                 >
                     <div>
                         <span v-if="paginationTotal === 0">
-                            Tidak ada data karyawan.
+                            Tidak ada data akun.
                         </span>
                         <span v-else>
                             Menampilkan {{ paginationFrom }}-{{
@@ -303,7 +303,7 @@
             </div>
         </div>
 
-        <!-- TAB 2: + TAMBAH KARYAWAN BARU -->
+        <!-- TAB 2: + TAMBAH AKUN BARU -->
         <div v-else-if="activeTab === '+ TAMBAH KARYAWAN BARU'">
             <div
                 class="rounded-xl border border-slate-200/70 bg-white p-8 shadow-xs"
@@ -403,7 +403,7 @@
                                     <label
                                         class="text-[11px] font-bold tracking-wider text-slate-600 uppercase"
                                     >
-                                        KATA SANDI SEMENTARA
+                                        KATA SANDI
                                     </label>
                                     <button
                                         type="button"
@@ -465,7 +465,7 @@
             </div>
         </div>
 
-        <!-- TAB 3: EDIT KARYAWAN -->
+        <!-- TAB 3: EDIT -->
         <div v-else-if="activeTab === 'EDIT KARYAWAN' && editingEmployee">
             <div class="rounded-xl bg-white p-8 shadow-xs">
                 <div class="mb-8">
@@ -618,7 +618,7 @@
                             :disabled="editForm.processing"
                             class="flex cursor-pointer items-center gap-2 rounded-lg bg-black px-6 py-2.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-amber-700 disabled:opacity-50"
                         >
-                            Update Data Karyawan
+                            Update Data Akun
                         </button>
                     </div>
                 </form>
@@ -633,7 +633,6 @@ import { ref, computed } from 'vue';
 import SidebarLayout from '@/Layouts/Layout.vue';
 import {
     Users,
-    UserCheck,
     Search,
     UserPlus,
     Pencil,
@@ -646,7 +645,7 @@ import {
     Trash2,
 } from 'lucide-vue-next';
 
-// 1. Dapatkan data riil dari Database Laravel melalui Props
+// GET DATA
 const props = defineProps({
     employees: {
         type: Array,
@@ -662,7 +661,7 @@ defineOptions({
     layout: SidebarLayout,
 });
 
-// Component State
+// STATE VARIABLES
 const activeTab = ref('SEMUA KARYAWAN');
 const searchQuery = ref('');
 const sortOrder = ref(
@@ -717,14 +716,14 @@ const paginationPages = computed(() => {
     return pages;
 });
 
-// Form untuk Tambah Data Baru
+// ADD FORM
 const createForm = useForm({
     name: '',
     nip: '',
     password: '',
 });
 
-// Form untuk Edit Data
+// EDIT FORM
 const editForm = useForm({
     id: null,
     name: '',
@@ -732,7 +731,7 @@ const editForm = useForm({
     password: '',
 });
 
-// Computed Search Filter dari Props Employees
+// SEARCH FILTER
 const visibleEmployees = computed(() => {
     const employees = employeesPage.value.data ?? [];
 
@@ -790,18 +789,18 @@ const getInitials = (name) => {
 const switchTab = (tab) => {
     activeTab.value = tab;
     if (tab !== 'EDIT KARYAWAN') {
-        editingEmployee.value = null; // Sembunyikan tab edit jika pengguna berpindah ke tab lain
+        editingEmployee.value = null;
     }
 };
 
-// Start Edit Handler (Memicu kemunculan Tab Edit)
+// Start Edit Handler
 const startEdit = (employee) => {
     editingEmployee.value = employee;
     editForm.id = employee.id;
     editForm.name = employee.name;
     editForm.nip = employee.nip;
-    editForm.password = ''; // Kosongkan password saat edit
-    activeTab.value = 'EDIT KARYAWAN'; // Otomatis berpindah ke tab edit
+    editForm.password = '';
+    activeTab.value = 'EDIT KARYAWAN';
 };
 
 const cancelEdit = () => {
@@ -827,7 +826,7 @@ const generatePassword = (targetForm = 'create') => {
     showToast('Password baru berhasil dibuat!');
 };
 
-// Toast
+// TOAST
 const showToast = (msg) => {
     toastMessage.value = msg;
     setTimeout(() => {
@@ -835,18 +834,18 @@ const showToast = (msg) => {
     }, 3500);
 };
 
-// Save New Employee
+// SAVE NEW ACCOUNT TOAST
 const saveEmployee = () => {
     createForm.post('/employees', {
         onSuccess: () => {
             createForm.reset();
-            showToast('Karyawan baru berhasil ditambahkan!');
+            showToast('Akun baru berhasil ditambahkan!');
             activeTab.value = 'SEMUA KARYAWAN';
         },
     });
 };
 
-// Update Employee
+// UPDATE ACCOUNT TOAST
 const updateEmployee = () => {
     editForm.put(`/employees/${editForm.id}`, {
         onSuccess: () => {
@@ -856,16 +855,16 @@ const updateEmployee = () => {
     });
 };
 
-// Delete Employee
+// DELETE ACCOUNT TOAST
 const deleteEmployee = (employee) => {
     if (
         confirm(
-            `Apakah Anda yakin ingin menghapus akun karyawan "${employee.name}"?`,
+            `Apakah Anda yakin ingin menghapus akun "${employee.name}"?`,
         )
     ) {
         router.delete(`/employees/${employee.id}`, {
             onSuccess: () => {
-                showToast(`Karyawan ${employee.name} berhasil dihapus!`);
+                showToast(`Akun ${employee.name} berhasil dihapus!`);
             },
         });
     }
