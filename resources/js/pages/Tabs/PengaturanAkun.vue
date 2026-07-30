@@ -117,27 +117,6 @@
                         <Users class="h-5 w-5" />
                     </div>
                 </div>
-
-                <!-- Card 2: AKUN ACTIVE -->
-                <div
-                    class="flex items-center justify-between rounded-xl border border-slate-200/70 bg-white p-5 shadow-xs"
-                >
-                    <div>
-                        <p
-                            class="mb-1 text-[11px] font-bold tracking-wider text-slate-400 uppercase"
-                        >
-                            AKUN ACTIVE
-                        </p>
-                        <p class="text-2xl font-extrabold text-emerald-600">
-                            {{ stats.activeStaff || 0 }}
-                        </p>
-                    </div>
-                    <div
-                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600"
-                    >
-                        <UserCheck class="h-5 w-5" />
-                    </div>
-                </div>
             </div>
 
             <!-- Employee List Table Card -->
