@@ -2,138 +2,219 @@
     <Head title="Pengaturan Akun" />
 
     <!-- Toast Notification -->
-    <Transition 
+    <Transition
         enter-active-class="transition duration-300 ease-out"
-        enter-from-class="transform translate-y-[-20px] opacity-0" 
+        enter-from-class="transform translate-y-[-20px] opacity-0"
         enter-to-class="transform translate-y-0 opacity-100"
-        leave-active-class="transition duration-200 ease-in" 
+        leave-active-class="transition duration-200 ease-in"
         leave-from-class="transform translate-y-0 opacity-100"
         leave-to-class="transform translate-y-[-20px] opacity-0"
     >
-        <div v-if="toastMessage"
-            class="fixed top-5 right-5 z-50 bg-[#0E1B2E] text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-3 border border-slate-700/50">
-            <div class="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-                <Check class="w-4 h-4" />
+        <div
+            v-if="toastMessage"
+            class="fixed top-5 right-5 z-50 flex items-center gap-3 rounded-xl border border-slate-700/50 bg-[#0E1B2E] px-5 py-3.5 text-white shadow-2xl"
+        >
+            <div
+                class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400"
+            >
+                <Check class="h-4 w-4" />
             </div>
             <div>
-                <p class="text-xs font-bold text-slate-200 uppercase tracking-wider">Notifikasi</p>
+                <p
+                    class="text-xs font-bold tracking-wider text-slate-200 uppercase"
+                >
+                    Notifikasi
+                </p>
                 <p class="text-sm font-medium text-white">{{ toastMessage }}</p>
             </div>
         </div>
     </Transition>
 
     <!-- Sub-Tabs Header Navigation Bar -->
-    <div class="bg-white border-b border-slate-200/80 px-8 pt-4 flex items-center gap-8 shadow-xs">
+    <div
+        class="flex items-center gap-8 border-b border-slate-200/80 bg-white px-8 pt-4 shadow-xs"
+    >
         <!-- Tab 1: SEMUA KARYAWAN -->
-        <button type="button" @click="switchTab('SEMUA KARYAWAN')" :class="[
-            'pb-3.5 text-xs font-bold tracking-wider uppercase transition-all relative cursor-pointer',
-            activeTab === 'SEMUA KARYAWAN'
-                ? 'text-slate-900 font-extrabold'
-                : 'text-slate-500 hover:text-slate-700'
-        ]">
+        <button
+            type="button"
+            @click="switchTab('SEMUA KARYAWAN')"
+            :class="[
+                'relative cursor-pointer pb-3.5 text-xs font-bold tracking-wider uppercase transition-all',
+                activeTab === 'SEMUA KARYAWAN'
+                    ? 'font-extrabold text-slate-900'
+                    : 'text-slate-500 hover:text-slate-700',
+            ]"
+        >
             SEMUA KARYAWAN
-            <div v-if="activeTab === 'SEMUA KARYAWAN'"
-                class="absolute bottom-0 left-0 right-0 h-[3px] bg-[#FFD000] rounded-t-full"></div>
+            <div
+                v-if="activeTab === 'SEMUA KARYAWAN'"
+                class="absolute right-0 bottom-0 left-0 h-[3px] rounded-t-full bg-[#FFD000]"
+            ></div>
         </button>
 
         <!-- Tab 2: + TAMBAH KARYAWAN BARU -->
-        <button type="button" @click="switchTab('+ TAMBAH KARYAWAN BARU')" :class="[
-            'pb-3.5 text-xs font-bold tracking-wider uppercase transition-all relative cursor-pointer',
-            activeTab === '+ TAMBAH KARYAWAN BARU'
-                ? 'text-slate-900 font-extrabold'
-                : 'text-slate-500 hover:text-slate-700'
-        ]">
+        <button
+            type="button"
+            @click="switchTab('+ TAMBAH KARYAWAN BARU')"
+            :class="[
+                'relative cursor-pointer pb-3.5 text-xs font-bold tracking-wider uppercase transition-all',
+                activeTab === '+ TAMBAH KARYAWAN BARU'
+                    ? 'font-extrabold text-slate-900'
+                    : 'text-slate-500 hover:text-slate-700',
+            ]"
+        >
             + TAMBAH KARYAWAN BARU
-            <div v-if="activeTab === '+ TAMBAH KARYAWAN BARU'"
-                class="absolute bottom-0 left-0 right-0 h-[3px] bg-[#FFD000] rounded-t-full"></div>
+            <div
+                v-if="activeTab === '+ TAMBAH KARYAWAN BARU'"
+                class="absolute right-0 bottom-0 left-0 h-[3px] rounded-t-full bg-[#FFD000]"
+            ></div>
         </button>
 
         <!-- Tab 3: EDIT KARYAWAN (HANYA MUNCUL JIKA DITEKAN TOMBOL EDIT) -->
-        <button v-if="editingEmployee" type="button" @click="activeTab = 'EDIT KARYAWAN'" :class="[
-            'pb-3.5 text-xs font-bold tracking-wider uppercase transition-all relative cursor-pointer flex items-center gap-2 text-amber-600',
-            activeTab === 'EDIT KARYAWAN'
-                ? 'text-slate-900 font-extrabold'
-                : 'hover:text-amber-700'
-        ]">
-            <Pencil class="w-3.5 h-3.5 text-amber-500" />
+        <button
+            v-if="editingEmployee"
+            type="button"
+            @click="activeTab = 'EDIT KARYAWAN'"
+            :class="[
+                'relative flex cursor-pointer items-center gap-2 pb-3.5 text-xs font-bold tracking-wider text-amber-600 uppercase transition-all',
+                activeTab === 'EDIT KARYAWAN'
+                    ? 'font-extrabold text-slate-900'
+                    : 'hover:text-amber-700',
+            ]"
+        >
+            <Pencil class="h-3.5 w-3.5 text-amber-500" />
             EDIT: {{ editingEmployee.name }}
-            <div v-if="activeTab === 'EDIT KARYAWAN'"
-                class="absolute bottom-0 left-0 right-0 h-[3px] bg-[#FFD000] rounded-t-full"></div>
+            <div
+                v-if="activeTab === 'EDIT KARYAWAN'"
+                class="absolute right-0 bottom-0 left-0 h-[3px] rounded-t-full bg-[#FFD000]"
+            ></div>
         </button>
     </div>
 
     <!-- Main Tab Content Body -->
-    <main class="flex-1 p-8 overflow-y-auto">
+    <main class="flex-1 overflow-y-auto p-8">
         <!-- TAB 1: SEMUA KARYAWAN -->
         <div v-if="activeTab === 'SEMUA KARYAWAN'" class="space-y-6">
             <!-- Stat Cards Row -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
                 <!-- Card 1: TOTAL AKUN STAF -->
-                <div class="bg-white rounded-xl p-5 border border-slate-200/70 shadow-xs flex items-center justify-between">
+                <div
+                    class="flex items-center justify-between rounded-xl border border-slate-200/70 bg-white p-5 shadow-xs"
+                >
                     <div>
-                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                        <p
+                            class="mb-1 text-[11px] font-bold tracking-wider text-slate-400 uppercase"
+                        >
                             TOTAL AKUN STAF
                         </p>
                         <p class="text-2xl font-extrabold text-slate-900">
                             {{ stats.totalStaff || 0 }}
                         </p>
                     </div>
-                    <div class="w-11 h-11 rounded-lg bg-slate-100/90 text-slate-700 flex items-center justify-center shrink-0">
-                        <Users class="w-5 h-5" />
+                    <div
+                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100/90 text-slate-700"
+                    >
+                        <Users class="h-5 w-5" />
                     </div>
                 </div>
 
                 <!-- Card 2: AKUN ACTIVE -->
-                <div class="bg-white rounded-xl p-5 border border-slate-200/70 shadow-xs flex items-center justify-between">
+                <div
+                    class="flex items-center justify-between rounded-xl border border-slate-200/70 bg-white p-5 shadow-xs"
+                >
                     <div>
-                        <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                        <p
+                            class="mb-1 text-[11px] font-bold tracking-wider text-slate-400 uppercase"
+                        >
                             AKUN ACTIVE
                         </p>
                         <p class="text-2xl font-extrabold text-emerald-600">
                             {{ stats.activeStaff || 0 }}
                         </p>
                     </div>
-                    <div class="w-11 h-11 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                        <UserCheck class="w-5 h-5" />
+                    <div
+                        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600"
+                    >
+                        <UserCheck class="h-5 w-5" />
                     </div>
                 </div>
             </div>
 
             <!-- Employee List Table Card -->
-            <div class="bg-white rounded-xl shadow-xs border border-slate-200/70 overflow-hidden">
+            <div
+                class="overflow-hidden rounded-xl border border-slate-200/70 bg-white shadow-xs"
+            >
                 <!-- Search Bar -->
-                <div class="p-4 border-b border-slate-100">
-                    <div class="relative max-w-md w-full">
-                        <Search class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                        <input v-model="searchQuery" type="text"
-                            placeholder="Cari berdasarkan nama, atau NIP"
-                            class="w-full bg-[#F1F3F5] text-xs py-2.5 pl-10 pr-4 rounded-lg outline-none text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-[#FFD000] focus:bg-white transition-all" />
+                <div class="border-b border-slate-100 p-4">
+                    <div
+                        class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+                    >
+                        <div class="relative w-full max-w-md">
+                            <Search
+                                class="absolute top-1/2 left-3.5 h-4 w-4 -translate-y-1/2 text-slate-400"
+                            />
+                            <input
+                                v-model="searchQuery"
+                                type="text"
+                                placeholder="Cari berdasarkan nama, atau NIP"
+                                class="w-full rounded-lg bg-[#F1F3F5] py-2.5 pr-4 pl-10 text-xs text-slate-800 placeholder-slate-400 transition-all outline-none focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                            />
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <span
+                                class="text-[11px] font-bold tracking-wider text-slate-400 uppercase"
+                            >
+                                Urutkan
+                            </span>
+                            <select
+                                v-model="sortOrder"
+                                @change="handleSortChange"
+                                class="h-10 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 transition-colors outline-none hover:border-slate-300 focus:border-[#FFD000] focus:ring-2 focus:ring-[#FFD000]"
+                            >
+                                <option value="latest">Terbaru</option>
+                                <option value="oldest">Terlama</option>
+                                <option value="az">A-Z</option>
+                                <option value="za">Z-A</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Table -->
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                <div class="overflow-x-auto px-6 py-4">
+                    <table class="w-full border-collapse text-left">
                         <thead>
-                            <tr class="bg-[#ECEFF1] text-slate-700 text-[11px] font-bold tracking-wider uppercase border-b border-slate-200/80">
-                                <th class="py-3.5 px-6">KARYAWAN</th>
-                                <th class="py-3.5 px-6">AKSI</th>
+                            <tr
+                                class="border-b border-slate-200/80 bg-[#ECEFF1] text-[11px] font-bold tracking-wider text-slate-700 uppercase"
+                            >
+                                <th class="px-8 py-3.5">KARYAWAN</th>
+                                <th class="px-8 py-3.5">AKSI</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-xs">
-                            <tr v-for="employee in filteredEmployees" :key="employee.id"
-                                class="hover:bg-slate-50/80 transition-colors">
+                            <tr
+                                v-for="employee in visibleEmployees"
+                                :key="employee.id"
+                                class="transition-colors hover:bg-slate-50/80"
+                            >
                                 <!-- Karyawan -->
-                                <td class="py-4 px-6">
+                                <td class="px-6 py-4">
                                     <div class="flex items-center gap-3.5">
-                                        <div class="w-9 h-9 rounded-full bg-[#E6F4EA] text-[#0F5132] font-semibold text-xs flex items-center justify-center shrink-0">
+                                        <div
+                                            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#E6F4EA] text-xs font-semibold text-[#0F5132]"
+                                        >
                                             {{ getInitials(employee.name) }}
                                         </div>
                                         <div>
-                                            <div class="font-bold text-slate-900 text-sm leading-tight">
+                                            <div
+                                                class="text-sm leading-tight font-bold text-slate-900"
+                                            >
                                                 {{ employee.name }}
                                             </div>
-                                            <div class="text-[11px] text-slate-400 font-normal mt-0.5">
+                                            <div
+                                                class="mt-0.5 text-[11px] font-normal text-slate-400"
+                                            >
                                                 NIP. {{ employee.nip }}
                                             </div>
                                         </div>
@@ -141,118 +222,263 @@
                                 </td>
 
                                 <!-- Aksi -->
-                                <td class="py-4 px-6 font-medium">
-                                    <button @click="startEdit(employee)" class="text-blue-600 hover:text-blue-800 transition-colors font-semibold mr-3 cursor-pointer">
-                                        Edit
-                                    </button>
-                                    <button @click="deleteEmployee(employee)" class="text-red-500 hover:text-red-700 transition-colors font-semibold cursor-pointer">
-                                        Hapus
-                                    </button>
+                                <td class="px-6 py-4 font-medium">
+                                    <div class="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            @click="startEdit(employee)"
+                                            class="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-blue-100 text-blue-600 transition-colors hover:bg-blue-50 hover:text-blue-800"
+                                            aria-label="Edit karyawan"
+                                        >
+                                            <Pencil class="h-4 w-4" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            @click="deleteEmployee(employee)"
+                                            class="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-red-100 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
+                                            aria-label="Hapus karyawan"
+                                        >
+                                            <Trash2 class="h-4 w-4" />
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
 
                             <!-- Empty Search Result State -->
-                            <tr v-if="filteredEmployees.length === 0">
-                                <td colspan="2" class="py-12 text-center text-slate-400">
-                                    Tidak ada data karyawan yang cocok dengan pencarian "{{ searchQuery }}"
+                            <tr v-if="visibleEmployees.length === 0">
+                                <td
+                                    colspan="2"
+                                    class="py-12 text-center text-slate-400"
+                                >
+                                    Tidak ada data karyawan yang cocok dengan
+                                    pencarian "{{ searchQuery }}"
                                 </td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <!-- Table Footer / Pagination -->
+                <div
+                    class="flex flex-col items-center justify-between gap-4 border-t border-slate-100 px-6 py-4 text-xs text-slate-500 sm:flex-row"
+                >
+                    <div>
+                        <span v-if="paginationTotal === 0">
+                            Tidak ada data karyawan.
+                        </span>
+                        <span v-else>
+                            Menampilkan {{ paginationFrom }}-{{
+                                paginationTo
+                            }}
+                            dari {{ paginationTotal }} data
+                        </span>
+                    </div>
+
+                    <div
+                        class="flex flex-wrap items-center justify-center gap-2 sm:justify-end"
+                    >
+                        <button
+                            type="button"
+                            @click="goToPage(currentPage - 1)"
+                            :disabled="currentPage === 1"
+                            class="flex h-8 w-8 cursor-pointer items-center justify-center rounded text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+                            aria-label="Halaman sebelumnya"
+                        >
+                            <ChevronLeft class="h-4 w-4" />
+                        </button>
+
+                        <button
+                            v-for="page in paginationPages"
+                            :key="page.key"
+                            type="button"
+                            @click="
+                                page.type === 'page' && goToPage(page.value)
+                            "
+                            :disabled="page.type === 'ellipsis'"
+                            :class="[
+                                'flex h-8 min-w-8 items-center justify-center rounded px-2 text-xs font-bold transition-colors',
+                                page.type === 'ellipsis'
+                                    ? 'cursor-default text-slate-400'
+                                    : currentPage === page.value
+                                      ? 'bg-slate-900 text-white'
+                                      : 'cursor-pointer text-slate-600 hover:bg-slate-100',
+                            ]"
+                        >
+                            <span v-if="page.type === 'page'">{{
+                                page.value
+                            }}</span>
+                            <span v-else>...</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            @click="goToPage(currentPage + 1)"
+                            :disabled="currentPage === lastPage"
+                            class="flex h-8 w-8 cursor-pointer items-center justify-center rounded text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-40"
+                            aria-label="Halaman berikutnya"
+                        >
+                            <ChevronRight class="h-4 w-4" />
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- TAB 2: + TAMBAH KARYAWAN BARU -->
         <div v-else-if="activeTab === '+ TAMBAH KARYAWAN BARU'">
-            <div class="bg-white rounded-xl shadow-xs border border-slate-200/70 p-8">
+            <div
+                class="rounded-xl border border-slate-200/70 bg-white p-8 shadow-xs"
+            >
                 <div class="mb-8">
-                    <h2 class="text-xl font-bold text-slate-900 mb-1">
+                    <h2 class="mb-1 text-xl font-bold text-slate-900">
                         Form Input Data & Akses Karyawan Baru
                     </h2>
                     <p class="text-sm text-slate-500">
-                        Lengkapi data identitas pegawai dan tentukan kata sandi akun.
+                        Lengkapi data identitas pegawai dan tentukan kata sandi
+                        akun.
                     </p>
-                    <div class="border-b border-slate-100 mt-6"></div>
+                    <div class="mt-6 border-b border-slate-100"></div>
                 </div>
 
                 <form @submit.prevent="saveEmployee">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                    <div
+                        class="grid grid-cols-1 gap-x-12 gap-y-8 md:grid-cols-2"
+                    >
                         <!-- LEFT COLUMN -->
                         <div class="space-y-6">
-                            <div class="flex items-center gap-3 mb-6">
-                                <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
-                                    <UserPlus class="w-4 h-4" />
+                            <div class="mb-6 flex items-center gap-3">
+                                <div
+                                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700"
+                                >
+                                    <UserPlus class="h-4 w-4" />
                                 </div>
-                                <h3 class="font-bold text-slate-900 text-sm tracking-wide uppercase">
+                                <h3
+                                    class="text-sm font-bold tracking-wide text-slate-900 uppercase"
+                                >
                                     DATA PENGGUNA
                                 </h3>
                             </div>
 
                             <div>
-                                <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2 block">
+                                <label
+                                    class="mb-2 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
+                                >
                                     NAMA LENGKAP
                                 </label>
-                                <input v-model="createForm.name" type="text" required
+                                <input
+                                    v-model="createForm.name"
+                                    type="text"
+                                    required
                                     placeholder="cth. Andi Hermawan, S.H."
-                                    class="w-full bg-[#F4F6F8] border border-transparent rounded-lg px-4 py-3 text-xs text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:border-slate-300 focus:ring-2 focus:ring-[#FFD000] transition-all" />
-                                <p v-if="createForm.errors.name" class="text-red-500 text-xs mt-1">{{ createForm.errors.name }}</p>
+                                    class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-4 py-3 text-xs text-slate-800 placeholder-slate-400 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                />
+                                <p
+                                    v-if="createForm.errors.name"
+                                    class="mt-1 text-xs text-red-500"
+                                >
+                                    {{ createForm.errors.name }}
+                                </p>
                             </div>
 
                             <div>
-                                <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2 block">
+                                <label
+                                    class="mb-2 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
+                                >
                                     NIP / IDENTITAS PEGAWAI
                                 </label>
-                                <input v-model="createForm.nip" type="text" required
+                                <input
+                                    v-model="createForm.nip"
+                                    type="text"
+                                    required
                                     placeholder="19850122 201001 1 004"
-                                    class="w-full bg-[#F4F6F8] border border-transparent rounded-lg px-4 py-3 text-xs text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:border-slate-300 focus:ring-2 focus:ring-[#FFD000] transition-all" />
-                                <p v-if="createForm.errors.nip" class="text-red-500 text-xs mt-1">{{ createForm.errors.nip }}</p>
+                                    class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-4 py-3 text-xs text-slate-800 placeholder-slate-400 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                />
+                                <p
+                                    v-if="createForm.errors.nip"
+                                    class="mt-1 text-xs text-red-500"
+                                >
+                                    {{ createForm.errors.nip }}
+                                </p>
                             </div>
                         </div>
 
                         <!-- RIGHT COLUMN -->
                         <div class="space-y-6">
-                            <div class="flex items-center gap-3 mb-6">
-                                <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
-                                    <Key class="w-4 h-4" />
+                            <div class="mb-6 flex items-center gap-3">
+                                <div
+                                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700"
+                                >
+                                    <Key class="h-4 w-4" />
                                 </div>
-                                <h3 class="font-bold text-slate-900 text-sm tracking-wide uppercase">
+                                <h3
+                                    class="text-sm font-bold tracking-wide text-slate-900 uppercase"
+                                >
                                     PENGATURAN AKUN
                                 </h3>
                             </div>
-                            
+
                             <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                                <div
+                                    class="mb-2 flex items-center justify-between"
+                                >
+                                    <label
+                                        class="text-[11px] font-bold tracking-wider text-slate-600 uppercase"
+                                    >
                                         KATA SANDI SEMENTARA
                                     </label>
-                                    <button type="button" @click="generatePassword('create')"
-                                        class="text-xs font-semibold text-slate-800 hover:text-slate-950 underline cursor-pointer transition-colors">
+                                    <button
+                                        type="button"
+                                        @click="generatePassword('create')"
+                                        class="cursor-pointer text-xs font-semibold text-slate-800 underline transition-colors hover:text-slate-950"
+                                    >
                                         Generate Password
                                     </button>
                                 </div>
                                 <div class="relative">
-                                    <input v-model="createForm.password" :type="showPassword ? 'text' : 'password'"
-                                        required placeholder="••••••••••••"
-                                        class="w-full bg-[#F4F6F8] border border-transparent rounded-lg px-4 py-3 text-xs text-slate-800 outline-none pr-11 focus:bg-white focus:border-slate-300 focus:ring-2 focus:ring-[#FFD000] transition-all" />
-                                    <button type="button" @click="showPassword = !showPassword"
-                                        class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1 cursor-pointer">
-                                        <EyeOff v-if="showPassword" class="w-4 h-4" />
-                                        <Eye v-else class="w-4 h-4" />
+                                    <input
+                                        v-model="createForm.password"
+                                        :type="
+                                            showPassword ? 'text' : 'password'
+                                        "
+                                        required
+                                        placeholder="••••••••••••"
+                                        class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-4 py-3 pr-11 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                    />
+                                    <button
+                                        type="button"
+                                        @click="showPassword = !showPassword"
+                                        class="absolute top-1/2 right-3.5 -translate-y-1/2 cursor-pointer p-1 text-slate-400 transition-colors hover:text-slate-600"
+                                    >
+                                        <EyeOff
+                                            v-if="showPassword"
+                                            class="h-4 w-4"
+                                        />
+                                        <Eye v-else class="h-4 w-4" />
                                     </button>
                                 </div>
-                                <p v-if="createForm.errors.password" class="text-red-500 text-xs mt-1">{{ createForm.errors.password }}</p>
+                                <p
+                                    v-if="createForm.errors.password"
+                                    class="mt-1 text-xs text-red-500"
+                                >
+                                    {{ createForm.errors.password }}
+                                </p>
                             </div>
                         </div>
                     </div>
 
                     <div class="flex items-center justify-end gap-3 pt-8">
-                        <button type="button" @click="activeTab = 'SEMUA KARYAWAN'"
-                            class="bg-[#E2E8F0] hover:bg-[#CBD5E1] text-slate-800 px-6 py-2.5 rounded-lg text-xs font-bold transition-colors cursor-pointer">
+                        <button
+                            type="button"
+                            @click="activeTab = 'SEMUA KARYAWAN'"
+                            class="cursor-pointer rounded-lg bg-[#E2E8F0] px-6 py-2.5 text-xs font-bold text-slate-800 transition-colors hover:bg-[#CBD5E1]"
+                        >
                             Batal
                         </button>
-                        <button type="submit" :disabled="createForm.processing"
-                            class="bg-[#0E1B2E] hover:bg-[#1A2C42] text-white px-6 py-2.5 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm flex items-center gap-2 disabled:opacity-50">
+                        <button
+                            type="submit"
+                            :disabled="createForm.processing"
+                            class="flex cursor-pointer items-center gap-2 rounded-lg bg-[#0E1B2E] px-6 py-2.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#1A2C42] disabled:opacity-50"
+                        >
                             Simpan & Buat Akun
                         </button>
                     </div>
@@ -262,93 +488,157 @@
 
         <!-- TAB 3: EDIT KARYAWAN -->
         <div v-else-if="activeTab === 'EDIT KARYAWAN' && editingEmployee">
-            <div class="bg-white rounded-xl shadow-xs p-8">
+            <div class="rounded-xl bg-white p-8 shadow-xs">
                 <div class="mb-8">
-                    <h2 class="text-xl font-bold text-slate-900 mb-1 flex items-center gap-2">
+                    <h2
+                        class="mb-1 flex items-center gap-2 text-xl font-bold text-slate-900"
+                    >
                         Edit Data Karyawan: {{ editingEmployee.name }}
                     </h2>
                     <p class="text-sm text-slate-500">
-                        Perbarui informasi data diri atau ubah kata sandi akun karyawan ini.
+                        Perbarui informasi data diri atau ubah kata sandi akun
+                        karyawan ini.
                     </p>
-                    <div class="border-b border-slate-100 mt-6"></div>
+                    <div class="mt-6 border-b border-slate-100"></div>
                 </div>
 
                 <form @submit.prevent="updateEmployee">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                    <div
+                        class="grid grid-cols-1 gap-x-12 gap-y-8 md:grid-cols-2"
+                    >
                         <!-- LEFT COLUMN -->
                         <div class="space-y-6">
-                            <div class="flex items-center gap-3 mb-6">
-                                <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
-                                    <Pencil class="w-4 h-4" />
+                            <div class="mb-6 flex items-center gap-3">
+                                <div
+                                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700"
+                                >
+                                    <Pencil class="h-4 w-4" />
                                 </div>
-                                <h3 class="font-bold text-slate-900 text-sm tracking-wide uppercase">
+                                <h3
+                                    class="text-sm font-bold tracking-wide text-slate-900 uppercase"
+                                >
                                     DATA PENGGUNA
                                 </h3>
                             </div>
 
                             <div>
-                                <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2 block">
+                                <label
+                                    class="mb-2 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
+                                >
                                     NAMA LENGKAP
                                 </label>
-                                <input v-model="editForm.name" type="text" required
-                                    class="w-full bg-[#F4F6F8] border border-transparent rounded-lg px-4 py-3 text-xs text-slate-800 outline-none focus:bg-white focus:border-slate-300 focus:ring-2 focus:ring-[#FFD000] transition-all" />
-                                <p v-if="editForm.errors.name" class="text-red-500 text-xs mt-1">{{ editForm.errors.name }}</p>
+                                <input
+                                    v-model="editForm.name"
+                                    type="text"
+                                    required
+                                    class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-4 py-3 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                />
+                                <p
+                                    v-if="editForm.errors.name"
+                                    class="mt-1 text-xs text-red-500"
+                                >
+                                    {{ editForm.errors.name }}
+                                </p>
                             </div>
 
                             <div>
-                                <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-2 block">
+                                <label
+                                    class="mb-2 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
+                                >
                                     NIP / IDENTITAS PEGAWAI
                                 </label>
-                                <input v-model="editForm.nip" type="text" required
-                                    class="w-full bg-[#F4F6F8] border border-transparent rounded-lg px-4 py-3 text-xs text-slate-800 outline-none focus:bg-white focus:border-slate-300 focus:ring-2 focus:ring-[#FFD000] transition-all" />
-                                <p v-if="editForm.errors.nip" class="text-red-500 text-xs mt-1">{{ editForm.errors.nip }}</p>
+                                <input
+                                    v-model="editForm.nip"
+                                    type="text"
+                                    required
+                                    class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-4 py-3 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                />
+                                <p
+                                    v-if="editForm.errors.nip"
+                                    class="mt-1 text-xs text-red-500"
+                                >
+                                    {{ editForm.errors.nip }}
+                                </p>
                             </div>
                         </div>
 
                         <!-- RIGHT COLUMN -->
                         <div class="space-y-6">
-                            <div class="flex items-center gap-3 mb-6">
-                                <div class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 flex items-center justify-center shrink-0">
-                                    <Key class="w-4 h-4" />
+                            <div class="mb-6 flex items-center gap-3">
+                                <div
+                                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700"
+                                >
+                                    <Key class="h-4 w-4" />
                                 </div>
-                                <h3 class="font-bold text-slate-900 text-sm tracking-wide uppercase">
+                                <h3
+                                    class="text-sm font-bold tracking-wide text-slate-900 uppercase"
+                                >
                                     UBAH KATA SANDI (OPSIONAL)
                                 </h3>
                             </div>
-                            
+
                             <div>
-                                <div class="flex items-center justify-between mb-2">
-                                    <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                                <div
+                                    class="mb-2 flex items-center justify-between"
+                                >
+                                    <label
+                                        class="text-[11px] font-bold tracking-wider text-slate-600 uppercase"
+                                    >
                                         KATA SANDI BARU
                                     </label>
-                                    <button type="button" @click="generatePassword('edit')"
-                                        class="text-xs font-semibold text-slate-800 hover:text-slate-950 underline cursor-pointer transition-colors">
+                                    <button
+                                        type="button"
+                                        @click="generatePassword('edit')"
+                                        class="cursor-pointer text-xs font-semibold text-slate-800 underline transition-colors hover:text-slate-950"
+                                    >
                                         Generate Password
                                     </button>
                                 </div>
                                 <div class="relative">
-                                    <input v-model="editForm.password" :type="showPassword ? 'text' : 'password'"
+                                    <input
+                                        v-model="editForm.password"
+                                        :type="
+                                            showPassword ? 'text' : 'password'
+                                        "
                                         placeholder="Kosongkan jika tidak ingin diubah"
-                                        class="w-full bg-[#F4F6F8] border border-transparent rounded-lg px-4 py-3 text-xs text-slate-800 outline-none pr-11 focus:bg-white focus:border-slate-300 focus:ring-2 focus:ring-[#FFD000] transition-all" />
-                                    <button type="button" @click="showPassword = !showPassword"
-                                        class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-1 cursor-pointer">
-                                        <EyeOff v-if="showPassword" class="w-4 h-4" />
-                                        <Eye v-else class="w-4 h-4" />
+                                        class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-4 py-3 pr-11 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                    />
+                                    <button
+                                        type="button"
+                                        @click="showPassword = !showPassword"
+                                        class="absolute top-1/2 right-3.5 -translate-y-1/2 cursor-pointer p-1 text-slate-400 transition-colors hover:text-slate-600"
+                                    >
+                                        <EyeOff
+                                            v-if="showPassword"
+                                            class="h-4 w-4"
+                                        />
+                                        <Eye v-else class="h-4 w-4" />
                                     </button>
                                 </div>
-                                <p v-if="editForm.errors.password" class="text-red-500 text-xs mt-1">{{ editForm.errors.password }}</p>
+                                <p
+                                    v-if="editForm.errors.password"
+                                    class="mt-1 text-xs text-red-500"
+                                >
+                                    {{ editForm.errors.password }}
+                                </p>
                             </div>
                         </div>
                     </div>
 
                     <!-- Action Buttons -->
                     <div class="flex items-center justify-end gap-3 pt-8">
-                        <button type="button" @click="cancelEdit"
-                            class="bg-[#E2E8F0] hover:bg-[#CBD5E1] text-slate-800 px-6 py-2.5 rounded-lg text-xs font-bold transition-colors cursor-pointer">
+                        <button
+                            type="button"
+                            @click="cancelEdit"
+                            class="cursor-pointer rounded-lg bg-[#E2E8F0] px-6 py-2.5 text-xs font-bold text-slate-800 transition-colors hover:bg-[#CBD5E1]"
+                        >
                             Batal Edit
                         </button>
-                        <button type="submit" :disabled="editForm.processing"
-                            class="bg-black hover:bg-amber-700 text-white px-6 py-2.5 rounded-lg text-xs font-bold transition-colors cursor-pointer shadow-sm flex items-center gap-2 disabled:opacity-50">
+                        <button
+                            type="submit"
+                            :disabled="editForm.processing"
+                            class="flex cursor-pointer items-center gap-2 rounded-lg bg-black px-6 py-2.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-amber-700 disabled:opacity-50"
+                        >
                             Update Data Karyawan
                         </button>
                     </div>
@@ -371,19 +661,22 @@ import {
     Key,
     Eye,
     EyeOff,
-    Check
+    Check,
+    ChevronLeft,
+    ChevronRight,
+    Trash2,
 } from 'lucide-vue-next';
 
 // 1. Dapatkan data riil dari Database Laravel melalui Props
 const props = defineProps({
     employees: {
         type: Array,
-        default: () => []
+        default: () => [],
     },
     stats: {
         type: Object,
-        default: () => ({ totalStaff: 0, activeStaff: 0 })
-    }
+        default: () => ({ totalStaff: 0, activeStaff: 0 }),
+    },
 });
 
 defineOptions({
@@ -393,15 +686,63 @@ defineOptions({
 // Component State
 const activeTab = ref('SEMUA KARYAWAN');
 const searchQuery = ref('');
+const sortOrder = ref(
+    typeof window !== 'undefined'
+        ? (new URLSearchParams(window.location.search).get('sort') ?? 'latest')
+        : 'latest',
+);
 const showPassword = ref(false);
 const toastMessage = ref('');
 const editingEmployee = ref(null); // Menyimpan objek karyawan yang sedang di-edit
+
+const employeesPage = computed(() => props.employees ?? {});
+const currentPage = computed(() => employeesPage.value.current_page ?? 1);
+const lastPage = computed(() => employeesPage.value.last_page ?? 1);
+const paginationTotal = computed(() => employeesPage.value.total ?? 0);
+const paginationFrom = computed(() => employeesPage.value.from ?? 0);
+const paginationTo = computed(() => employeesPage.value.to ?? 0);
+const paginationPages = computed(() => {
+    const totalPages = lastPage.value;
+    const current = currentPage.value;
+
+    if (totalPages <= 1) {
+        return totalPages === 1 ? [{ key: 1, type: 'page', value: 1 }] : [];
+    }
+
+    if (totalPages <= 7) {
+        return Array.from({ length: totalPages }, (_, index) => ({
+            key: index + 1,
+            type: 'page',
+            value: index + 1,
+        }));
+    }
+
+    const pages = [{ key: 1, type: 'page', value: 1 }];
+    const start = Math.max(2, current - 1);
+    const end = Math.min(totalPages - 1, current + 1);
+
+    if (start > 2) {
+        pages.push({ key: 'start-ellipsis', type: 'ellipsis' });
+    }
+
+    for (let page = start; page <= end; page += 1) {
+        pages.push({ key: page, type: 'page', value: page });
+    }
+
+    if (end < totalPages - 1) {
+        pages.push({ key: 'end-ellipsis', type: 'ellipsis' });
+    }
+
+    pages.push({ key: totalPages, type: 'page', value: totalPages });
+
+    return pages;
+});
 
 // Form untuk Tambah Data Baru
 const createForm = useForm({
     name: '',
     nip: '',
-    password: ''
+    password: '',
 });
 
 // Form untuk Edit Data
@@ -409,18 +750,52 @@ const editForm = useForm({
     id: null,
     name: '',
     nip: '',
-    password: ''
+    password: '',
 });
 
 // Computed Search Filter dari Props Employees
-const filteredEmployees = computed(() => {
-    if (!searchQuery.value.trim()) return props.employees;
+const visibleEmployees = computed(() => {
+    const employees = employeesPage.value.data ?? [];
+
+    if (!searchQuery.value.trim()) return employees;
+
     const query = searchQuery.value.toLowerCase();
-    return props.employees.filter(emp =>
-        emp.name?.toLowerCase().includes(query) ||
-        emp.nip?.toLowerCase().includes(query)
+    return employees.filter(
+        (emp) =>
+            emp.name?.toLowerCase().includes(query) ||
+            emp.nip?.toLowerCase().includes(query),
     );
 });
+
+const goToPage = (page) => {
+    if (page < 1 || page > lastPage.value || page === currentPage.value) {
+        return;
+    }
+
+    router.get(
+        '/pengaturan-akun',
+        { page, sort: sortOrder.value },
+        {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            only: ['employees', 'stats'],
+        },
+    );
+};
+
+const handleSortChange = () => {
+    router.get(
+        '/pengaturan-akun',
+        { page: 1, sort: sortOrder.value },
+        {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            only: ['employees', 'stats'],
+        },
+    );
+};
 
 // Helper Initials
 const getInitials = (name) => {
@@ -458,7 +833,8 @@ const cancelEdit = () => {
 
 // Random Password Generator
 const generatePassword = (targetForm = 'create') => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%^&*';
+    const chars =
+        'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%^&*';
     let pass = '';
     for (let i = 0; i < 12; i++) {
         pass += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -487,7 +863,7 @@ const saveEmployee = () => {
             createForm.reset();
             showToast('Karyawan baru berhasil ditambahkan!');
             activeTab.value = 'SEMUA KARYAWAN';
-        }
+        },
     });
 };
 
@@ -497,17 +873,21 @@ const updateEmployee = () => {
         onSuccess: () => {
             showToast(`Data ${editForm.name} berhasil diperbarui!`);
             cancelEdit();
-        }
+        },
     });
 };
 
 // Delete Employee
 const deleteEmployee = (employee) => {
-    if (confirm(`Apakah Anda yakin ingin menghapus akun karyawan "${employee.name}"?`)) {
+    if (
+        confirm(
+            `Apakah Anda yakin ingin menghapus akun karyawan "${employee.name}"?`,
+        )
+    ) {
         router.delete(`/employees/${employee.id}`, {
             onSuccess: () => {
                 showToast(`Karyawan ${employee.name} berhasil dihapus!`);
-            }
+            },
         });
     }
 };
