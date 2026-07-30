@@ -27,32 +27,5 @@
 import Sidebar from '@/Components/Sidebar.vue';
 import Topbar from '@/Components/Topbar.vue';
 
-defineProps({
-    userRole: {
-        type: String,
-        default: 'karyawan' // 'karyawan' atau 'admin'
-    },
-    activeMenu: {
-        type: String,
-        default: 'BERANDA'
-    },
-    userName: {
-        type: String,
-        default: 'ADMIN KEJAKSAAN'
-    },
-    nip: {
-        type: String,
-        default: 'NIP. 19820412 200501 1 002'
-    }
-});
-
 defineEmits(['update:activeMenu']);
 </script>
-
-<style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-
-:deep(*) {
-    font-family: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
-}
-</style>

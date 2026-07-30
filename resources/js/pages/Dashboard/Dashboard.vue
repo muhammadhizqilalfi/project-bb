@@ -1,87 +1,6 @@
-<script setup>
-import { Head } from '@inertiajs/vue3';
-import { ref } from 'vue';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import {
-  Scale,
-  FileCheck,
-  BarChart2,
-  TrendingUp,
-  Filter,
-  Download,
-  Eye,
-  Edit3,
-  AlertTriangle,
-  Archive
-} from 'lucide-vue-next';
-
-// Reactive Data State
-const stats = ref({
-  totalCases: '1,095',
-  pendingReports: '35'
-});
-
-const previewReports = ref([
-  {
-    formCode: 'FORM 3A',
-    formTitle: 'EVIDENCE INVENTORY',
-    period: 'OCT 2023',
-    status: 'DONE',
-    icon: Eye
-  },
-  {
-    formCode: 'FORM 3B',
-    formTitle: 'ASSET SEIZURE',
-    period: 'OCT 2023',
-    status: 'DONE',
-    icon: Edit3
-  },
-  {
-    formCode: 'FORM 3C',
-    formTitle: 'DISPOSAL STATUS',
-    period: 'OCT 2023',
-    status: 'DRAFT',
-    icon: AlertTriangle
-  },
-  {
-    formCode: 'FORM 3A',
-    formTitle: 'EVIDENCE INVENTORY',
-    period: 'NOV 2023',
-    status: 'DRAFT',
-    icon: Archive
-  }
-]);
-
-const ongoingCases = ref([
-  {
-    id: 'CASE-2023-9982',
-    title: 'Penyitaan Aset Tindak Pidana Korupsi - Wilayah IV',
-    btnPrimary: 'VIEW DETAILS',
-    btnSecondary: 'UPDATE'
-  },
-  {
-    id: 'CASE-2023-1004',
-    title: 'Pelimpahan Barang Bukti Narkotika Golongan I',
-    btnPrimary: 'VIEW DETAILS',
-    btnSecondary: 'UPDATE'
-  },
-  {
-    id: 'CASE-2023-8821',
-    title: 'Pemusnahan Barang Bukti Miras & Kosmetik Ilegal',
-    btnPrimary: 'FIX NOW',
-    btnSecondary: 'HISTORY'
-  }
-]);
-</script>
-
 <template>
-  <Head title="Beranda - Karyawan" />
-  <AuthenticatedLayout 
-    userRole="karyawan" 
-    activeMenu="BERANDA"
-    userName="Jaksa Utama Muda"
-    nip="NIP. 19820412 200501 1 002"
-  >
+  <Head title="Dashboard" />
+  <SidebarLayout >
     <div class="p-8 space-y-6">
       
       <!-- Baris Atas: 2 Metric Cards Grid -->
@@ -265,5 +184,81 @@ const ongoingCases = ref([
       </div>
 
     </div>
-  </AuthenticatedLayout>
+  </SidebarLayout>
 </template>
+
+<script setup>
+import { Head } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import SidebarLayout from '@/Layouts/Layout.vue';
+import {
+  Scale,
+  FileCheck,
+  BarChart2,
+  TrendingUp,
+  Filter,
+  Download,
+  Eye,
+  Edit3,
+  AlertTriangle,
+  Archive
+} from 'lucide-vue-next';
+
+// Reactive Data State
+const stats = ref({
+  totalCases: '1,095',
+  pendingReports: '35'
+});
+
+const previewReports = ref([
+  {
+    formCode: 'FORM 3A',
+    formTitle: 'EVIDENCE INVENTORY',
+    period: 'OCT 2023',
+    status: 'DONE',
+    icon: Eye
+  },
+  {
+    formCode: 'FORM 3B',
+    formTitle: 'ASSET SEIZURE',
+    period: 'OCT 2023',
+    status: 'DONE',
+    icon: Edit3
+  },
+  {
+    formCode: 'FORM 3C',
+    formTitle: 'DISPOSAL STATUS',
+    period: 'OCT 2023',
+    status: 'DRAFT',
+    icon: AlertTriangle
+  },
+  {
+    formCode: 'FORM 3A',
+    formTitle: 'EVIDENCE INVENTORY',
+    period: 'NOV 2023',
+    status: 'DRAFT',
+    icon: Archive
+  }
+]);
+
+const ongoingCases = ref([
+  {
+    id: 'CASE-2023-9982',
+    title: 'Penyitaan Aset Tindak Pidana Korupsi - Wilayah IV',
+    btnPrimary: 'VIEW DETAILS',
+    btnSecondary: 'UPDATE'
+  },
+  {
+    id: 'CASE-2023-1004',
+    title: 'Pelimpahan Barang Bukti Narkotika Golongan I',
+    btnPrimary: 'VIEW DETAILS',
+    btnSecondary: 'UPDATE'
+  },
+  {
+    id: 'CASE-2023-8821',
+    title: 'Pemusnahan Barang Bukti Miras & Kosmetik Ilegal',
+    btnPrimary: 'FIX NOW',
+    btnSecondary: 'HISTORY'
+  }
+]);
+</script>

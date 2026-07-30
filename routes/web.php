@@ -4,14 +4,11 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Inertia\Inertia;
+use App\Http\Controllers\EmployeesController;
 
 Route::get('/', function () {
     if (Auth::check()) {
-        $user = Auth::user();
-        if (strtoupper($user->role) === 'ADMIN') {
-            return redirect()->route('admin.dashboard');
-        }
-        return redirect()->route('staff.dashboard');
+        return redirect()->route('dashboard');
     }
 
     return Inertia::render('Auth/Login');
@@ -21,25 +18,20 @@ Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middlew
 
 
 Route::middleware('auth')->group(function () {
-
-    // Admin
-    Route::middleware('role:ADMIN')->group(function () {
-        Route::get('/admin/dashboard', function () {
-            return Inertia::render('Admin/Dashboard');
-        })->name('admin.dashboard');
-    });
-
-    // Staff
-    Route::middleware('role:ADMIN,STAF')->group(function () {
-        Route::get('/staff/dashboard', function () {
-            return Inertia::render('Staff/Dashboard');
-        })->name('staff.dashboard');
-    });
+    
+    Route::get('/dashboard', function () {
+        $user = Auth::user();
+        return inertia()->render('Dashboard/Dashboard', [
+            'user' => $user,
+        ]);
+    })->name('dashboard');
 
     // Logout
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 });
 
-Route::get('/staff/pengaturan-akun', function () {
-    return Inertia::render('Staff/PengaturanAkun');
-})->name('staff.pengaturan-akun')->middleware('auth', 'role:ADMIN,STAF');
+// Employees routes
+Route::get('/pengaturan-akun', [EmployeesController::class, 'index'])->name('pengaturan-akun');
+Route::post('/employees', [EmployeesController::class, 'store']);
+Route::put('/employees/{id}', [EmployeesController::class, 'update']);
+Route::delete('/employees/{id}', [EmployeesController::class, 'destroy']);

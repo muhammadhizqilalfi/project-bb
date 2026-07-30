@@ -11,12 +11,12 @@
             <div class="h-6 w-px bg-slate-700/80"></div>
             <div class="text-right">
                 <div class="text-xs font-bold tracking-wide text-white">
-                    {{ userName }}
+                    {{ user?.nama}}
                 </div>
                 <div
                     class="mt-0.5 font-mono text-[11px] tracking-tight text-slate-400"
                 >
-                    {{ nip }}
+                    {{ user?.nip ? `NIP. ${user.nip}` : '-' }}
                 </div>
             </div>
 
@@ -35,7 +35,7 @@
                     <button
                         type="button"
                         @click="handleLogout"
-                        class="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left text-sm text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+                        class="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left text-sm text-slate-600 transition-colors hover:bg-red-300 hover:text-slate-900"
                     >
                         <LogOut class="h-4 w-4 text-slate-500" />
                         <span>Logout</span>
@@ -47,20 +47,15 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { router, usePage } from '@inertiajs/vue3';
 import { LogOut } from 'lucide-vue-next';
 
-defineProps({
-    userName: {
-        type: String,
-        default: 'ADMIN KEJAKSAAN',
-    },
-    nip: {
-        type: String,
-        default: 'NIP. 19820412 200501 1 002',
-    },
-});
+// 1. Panggil usePage untuk mengakses Shared Props dari Inertia
+const page = usePage();
+
+// 2. Buat computed property untuk mengambil data user
+const user = computed(() => page.props.auth?.user);
 
 const isMenuOpen = ref(false);
 const menuWrapper = ref(null);

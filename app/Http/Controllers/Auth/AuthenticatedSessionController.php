@@ -42,11 +42,7 @@ class AuthenticatedSessionController extends Controller
             $user = Auth::user();
 
             // Direct user
-            if (strtoupper($user->role) === 'ADMIN') {
-                return redirect()->intended(route('admin.dashboard'));
-            }
-
-            return redirect()->intended(route('staff.dashboard'));
+            return redirect()->intended(route('dashboard'));
         }
 
         RateLimiter::hit($throttleKey, 5 * 60);
