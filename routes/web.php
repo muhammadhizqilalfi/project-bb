@@ -35,3 +35,5 @@ Route::get('/pengaturan-akun', [EmployeesController::class, 'index'])->name('pen
 Route::post('/employees', [EmployeesController::class, 'store']);
 Route::put('/employees/{id}', [EmployeesController::class, 'update']);
 Route::delete('/employees/{id}', [EmployeesController::class, 'destroy']);
+
+// Form routes
