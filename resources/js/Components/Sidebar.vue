@@ -97,6 +97,36 @@
                 <span>LAPORAN</span>
             </button>
 
+            <!-- PENGATURAN FORM -->
+                <button
+                    type="button"
+                    @click="selectMenu('PENGATURAN FORM')"
+                    :class="[
+                        'w-full flex items-center gap-3 px-4 py-3 rounded-lg font-bold text-xs tracking-wider uppercase transition-colors cursor-pointer',
+                        activeMenu === 'PENGATURAN FORM'
+                            ? 'bg-[#FFD000] text-slate-950 shadow-md'
+                            : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                    ]"
+                >
+                    <Sliders class="w-4 h-4 shrink-0" />
+                    <span>PENGATURAN FORM</span>
+                </button>
+
+            <!-- PENGATURAN AKUN -->
+            <button
+                type="button"
+                @click="selectMenu('staff.pengaturan-akun')"
+                :class="[
+                    'w-full flex items-center gap-3 px-4 py-3 rounded-lg font-bold text-xs tracking-wider uppercase transition-colors cursor-pointer',
+                    activeMenu === 'staff.pengaturan-akun'
+                        ? 'bg-[#FFD000] text-slate-950 shadow-md'
+                        : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
+                ]"
+            >
+                <Users class="w-4 h-4 shrink-0" />
+                <span>PENGATURAN AKUN</span>
+            </button>
+
             <!-- ================= MENU KHUSUS ADMIN ================= -->
             <template v-if="normalizedRole === 'admin'">
                 <div class="pt-4 pb-1 px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">

@@ -9,9 +9,9 @@ Route::get('/', function () {
     if (Auth::check()) {
         $user = Auth::user();
         if (strtoupper($user->role) === 'ADMIN') {
-            return redirect()->route('admin.beranda');
+            return redirect()->route('admin.dashboard');
         }
-        return redirect()->route('karyawan.beranda');
+        return redirect()->route('staff.dashboard');
     }
 
     return Inertia::render('Auth/Login');
@@ -39,3 +39,7 @@ Route::middleware('auth')->group(function () {
     // Logout
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 });
+
+Route::get('/staff/pengaturan-akun', function () {
+    return Inertia::render('Staff/PengaturanAkun');
+})->name('staff.pengaturan-akun')->middleware('auth', 'role:ADMIN,STAF');
