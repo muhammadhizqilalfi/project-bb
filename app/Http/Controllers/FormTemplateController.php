@@ -23,22 +23,109 @@ class FormTemplateController extends Controller
         ]);
     }
 
-    public function store(Request $request, string $type)
+    // Method untuk membuka halaman Wizard Buat Form 3A dari nol (Tahap 1)
+    public function create3AWizard()
+    {
+        return Inertia::render('Tabs/Form3AInput', [
+            'form' => null,
+        ]);
+    }
+
+    // Method untuk menyimpan Form 3A + Case Pertama dari Wizard
+    public function store3AWizard(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'month' => 'required|integer|min:1|max:12',
-            'year' => 'required|integer|min:2000|max:2100',
+            'header.name' => 'required|string|max:255',
+            'header.month' => 'required|integer|min:1|max:12',
+            'header.year' => 'required|integer|min:2000|max:2100',
+            
+            'case.satuanKerja' => 'required|string|max:255',
+            'case.kategoriTindakPidana' => 'required|string|max:255',
+            'case.noRegBendaSitaan' => 'required|string|max:255',
+            'case.noRegPenyidikan' => 'required|string|max:255',
+            'case.identitasTersangka' => 'required|string',
+            'case.pasalDisangkakan' => 'required|string|max:255',
+            'case.jenisBarangBukti' => 'required|string|max:255',
+            'case.jumlah' => 'required|numeric',
+            'case.satuan' => 'required|string|max:255',
+            'case.ukuranDetail' => 'required|string',
+            'case.tempatPenyimpanan' => 'required|string|max:255',
+            'case.statusDiselesaikan' => 'required|string|max:255',
+            'case.tglPelaksanaanPutusan' => 'nullable|date',
+            'case.keterangan' => 'nullable|string',
         ]);
 
         FormTemplate::create([
-            'form_type' => $this->normalizeFormType($type),
-            'name' => $validated['name'],
-            'month' => (int) $validated['month'],
-            'year' => (int) $validated['year'],
+            'form_type' => '3A',
+            'name' => $validated['header']['name'],
+            'month' => (int) $validated['header']['month'],
+            'year' => (int) $validated['header']['year'],
+            'latest_case_summary' => [
+                'satuanKerja' => $validated['case']['satuanKerja'],
+                'kategoriTindakPidana' => $validated['case']['kategoriTindakPidana'],
+                'noRegBendaSitaan' => $validated['case']['noRegBendaSitaan'],
+                'noRegPenyidikan' => $validated['case']['noRegPenyidikan'],
+                'jenisBarangBukti' => $validated['case']['jenisBarangBukti'],
+                'jumlah' => (string) $validated['case']['jumlah'],
+                'satuan' => $validated['case']['satuan'],
+                'statusDiselesaikan' => $validated['case']['statusDiselesaikan'],
+            ],
+            'latest_case_saved_at' => now(),
         ]);
 
-        return redirect()->back();
+        return redirect('/form3a')->with('success', 'Form dan case pertama berhasil disimpan');
+    }
+
+    // Method untuk membuka halaman Wizard Buat Form 3C dari nol (Tahap 1)
+    public function create3CWizard()
+    {
+        return Inertia::render('Tabs/Form3CInput', [
+            'form' => null,
+        ]);
+    }
+
+    // Method untuk menyimpan Form 3C + Case Pertama dari Wizard
+    public function store3CWizard(Request $request)
+    {
+        $validated = $request->validate([
+            'header.name' => 'required|string|max:255',
+            'header.month' => 'required|integer|min:1|max:12',
+            'header.year' => 'required|integer|min:2000|max:2100',
+
+            'case.kejaksaan' => 'required|string|max:255',
+            'case.kategoriTindakPidana' => 'required|string|max:255',
+            'case.jenisBarangBukti' => 'required|string|max:255',
+            'case.pasalDidakwakan' => 'required|string|max:255',
+            'case.noRegBendaSitaan' => 'required|string|max:255',
+            'case.tglPenerimaan' => 'required|date',
+            'case.macamJenisKadar' => 'required|string',
+            'case.jumlahSatuan' => 'required|numeric',
+            'case.jenisSatuan' => 'required|string|max:255',
+            'case.tempatPenyimpanan' => 'required|string|max:255',
+            'case.noKepPengadilan' => 'required|string|max:255',
+            'case.tglKepPengadilan' => 'required|date',
+            'case.amarPutusan' => 'required|string',
+            'case.tglPelaksanaanPutusan' => 'nullable|date',
+        ]);
+
+        FormTemplate::create([
+            'form_type' => '3C',
+            'name' => $validated['header']['name'],
+            'month' => (int) $validated['header']['month'],
+            'year' => (int) $validated['header']['year'],
+            'latest_case_summary' => [
+                'kejaksaan' => $validated['case']['kejaksaan'],
+                'kategoriTindakPidana' => $validated['case']['kategoriTindakPidana'],
+                'jenisBarangBukti' => $validated['case']['jenisBarangBukti'],
+                'noRegBendaSitaan' => $validated['case']['noRegBendaSitaan'],
+                'jumlahSatuan' => (string) $validated['case']['jumlahSatuan'],
+                'jenisSatuan' => $validated['case']['jenisSatuan'],
+                'amarPutusan' => $validated['case']['amarPutusan'],
+            ],
+            'latest_case_saved_at' => now(),
+        ]);
+
+        return redirect('/form3c')->with('success', 'Form dan case pertama berhasil disimpan');
     }
 
     public function destroy(string $type, string $id)
@@ -61,6 +148,59 @@ class FormTemplateController extends Controller
         return Inertia::render('Tabs/Form3CEdit', [
             'form' => $this->mapForm($this->findForm('3C', $id)),
         ]);
+    }
+
+    public function create3ACase(string $id)
+    {
+        return Inertia::render('Tabs/Form3AInput', [
+            'form' => $this->mapForm($this->findForm('3A', $id)),
+        ]);
+    }
+
+    public function create3CCase(string $id)
+    {
+        return Inertia::render('Tabs/Form3CInput', [
+            'form' => $this->mapForm($this->findForm('3C', $id)),
+        ]);
+    }
+
+    public function store3ACase(Request $request, string $id)
+    {
+        $validated = $request->validate([
+            'satuanKerja' => 'required|string|max:255',
+            'kategoriTindakPidana' => 'required|string|max:255',
+            'noRegBendaSitaan' => 'required|string|max:255',
+            'noRegPenyidikan' => 'required|string|max:255',
+            'identitasTersangka' => 'required|string',
+            'pasalDisangkakan' => 'required|string|max:255',
+            'jenisBarangBukti' => 'required|string|max:255',
+            'namaBarangBukti' => 'required|string|max:255',
+            'jumlah' => 'required|numeric',
+            'satuan' => 'required|string|max:255',
+            'ukuranDetail' => 'required|string',
+            'tempatPenyimpanan' => 'required|string|max:255',
+            'statusDiselesaikan' => 'required|string|max:255',
+            'tglPelaksanaanPutusan' => 'nullable|date',
+            'keterangan' => 'nullable|string',
+        ]);
+
+        $form = $this->findForm('3A', $id);
+
+        $form->update([
+            'latest_case_summary' => [
+                'satuanKerja' => $validated['satuanKerja'],
+                'kategoriTindakPidana' => $validated['kategoriTindakPidana'],
+                'noRegBendaSitaan' => $validated['noRegBendaSitaan'],
+                'noRegPenyidikan' => $validated['noRegPenyidikan'],
+                'jenisBarangBukti' => $validated['jenisBarangBukti'],
+                'jumlah' => (string) $validated['jumlah'],
+                'satuan' => $validated['satuan'],
+                'statusDiselesaikan' => $validated['statusDiselesaikan'],
+            ],
+            'latest_case_saved_at' => now(),
+        ]);
+
+        return redirect("/form3a/{$id}/edit")->with('success', 'form saved successfully');
     }
 
     public function store3CCase(Request $request, string $id)
@@ -100,20 +240,6 @@ class FormTemplateController extends Controller
         return redirect("/form3c/{$id}/edit")->with('success', 'form saved successfully');
     }
 
-    public function create3ACase(string $id)
-    {
-        return Inertia::render('Tabs/Form3AInput', [
-            'form' => $this->mapForm($this->findForm('3A', $id)),
-        ]);
-    }
-
-    public function create3CCase(string $id)
-    {
-        return Inertia::render('Tabs/Form3CInput', [
-            'form' => $this->mapForm($this->findForm('3C', $id)),
-        ]);
-    }
-
     private function getFormsByType(string $type): array
     {
         return FormTemplate::where('form_type', $this->normalizeFormType($type))
@@ -151,12 +277,14 @@ class FormTemplateController extends Controller
         }
 
         return [
-            'kejaksaan' => $form->latest_case_summary['kejaksaan'] ?? '-',
+            'satuanKerja' => $form->latest_case_summary['satuanKerja'] ?? $form->latest_case_summary['kejaksaan'] ?? '-',
             'kategoriTindakPidana' => $form->latest_case_summary['kategoriTindakPidana'] ?? '-',
             'jenisBarangBukti' => $form->latest_case_summary['jenisBarangBukti'] ?? '-',
             'noRegBendaSitaan' => $form->latest_case_summary['noRegBendaSitaan'] ?? '-',
-            'jumlahSatuan' => $form->latest_case_summary['jumlahSatuan'] ?? '-',
-            'jenisSatuan' => $form->latest_case_summary['jenisSatuan'] ?? '-',
+            'noRegPenyidikan' => $form->latest_case_summary['noRegPenyidikan'] ?? '-',
+            'jumlah' => $form->latest_case_summary['jumlah'] ?? $form->latest_case_summary['jumlahSatuan'] ?? '-',
+            'satuan' => $form->latest_case_summary['satuan'] ?? $form->latest_case_summary['jenisSatuan'] ?? '-',
+            'statusDiselesaikan' => $form->latest_case_summary['statusDiselesaikan'] ?? $form->latest_case_summary['amarPutusan'] ?? '-',
             'amarPutusan' => $form->latest_case_summary['amarPutusan'] ?? '-',
             'savedAt' => $this->formatSavedAt($form->latest_case_saved_at),
         ];
