@@ -4,7 +4,6 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Inertia\Inertia;
-use App\Http\Controllers\EmployeesController;
 use App\Http\Controllers\FormTemplateController;
 
 Route::get('/', function () {
