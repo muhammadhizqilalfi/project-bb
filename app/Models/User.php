@@ -2,17 +2,13 @@
 
 namespace App\Models;
 
-// Jika menggunakan paket official mongodb/laravel-mongodb:
-use MongoDB\Laravel\Eloquent\Model as Eloquent;
-use Illuminate\Auth\Authenticatable;
-use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
-class User extends Eloquent implements AuthenticatableContract
+class User extends Authenticatable
 {
-    use Authenticatable;
-
-    protected $connection = 'mongodb';
-    protected $collection = 'users';
+    use HasFactory, Notifiable;
 
     protected $fillable = [
         'name',
@@ -22,5 +18,6 @@ class User extends Eloquent implements AuthenticatableContract
 
     protected $hidden = [
         'password',
+        'remember_token',
     ];
 }

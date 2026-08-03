@@ -78,7 +78,7 @@ const monthOptions = [
 
 const yearOptions = computed(() => {
   const currentYear = new Date().getFullYear();
-  return Array.from({ length: 10 }, (_, index) => currentYear + 2 - index);
+  return Array.from({ length: 10 }, (_, index) => currentYear - index);
 });
 
 const kategoriPidanaOptions = [

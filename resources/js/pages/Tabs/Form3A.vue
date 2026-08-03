@@ -81,7 +81,7 @@ const getMonthLabel = (month: number) => {
         <button
           type="button"
           class="bg-[#0E1B2E] hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-lg flex items-center gap-2 transition-colors cursor-pointer"
-          @click="router.get('/form3a/create-wizard')"
+          @click="router.get('/form3a/create')"
         >
           <Plus class="w-4 h-4" />
           <span>Buat Form</span>

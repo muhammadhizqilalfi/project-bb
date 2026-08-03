@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
-use MongoDB\Laravel\Eloquent\Model as Eloquent;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
-class FormTemplate extends Eloquent
+class FormTemplate extends Model
 {
-    protected $connection = 'mongodb';
+    use HasFactory;
 
-    protected $collection = 'form_templates';
+    protected $table = 'form_templates';
 
     protected $fillable = [
         'form_type',
@@ -17,5 +18,10 @@ class FormTemplate extends Eloquent
         'year',
         'latest_case_summary',
         'latest_case_saved_at',
+    ];
+
+    protected $casts = [
+        'latest_case_summary' => 'array',
+        'latest_case_saved_at' => 'datetime',
     ];
 }
