@@ -34,7 +34,7 @@ Route::middleware('auth')->group(function () {
 
     // Form 3A routes
     Route::get('/form3a', [FormTemplateController::class, 'index3A'])->name('form3a');
-    Route::get('/form3a/create-wizard', [FormTemplateController::class, 'create3AWizard']);
+    Route::get('/form3a/create', [FormTemplateController::class, 'create3AWizard']);
     Route::post('/forms/3a/wizard', [FormTemplateController::class, 'store3AWizard']);
     Route::get('/form3a/{id}/edit', [FormTemplateController::class, 'edit3A']);
     Route::get('/form3a/{id}/cases/create', [FormTemplateController::class, 'create3ACase']);
@@ -47,7 +47,7 @@ Route::middleware('auth')->group(function () {
 
     // Form 3C routes
     Route::get('/form3c', [FormTemplateController::class, 'index3C'])->name('form3c');
-    Route::get('/form3c/create-wizard', [FormTemplateController::class, 'create3CWizard']);
+    Route::get('/form3c/create', [FormTemplateController::class, 'create3CWizard']);
     Route::post('/forms/3c/wizard', [FormTemplateController::class, 'store3CWizard']);
     Route::get('/form3c/{id}/edit', [FormTemplateController::class, 'edit3C']);
     Route::get('/form3c/{id}/cases/create', [FormTemplateController::class, 'create3CCase']);

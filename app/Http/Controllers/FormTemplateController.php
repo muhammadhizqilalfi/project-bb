@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\FormTemplate;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use MongoDB\BSON\UTCDateTime;
 
 class FormTemplateController extends Controller
 {
@@ -261,7 +260,7 @@ class FormTemplateController extends Controller
     private function mapForm(FormTemplate $form): array
     {
         return [
-            'id' => (string) $form->_id,
+            'id' => (string) $form->id,
             'name' => $form->name,
             'month' => (int) $form->month,
             'year' => (int) $form->year,
