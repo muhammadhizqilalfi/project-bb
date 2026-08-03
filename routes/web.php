@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Inertia\Inertia;
 use App\Http\Controllers\EmployeesController;
+use App\Http\Controllers\FormTemplateController;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -37,14 +38,17 @@ Route::put('/employees/{id}', [EmployeesController::class, 'update']);
 Route::delete('/employees/{id}', [EmployeesController::class, 'destroy']);
 
 // Form routes
-Route::get('/form3a', function () {
-    return Inertia::render('Tabs/Form3A');
-})->name('form3a');
+Route::get('/form3a', [FormTemplateController::class, 'index3A'])->name('form3a');
+Route::post('/forms/{type}', [FormTemplateController::class, 'store'])->whereIn('type', ['3a', '3c']);
+Route::delete('/forms/{type}/{id}', [FormTemplateController::class, 'destroy'])->whereIn('type', ['3a', '3c']);
+Route::get('/form3a/{id}/edit', [FormTemplateController::class, 'edit3A']);
+Route::get('/form3a/{id}/cases/create', [FormTemplateController::class, 'create3ACase']);
 
 Route::get('/form3b', function () {
     return Inertia::render('Tabs/Form3B');
 })->name('form3b');
 
-Route::get('/form3c', function () {
-    return Inertia::render('Tabs/Form3C');
-})->name('form3c');
+Route::get('/form3c', [FormTemplateController::class, 'index3C'])->name('form3c');
+Route::get('/form3c/{id}/edit', [FormTemplateController::class, 'edit3C']);
+Route::get('/form3c/{id}/cases/create', [FormTemplateController::class, 'create3CCase']);
+Route::post('/form3c/{id}/cases', [FormTemplateController::class, 'store3CCase']);

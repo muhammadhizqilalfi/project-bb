@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Cache\RateLimiter as CacheRateLimiter;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\RateLimiter;
 use Inertia\Inertia;
 
 class AuthenticatedSessionController extends Controller
@@ -18,6 +19,8 @@ class AuthenticatedSessionController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $limiter = $this->loginRateLimiter();
+
         // Validation
         $credentials = $request->validate([
             'nip'    => ['required', 'string'],
@@ -26,8 +29,8 @@ class AuthenticatedSessionController extends Controller
 
         $throttleKey = $request->input('nip') . '|' . $request->ip();
 
-        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
-            $seconds = RateLimiter::availableIn($throttleKey);
+        if ($limiter->tooManyAttempts($throttleKey, 5)) {
+            $seconds = $limiter->availableIn($throttleKey);
             $minutes = ceil($seconds / 60);
             return back()->withErrors([
                 'nip' => "Terlalu banyak percobaan login. Silakan coba lagi dalam $minutes menit.",
@@ -36,7 +39,7 @@ class AuthenticatedSessionController extends Controller
 
         // Auth
         if (Auth::attempt($credentials, $request->boolean('remember'))) {
-            rateLimiter::clear($throttleKey);
+            $limiter->clear($throttleKey);
             $request->session()->regenerate();
 
             $user = Auth::user();
@@ -45,7 +48,7 @@ class AuthenticatedSessionController extends Controller
             return redirect()->intended(route('dashboard'));
         }
 
-        RateLimiter::hit($throttleKey, 5 * 60);
+        $limiter->hit($throttleKey, 5 * 60);
 
         // If authentication fails, redirect back with an error message
         return back()->withErrors([
@@ -61,5 +64,10 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    private function loginRateLimiter(): CacheRateLimiter
+    {
+        return new CacheRateLimiter(Cache::store('file'));
     }
 }

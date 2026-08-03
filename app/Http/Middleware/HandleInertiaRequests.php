@@ -44,6 +44,9 @@ class HandleInertiaRequests extends Middleware
                 'nip'  => $request->user()->nip,
             ] : null,
         ],
+        'flash' => [
+            'success' => fn () => $request->session()->get('success'),
+        ],
     ];
 }
 }

@@ -44,18 +44,18 @@
                         leave-from-class="transform scale-100 opacity-100 translate-y-0"
                         leave-to-class="transform scale-95 opacity-0 -translate-y-1">
                         <div v-show="isFormDropdownOpen" @click="selectMenu('FORM')" :class="['pl-11 pr-3 py-1 space-y-1', activeMenu === 'FORM' ? 'bg-slate-800/70 rounded-lg' : '']">
-                            <a href="form3a"
+                            <Link href="form3a"
                                 class="block py-2 px-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors rounded">
                                 FORM 3A
-                            </a>
-                            <a href="form3b"
+                            </Link>
+                            <Link href="form3b"
                                 class="block py-2 px-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors rounded">
                                 FORM 3B
-                            </a>
-                            <a href="form3c"
+                            </Link>
+                            <Link href="form3c"
                                 class="block py-2 px-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors rounded">
                                 FORM 3C
-                            </a>
+                            </Link>
                         </div>
                     </Transition>
                 </div>
@@ -98,7 +98,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { router, usePage } from '@inertiajs/vue3';
+import { router, usePage, Link } from '@inertiajs/vue3';
 import {
     LayoutGrid,
     FileText,
