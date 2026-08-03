@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\FormTemplate;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use MongoDB\BSON\UTCDateTime;
 
 class FormTemplateController extends Controller
 {
@@ -30,7 +31,7 @@ class FormTemplateController extends Controller
         ]);
     }
 
-    // Method untuk menyimpan Form 3A + Case Pertama dari Wizard
+    // Method untuk menyimpan Form 3A + Case Pertama dari Wizard (MULTI BARANG BUKTI)
     public function store3AWizard(Request $request)
     {
         $validated = $request->validate([
@@ -44,14 +45,18 @@ class FormTemplateController extends Controller
             'case.noRegPenyidikan' => 'required|string|max:255',
             'case.identitasTersangka' => 'required|string',
             'case.pasalDisangkakan' => 'required|string|max:255',
-            'case.jenisBarangBukti' => 'required|string|max:255',
-            'case.jumlah' => 'required|numeric',
-            'case.satuan' => 'required|string|max:255',
-            'case.ukuranDetail' => 'required|string',
-            'case.tempatPenyimpanan' => 'required|string|max:255',
             'case.statusDiselesaikan' => 'required|string|max:255',
             'case.tglPelaksanaanPutusan' => 'nullable|date',
             'case.keterangan' => 'nullable|string',
+
+            // Validasi Array Multi Barang Bukti Form 3A
+            'case.barangBuktiList' => 'required|array|min:1',
+            'case.barangBuktiList.*.jenisBarangBukti' => 'required|string|max:255',
+            'case.barangBuktiList.*.namaBarangBukti' => 'required|string|max:255',
+            'case.barangBuktiList.*.jumlah' => 'required|numeric',
+            'case.barangBuktiList.*.satuan' => 'required|string|max:255',
+            'case.barangBuktiList.*.ukuranDetail' => 'required|string',
+            'case.barangBuktiList.*.tempatPenyimpanan' => 'required|string|max:255',
         ]);
 
         FormTemplate::create([
@@ -64,10 +69,12 @@ class FormTemplateController extends Controller
                 'kategoriTindakPidana' => $validated['case']['kategoriTindakPidana'],
                 'noRegBendaSitaan' => $validated['case']['noRegBendaSitaan'],
                 'noRegPenyidikan' => $validated['case']['noRegPenyidikan'],
-                'jenisBarangBukti' => $validated['case']['jenisBarangBukti'],
-                'jumlah' => (string) $validated['case']['jumlah'],
-                'satuan' => $validated['case']['satuan'],
+                'identitasTersangka' => $validated['case']['identitasTersangka'],
+                'pasalDisangkakan' => $validated['case']['pasalDisangkakan'],
                 'statusDiselesaikan' => $validated['case']['statusDiselesaikan'],
+                'tglPelaksanaanPutusan' => $validated['case']['tglPelaksanaanPutusan'] ?? null,
+                'keterangan' => $validated['case']['keterangan'] ?? null,
+                'barangBuktiList' => $validated['case']['barangBuktiList'],
             ],
             'latest_case_saved_at' => now(),
         ]);
@@ -83,7 +90,7 @@ class FormTemplateController extends Controller
         ]);
     }
 
-    // Method untuk menyimpan Form 3C + Case Pertama dari Wizard
+    // Method untuk menyimpan Form 3C + Case Pertama dari Wizard (MULTI BARANG BUKTI)
     public function store3CWizard(Request $request)
     {
         $validated = $request->validate([
@@ -93,18 +100,21 @@ class FormTemplateController extends Controller
 
             'case.kejaksaan' => 'required|string|max:255',
             'case.kategoriTindakPidana' => 'required|string|max:255',
-            'case.jenisBarangBukti' => 'required|string|max:255',
             'case.pasalDidakwakan' => 'required|string|max:255',
             'case.noRegBendaSitaan' => 'required|string|max:255',
             'case.tglPenerimaan' => 'required|date',
-            'case.macamJenisKadar' => 'required|string',
-            'case.jumlahSatuan' => 'required|numeric',
-            'case.jenisSatuan' => 'required|string|max:255',
-            'case.tempatPenyimpanan' => 'required|string|max:255',
             'case.noKepPengadilan' => 'required|string|max:255',
             'case.tglKepPengadilan' => 'required|date',
             'case.amarPutusan' => 'required|string',
             'case.tglPelaksanaanPutusan' => 'nullable|date',
+
+            // Validasi Array Multi Barang Bukti Form 3C
+            'case.barangBuktiList' => 'required|array|min:1',
+            'case.barangBuktiList.*.jenisBarangBukti' => 'required|string|max:255',
+            'case.barangBuktiList.*.macamJenisKadar' => 'required|string',
+            'case.barangBuktiList.*.jumlahSatuan' => 'required|numeric',
+            'case.barangBuktiList.*.jenisSatuan' => 'required|string|max:255',
+            'case.barangBuktiList.*.tempatPenyimpanan' => 'required|string|max:255',
         ]);
 
         FormTemplate::create([
@@ -115,11 +125,14 @@ class FormTemplateController extends Controller
             'latest_case_summary' => [
                 'kejaksaan' => $validated['case']['kejaksaan'],
                 'kategoriTindakPidana' => $validated['case']['kategoriTindakPidana'],
-                'jenisBarangBukti' => $validated['case']['jenisBarangBukti'],
+                'pasalDidakwakan' => $validated['case']['pasalDidakwakan'],
                 'noRegBendaSitaan' => $validated['case']['noRegBendaSitaan'],
-                'jumlahSatuan' => (string) $validated['case']['jumlahSatuan'],
-                'jenisSatuan' => $validated['case']['jenisSatuan'],
+                'tglPenerimaan' => $validated['case']['tglPenerimaan'],
+                'noKepPengadilan' => $validated['case']['noKepPengadilan'],
+                'tglKepPengadilan' => $validated['case']['tglKepPengadilan'],
                 'amarPutusan' => $validated['case']['amarPutusan'],
+                'tglPelaksanaanPutusan' => $validated['case']['tglPelaksanaanPutusan'] ?? null,
+                'barangBuktiList' => $validated['case']['barangBuktiList'],
             ],
             'latest_case_saved_at' => now(),
         ]);
@@ -163,6 +176,7 @@ class FormTemplateController extends Controller
         ]);
     }
 
+    // Method untuk menyimpan Case Baru pada Form 3A yang sudah ada (MULTI BARANG BUKTI)
     public function store3ACase(Request $request, string $id)
     {
         $validated = $request->validate([
@@ -172,15 +186,18 @@ class FormTemplateController extends Controller
             'noRegPenyidikan' => 'required|string|max:255',
             'identitasTersangka' => 'required|string',
             'pasalDisangkakan' => 'required|string|max:255',
-            'jenisBarangBukti' => 'required|string|max:255',
-            'namaBarangBukti' => 'required|string|max:255',
-            'jumlah' => 'required|numeric',
-            'satuan' => 'required|string|max:255',
-            'ukuranDetail' => 'required|string',
-            'tempatPenyimpanan' => 'required|string|max:255',
             'statusDiselesaikan' => 'required|string|max:255',
             'tglPelaksanaanPutusan' => 'nullable|date',
             'keterangan' => 'nullable|string',
+
+            // Validasi Array Multi Barang Bukti Form 3A
+            'barangBuktiList' => 'required|array|min:1',
+            'barangBuktiList.*.jenisBarangBukti' => 'required|string|max:255',
+            'barangBuktiList.*.namaBarangBukti' => 'required|string|max:255',
+            'barangBuktiList.*.jumlah' => 'required|numeric',
+            'barangBuktiList.*.satuan' => 'required|string|max:255',
+            'barangBuktiList.*.ukuranDetail' => 'required|string',
+            'barangBuktiList.*.tempatPenyimpanan' => 'required|string|max:255',
         ]);
 
         $form = $this->findForm('3A', $id);
@@ -191,10 +208,12 @@ class FormTemplateController extends Controller
                 'kategoriTindakPidana' => $validated['kategoriTindakPidana'],
                 'noRegBendaSitaan' => $validated['noRegBendaSitaan'],
                 'noRegPenyidikan' => $validated['noRegPenyidikan'],
-                'jenisBarangBukti' => $validated['jenisBarangBukti'],
-                'jumlah' => (string) $validated['jumlah'],
-                'satuan' => $validated['satuan'],
+                'identitasTersangka' => $validated['identitasTersangka'],
+                'pasalDisangkakan' => $validated['pasalDisangkakan'],
                 'statusDiselesaikan' => $validated['statusDiselesaikan'],
+                'tglPelaksanaanPutusan' => $validated['tglPelaksanaanPutusan'] ?? null,
+                'keterangan' => $validated['keterangan'] ?? null,
+                'barangBuktiList' => $validated['barangBuktiList'],
             ],
             'latest_case_saved_at' => now(),
         ]);
@@ -202,23 +221,27 @@ class FormTemplateController extends Controller
         return redirect("/form3a/{$id}/edit")->with('success', 'form saved successfully');
     }
 
+    // Method untuk menyimpan Case Baru pada Form 3C yang sudah ada (MULTI BARANG BUKTI)
     public function store3CCase(Request $request, string $id)
     {
         $validated = $request->validate([
             'kejaksaan' => 'required|string|max:255',
             'kategoriTindakPidana' => 'required|string|max:255',
-            'jenisBarangBukti' => 'required|string|max:255',
             'pasalDidakwakan' => 'required|string|max:255',
             'noRegBendaSitaan' => 'required|string|max:255',
             'tglPenerimaan' => 'required|date',
-            'macamJenisKadar' => 'required|string',
-            'jumlahSatuan' => 'required|numeric',
-            'jenisSatuan' => 'required|string|max:255',
-            'tempatPenyimpanan' => 'required|string|max:255',
             'noKepPengadilan' => 'required|string|max:255',
             'tglKepPengadilan' => 'required|date',
             'amarPutusan' => 'required|string',
             'tglPelaksanaanPutusan' => 'nullable|date',
+
+            // Validasi Array Multi Barang Bukti Form 3C
+            'barangBuktiList' => 'required|array|min:1',
+            'barangBuktiList.*.jenisBarangBukti' => 'required|string|max:255',
+            'barangBuktiList.*.macamJenisKadar' => 'required|string',
+            'barangBuktiList.*.jumlahSatuan' => 'required|numeric',
+            'barangBuktiList.*.jenisSatuan' => 'required|string|max:255',
+            'barangBuktiList.*.tempatPenyimpanan' => 'required|string|max:255',
         ]);
 
         $form = $this->findForm('3C', $id);
@@ -227,11 +250,14 @@ class FormTemplateController extends Controller
             'latest_case_summary' => [
                 'kejaksaan' => $validated['kejaksaan'],
                 'kategoriTindakPidana' => $validated['kategoriTindakPidana'],
-                'jenisBarangBukti' => $validated['jenisBarangBukti'],
+                'pasalDidakwakan' => $validated['pasalDidakwakan'],
                 'noRegBendaSitaan' => $validated['noRegBendaSitaan'],
-                'jumlahSatuan' => (string) $validated['jumlahSatuan'],
-                'jenisSatuan' => $validated['jenisSatuan'],
+                'tglPenerimaan' => $validated['tglPenerimaan'],
+                'noKepPengadilan' => $validated['noKepPengadilan'],
+                'tglKepPengadilan' => $validated['tglKepPengadilan'],
                 'amarPutusan' => $validated['amarPutusan'],
+                'tglPelaksanaanPutusan' => $validated['tglPelaksanaanPutusan'] ?? null,
+                'barangBuktiList' => $validated['barangBuktiList'],
             ],
             'latest_case_saved_at' => now(),
         ]);
@@ -266,25 +292,55 @@ class FormTemplateController extends Controller
             'year' => (int) $form->year,
             'formType' => $form->form_type,
             'latestCase' => $this->mapLatestCase($form),
+
+            // MENGIRIMKAN DAFTAR CASE YANG SUDAH DITAMBAHKAN SEBELUMNYA
+            'cases' => $form->cases ?? ($form->latest_case_summary ? [$form->latest_case_summary] : []),
         ];
     }
 
+    // Mapping ringkasan case terbaru dengan penanganan fallback (Mendukung Multi BB & Single BB Legacy)
     private function mapLatestCase(FormTemplate $form): ?array
     {
         if (!$form->latest_case_summary || !is_array($form->latest_case_summary)) {
             return null;
         }
 
+        $summary = $form->latest_case_summary;
+        $bbList = $summary['barangBuktiList'] ?? [];
+        $firstBb = $bbList[0] ?? [];
+
+        // Fallback Jenis Barang Bukti
+        $jenisBarangBukti = $summary['jenisBarangBukti'] 
+            ?? $firstBb['jenisBarangBukti'] 
+            ?? '-';
+
+        // Fallback Jumlah
+        $jumlah = isset($summary['jumlah']) 
+            ? $summary['jumlah'] 
+            : (isset($firstBb['jumlah']) 
+                ? (string)$firstBb['jumlah'] 
+                : (isset($firstBb['jumlahSatuan']) 
+                    ? (string)$firstBb['jumlahSatuan'] 
+                    : ($summary['jumlahSatuan'] ?? '-')));
+
+        // Fallback Satuan
+        $satuan = $summary['satuan'] 
+            ?? $firstBb['satuan'] 
+            ?? $firstBb['jenisSatuan'] 
+            ?? $summary['jenisSatuan'] 
+            ?? '-';
+
         return [
-            'satuanKerja' => $form->latest_case_summary['satuanKerja'] ?? $form->latest_case_summary['kejaksaan'] ?? '-',
-            'kategoriTindakPidana' => $form->latest_case_summary['kategoriTindakPidana'] ?? '-',
-            'jenisBarangBukti' => $form->latest_case_summary['jenisBarangBukti'] ?? '-',
-            'noRegBendaSitaan' => $form->latest_case_summary['noRegBendaSitaan'] ?? '-',
-            'noRegPenyidikan' => $form->latest_case_summary['noRegPenyidikan'] ?? '-',
-            'jumlah' => $form->latest_case_summary['jumlah'] ?? $form->latest_case_summary['jumlahSatuan'] ?? '-',
-            'satuan' => $form->latest_case_summary['satuan'] ?? $form->latest_case_summary['jenisSatuan'] ?? '-',
-            'statusDiselesaikan' => $form->latest_case_summary['statusDiselesaikan'] ?? $form->latest_case_summary['amarPutusan'] ?? '-',
-            'amarPutusan' => $form->latest_case_summary['amarPutusan'] ?? '-',
+            'satuanKerja' => $summary['satuanKerja'] ?? $summary['kejaksaan'] ?? '-',
+            'kategoriTindakPidana' => $summary['kategoriTindakPidana'] ?? '-',
+            'jenisBarangBukti' => $jenisBarangBukti,
+            'noRegBendaSitaan' => $summary['noRegBendaSitaan'] ?? '-',
+            'noRegPenyidikan' => $summary['noRegPenyidikan'] ?? '-',
+            'jumlah' => $jumlah,
+            'satuan' => $satuan,
+            'statusDiselesaikan' => $summary['statusDiselesaikan'] ?? $summary['amarPutusan'] ?? '-',
+            'amarPutusan' => $summary['amarPutusan'] ?? '-',
+            'barangBuktiList' => $bbList,
             'savedAt' => $this->formatSavedAt($form->latest_case_saved_at),
         ];
     }
