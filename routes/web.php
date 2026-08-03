@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Inertia\Inertia;
 use App\Http\Controllers\FormTemplateController;
+use App\Http\Controllers\LaporanController;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -54,6 +55,12 @@ Route::middleware('auth')->group(function () {
 
     // Common Form Delete
     Route::delete('/forms/{type}/{id}', [FormTemplateController::class, 'destroy'])->whereIn('type', ['3a', '3c']);
+
+    // Laporan routes
+    Route::middleware(['auth'])->group(function () {
+    Route::get('/laporan', [LaporanController::class, 'Laporan'])->name('laporan');
+    Route::get('/laporan/export-pdf', [LaporanController::class, 'exportPdf'])->name('laporan.exportPdf');
+    });
 
     // Logout
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
