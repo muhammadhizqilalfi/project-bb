@@ -26,12 +26,6 @@ Route::middleware('auth')->group(function () {
         ]);
     })->name('dashboard');
 
-    // Employees routes
-    Route::get('/pengaturan-akun', [EmployeesController::class, 'index'])->name('pengaturan-akun');
-    Route::post('/employees', [EmployeesController::class, 'store']);
-    Route::put('/employees/{id}', [EmployeesController::class, 'update']);
-    Route::delete('/employees/{id}', [EmployeesController::class, 'destroy']);
-
     // Form 3A routes
     Route::get('/form3a', [FormTemplateController::class, 'index3A'])->name('form3a');
     Route::get('/form3a/create', [FormTemplateController::class, 'create3AWizard']);
