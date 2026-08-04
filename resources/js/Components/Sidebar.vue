@@ -98,17 +98,6 @@
                 <Sliders class="w-4 h-4 shrink-0" />
                 <span>PENGATURAN FORM</span>
             </button>
-
-            <!-- PENGATURAN AKUN -->
-            <button type="button" @click="selectMenu('PENGATURAN AKUN')" :class="[
-                'w-full flex items-center gap-3 px-4 py-3 rounded-lg font-bold text-xs tracking-wider uppercase transition-colors cursor-pointer',
-                activeMenu === 'PENGATURAN AKUN'
-                    ? 'bg-[#FFD000] text-slate-950 shadow-md'
-                    : 'text-slate-300 hover:bg-slate-800/70 hover:text-white'
-            ]">
-                <Users class="w-4 h-4 shrink-0" />
-                <span>PENGATURAN AKUN</span>
-            </button>
         </nav>
     </aside>
 </template>
@@ -130,7 +119,6 @@ const page = usePage();
 const activeMenu = computed(() => {
     const url = page.url;
 
-    if (url.startsWith('/pengaturan-akun')) return 'PENGATURAN AKUN';
     if (url.startsWith('/laporan')) return 'LAPORAN';
     if (url.startsWith('/pengaturan-form')) return 'PENGATURAN FORM';
     if (url.startsWith('/form3a') || url.startsWith('/form3b') || url.startsWith('/form3c')) return 'FORM';
@@ -148,8 +136,6 @@ const isFormDropdownOpen = ref(true);
 const selectMenu = (menuName) => {
     if (menuName === 'BERANDA') {
         router.get('/dashboard');
-    } else if (menuName === 'PENGATURAN AKUN') {
-        router.get('/pengaturan-akun');
     } else if (menuName === 'LAPORAN') {
         router.get('/laporan');
     } else if (menuName === 'PENGATURAN FORM') {
