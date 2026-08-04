@@ -4,7 +4,6 @@ import {
     Gavel,
     Package,
     CheckSquare,
-    Eye,
     Save,
     ArrowRight,
     ArrowLeft,
@@ -22,11 +21,12 @@ const activeMenu = ref('FORM');
 
 type BarangBukti = {
     jenisBarangBukti: string;
-    namaBarangBukti: string;
-    jumlah: string | number;
-    satuan: string;
-    ukuranDetail: string;
+    jumlah: number | string;
+    uraianBarangBukti: string;
     tempatPenyimpanan: string;
+    jenisNarkotika?: string;
+    jumlahNarkotika?: string | number;
+    satuanNarkotika?: string;
 };
 
 type SavedCase = {
@@ -67,16 +67,20 @@ const formHeader = ref({
 });
 
 const createEmptyBarangBukti = (): BarangBukti => ({
-    jenisBarangBukti: '',
-    namaBarangBukti: '',
-    jumlah: '',
-    satuan: '',
-    ukuranDetail: '',
+    jenisBarangBukti: 'NARKOTIKA',
+    jumlah: 1,
+    uraianBarangBukti: '',
     tempatPenyimpanan: '',
+    jenisNarkotika: '',
+    jumlahNarkotika: '',
+    satuanNarkotika: '',
 });
 
+const DEFAULT_SATKER = 'Kejari Banda Aceh';
+const keteranganTahapOptions = ['Tahap Persidangan', 'Tahap II'];
+
 const formCase = ref({
-    satuanKerja: '',
+    satuanKerja: DEFAULT_SATKER,
     kategoriTindakPidana: '',
     noRegBendaSitaan: '',
     noRegPenyidikan: '',
@@ -87,8 +91,6 @@ const formCase = ref({
     keterangan: '',
     barangBuktiList: [createEmptyBarangBukti()],
 });
-
-const showPreviewModal = ref(false);
 
 const monthOptions = [
     { value: 1, label: 'Januari' },
@@ -110,17 +112,24 @@ const yearOptions = computed(() => {
     return Array.from({ length: 10 }, (_, index) => currentYear - index);
 });
 
-const satuanKerjaOptions = [
-  'Kejari Banda Aceh', 
-  'Kejaksaan Negeri Banda Aceh'
-];
-
 const kategoriPidanaOptions = [
     'KAMNEGTIBUM DAN TPUL',
     'NARKOTIKA DAN ZAT ADITIF LAINNYA',
     'OHARDA',
     'TERORIS',
     'KORUPSI',
+];
+
+const jenisBbCategoryOptions = ['Narkotika', 'Lainnya'];
+
+const jenisNarkotikaOptions = [
+    'Sabu',
+    'Ganja',
+    'Ekstasi / Pil',
+    'Heroin',
+    'Tembakau Sintetis',
+    'Obat Keras',
+    'Lainnya',
 ];
 
 const satuanOptions = [
@@ -137,18 +146,11 @@ const satuanOptions = [
     'Lembar',
 ];
 
-const jenisBbOptions = [
-    'Narkotika',
-    'Psikotropika / Zat Adiktif',
-    'Kendaraan',
-    'Senjata Api / Tajam',
-    'Elektronik / HP',
-    'Uang / Dokumen',
-    'Lain-lain',
-];
-
 const tempatPenyimpananOptions = [
     'Gudang Barang Bukti Kejaksaan Negeri Banda Aceh',
+    'Gudang Barang Bukti Kejaksaan Tinggi Aceh',
+    'Rumah Penyimpanan Benda Sitaan Negara (RUPBASAN)',
+    'Brankas Barang Bukti / Khusus',
     'Lainnya',
 ];
 
@@ -177,19 +179,24 @@ const goToStep1 = () => {
 };
 
 const submitForm = () => {
+    const casePayload = {
+        ...formCase.value,
+        tglPelaksanaanPutusan: formCase.value.tglPelaksanaanPutusan || '-',
+    };
+
     if (isNewForm.value) {
         router.post('/forms/3a/wizard', {
             header: formHeader.value,
-            case: formCase.value,
+            case: casePayload,
         });
     } else {
-        router.post(`/form3a/${props.form?.id}/cases`, formCase.value);
+        router.post(`/form3a/${props.form?.id}/cases`, casePayload);
     }
 };
 
 const resetCaseForm = () => {
     formCase.value = {
-        satuanKerja: '',
+        satuanKerja: DEFAULT_SATKER,
         kategoriTindakPidana: '',
         noRegBendaSitaan: '',
         noRegPenyidikan: '',
@@ -462,22 +469,12 @@ const resetCaseForm = () => {
                                 SATUAN KERJA
                                 <span class="text-red-500">*</span>
                             </label>
-                            <select
+                            <input
                                 v-model="formCase.satuanKerja"
-                                required
-                                class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                            >
-                                <option value="" disabled>
-                                    Pilih Satuan Kerja...
-                                </option>
-                                <option
-                                    v-for="opt in satuanKerjaOptions"
-                                    :key="opt"
-                                    :value="opt"
-                                >
-                                    {{ opt }}
-                                </option>
-                            </select>
+                                type="text"
+                                readonly
+                                class="w-full cursor-not-allowed rounded-lg border border-transparent bg-slate-200/70 px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none"
+                            />
                         </div>
 
                         <div>
@@ -600,8 +597,9 @@ const resetCaseForm = () => {
                             <div>
                                 <label
                                     class="mb-1 block text-[10px] font-bold text-slate-600 uppercase"
-                                    >KETERANGAN</label
                                 >
+                                    KETERANGAN
+                                </label>
                                 <select
                                     v-model="formCase.keterangan"
                                     class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3 py-2 text-xs text-slate-800 transition-all outline-none focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
@@ -609,10 +607,13 @@ const resetCaseForm = () => {
                                     <option value="" disabled>
                                         Pilih Keterangan Tahap...
                                     </option>
-                                    <option value="Tahap Persidangan">
-                                        Tahap Persidangan
+                                    <option
+                                        v-for="opt in keteranganTahapOptions"
+                                        :key="opt"
+                                        :value="opt"
+                                    >
+                                        {{ opt }}
                                     </option>
-                                    <option value="Tahap II">Tahap II</option>
                                 </select>
                             </div>
                         </div>
@@ -678,133 +679,203 @@ const resetCaseForm = () => {
                                 </button>
                             </div>
 
-                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <div>
-                                    <label
-                                        class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
+                            <!-- BARIS PALING ATAS: PILIH JENIS BARANG BUKTI (KHUSUS / UMUM) -->
+                            <div
+                                v-if="
+                                    formCase.kategoriTindakPidana ===
+                                    'NARKOTIKA DAN ZAT ADITIF LAINNYA'
+                                "
+                            >
+                                <label
+                                    class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
+                                >
+                                    JENIS BARANG BUKTI
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <select
+                                    v-model="bb.jenisBarangBukti"
+                                    required
+                                    class="w-full rounded-lg border border-amber-300 bg-[#FFFBEB] px-3.5 py-2.5 text-xs font-bold text-slate-900 transition-all outline-none focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                >
+                                    <option
+                                        v-for="opt in jenisBbCategoryOptions"
+                                        :key="opt"
+                                        :value="opt"
                                     >
-                                        JENIS BARANG BUKTI
-                                        <span class="text-red-500">*</span>
-                                    </label>
-                                    <select
-                                        v-model="bb.jenisBarangBukti"
-                                        required
-                                        class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                                    >
-                                        <option value="" disabled>
-                                            Pilih Jenis Barang Bukti...
-                                        </option>
-                                        <option
-                                            v-for="opt in jenisBbOptions"
-                                            :key="opt"
-                                            :value="opt"
-                                        >
-                                            {{ opt }}
-                                        </option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label
-                                        class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                        >NAMA BARANG BUKTI
-                                        <span class="text-red-500"
-                                            >*</span
-                                        ></label
-                                    >
-                                    <input
-                                        v-model="bb.namaBarangBukti"
-                                        type="text"
-                                        required
-                                        placeholder="e.g. Sabu Paket / Honda Vario"
-                                        class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                                    />
-                                </div>
+                                        {{ opt }}
+                                    </option>
+                                </select>
                             </div>
 
-                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                                <div>
+                            <!-- BARIS 2: JUMLAH (ANGKA) & URAIAN/KETERANGAN BARANG BUKTI (TEXTAREA AUTOMATIC AUTO-EXPAND) -->
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
+                                <div class="sm:col-span-3">
                                     <label
                                         class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                        >JUMLAH
-                                        <span class="text-red-500"
-                                            >*</span
-                                        ></label
                                     >
-                                    <!-- INPUT BISA ANGKA DESIMAL (step="any") -->
+                                        JUMLAH
+                                        <span class="text-red-500">*</span>
+                                    </label>
                                     <input
                                         v-model="bb.jumlah"
                                         type="number"
+                                        min="1"
                                         step="any"
                                         required
-                                        placeholder="0.00"
-                                        class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                        placeholder="1"
+                                        class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs font-semibold text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                                     />
                                 </div>
-                                <div>
-                                    <label
-                                        class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                        >SATUAN
-                                        <span class="text-red-500"
-                                            >*</span
-                                        ></label
-                                    >
-                                    <!-- SELECT DROPDOWN SATUAN -->
-                                    <select
-                                        v-model="bb.satuan"
-                                        required
-                                        class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                                    >
-                                        <option value="" disabled>
-                                            Pilih Satuan...
-                                        </option>
-                                        <option
-                                            v-for="s in satuanOptions"
-                                            :key="s"
-                                            :value="s"
-                                        >
-                                            {{ s }}
-                                        </option>
-                                    </select>
-                                </div>
-                                <div>
+                                <div class="sm:col-span-9">
                                     <label
                                         class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
                                     >
-                                        TEMPAT PENYIMPANAN
+                                        URAIAN / KETERANGAN BARANG BUKTI
                                         <span class="text-red-500">*</span>
                                     </label>
-                                    <select
-                                        v-model="bb.tempatPenyimpanan"
+                                    <textarea
+                                        v-model="bb.uraianBarangBukti"
+                                        rows="1"
                                         required
-                                        class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                                    >
-                                        <option value="" disabled>
-                                            Pilih Tempat Penyimpanan...
-                                        </option>
-                                        <option
-                                            v-for="opt in tempatPenyimpananOptions"
-                                            :key="opt"
-                                            :value="opt"
-                                        >
-                                            {{ opt }}
-                                        </option>
-                                    </select>
+                                        placeholder="Deskripsi / spesifikasi rinci barang bukti..."
+                                        @input="
+                                            (e) => {
+                                                const el =
+                                                    e.target as HTMLTextAreaElement;
+                                                el.style.height = 'auto';
+                                                el.style.height =
+                                                    el.scrollHeight + 'px';
+                                            }
+                                        "
+                                        class="w-full resize-none overflow-hidden rounded-lg border border-transparent bg-[#F4F6F8] p-3 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                    ></textarea>
                                 </div>
                             </div>
 
+                            <!-- BARIS 3: TEMPAT PENYIMPANAN -->
                             <div>
                                 <label
                                     class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                    >UKURAN / DETAIL URAIAN BARANG
-                                    <span class="text-red-500">*</span></label
                                 >
-                                <textarea
-                                    v-model="bb.ukuranDetail"
-                                    rows="2"
+                                    TEMPAT PENYIMPANAN
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <select
+                                    v-model="bb.tempatPenyimpanan"
                                     required
-                                    placeholder="Contoh: Plastik klip transparan berisi kristal putih..."
-                                    class="w-full resize-none rounded-lg border border-transparent bg-[#F4F6F8] p-3 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                                ></textarea>
+                                    class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                >
+                                    <option value="" disabled>
+                                        Pilih Tempat Penyimpanan...
+                                    </option>
+                                    <option
+                                        v-for="opt in tempatPenyimpananOptions"
+                                        :key="opt"
+                                        :value="opt"
+                                    >
+                                        {{ opt }}
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- BARIS 4: KHUSUS JIKA KATEGORI PIDANA NARKOTIKA & JENIS BB ADALAH NARKOTIKA -->
+                            <div
+                                v-if="
+                                    formCase.kategoriTindakPidana ===
+                                        'NARKOTIKA DAN ZAT ADITIF LAINNYA' &&
+                                    bb.jenisBarangBukti === 'Narkotika'
+                                "
+                                class="space-y-3 rounded-lg border border-amber-200 bg-amber-50/60 p-4"
+                            >
+                                <p
+                                    class="text-[11px] font-bold tracking-wider text-amber-900 uppercase"
+                                >
+                                    Rincian Kuantitatif Narkotika (Untuk
+                                    Rekapitulasi)
+                                </p>
+                                <div
+                                    class="grid grid-cols-1 gap-4 sm:grid-cols-3"
+                                >
+                                    <div>
+                                        <label
+                                            class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-700 uppercase"
+                                        >
+                                            JENIS NARKOTIKA
+                                            <span class="text-red-500">*</span>
+                                        </label>
+                                        <select
+                                            v-model="bb.jenisNarkotika"
+                                            :required="
+                                                formCase.kategoriTindakPidana ===
+                                                    'NARKOTIKA DAN ZAT ADITIF LAINNYA' &&
+                                                bb.jenisBarangBukti ===
+                                                    'Narkotika'
+                                            "
+                                            class="w-full rounded-lg border border-transparent bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-800 transition-all outline-none focus:border-slate-300 focus:ring-2 focus:ring-[#FFD000]"
+                                        >
+                                            <option value="" disabled>
+                                                Pilih Jenis...
+                                            </option>
+                                            <option
+                                                v-for="opt in jenisNarkotikaOptions"
+                                                :key="opt"
+                                                :value="opt"
+                                            >
+                                                {{ opt }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label
+                                            class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-700 uppercase"
+                                        >
+                                            JUMLAH (DESIMAL)
+                                            <span class="text-red-500">*</span>
+                                        </label>
+                                        <input
+                                            v-model="bb.jumlahNarkotika"
+                                            type="number"
+                                            step="any"
+                                            :required="
+                                                formCase.kategoriTindakPidana ===
+                                                    'NARKOTIKA DAN ZAT ADITIF LAINNYA' &&
+                                                bb.jenisBarangBukti ===
+                                                    'Narkotika'
+                                            "
+                                            placeholder="0.00"
+                                            class="w-full rounded-lg border border-transparent bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-800 transition-all outline-none focus:border-slate-300 focus:ring-2 focus:ring-[#FFD000]"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label
+                                            class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-700 uppercase"
+                                        >
+                                            SATUAN
+                                            <span class="text-red-500">*</span>
+                                        </label>
+                                        <select
+                                            v-model="bb.satuanNarkotika"
+                                            :required="
+                                                formCase.kategoriTindakPidana ===
+                                                    'NARKOTIKA DAN ZAT ADITIF LAINNYA' &&
+                                                bb.jenisBarangBukti ===
+                                                    'Narkotika'
+                                            "
+                                            class="w-full rounded-lg border border-transparent bg-white px-3.5 py-2.5 text-xs font-semibold text-slate-800 transition-all outline-none focus:border-slate-300 focus:ring-2 focus:ring-[#FFD000]"
+                                        >
+                                            <option value="" disabled>
+                                                Pilih Satuan...
+                                            </option>
+                                            <option
+                                                v-for="s in satuanOptions"
+                                                :key="s"
+                                                :value="s"
+                                            >
+                                                {{ s }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -828,14 +899,6 @@ const resetCaseForm = () => {
                     <div class="flex items-center gap-3">
                         <button
                             type="button"
-                            class="flex cursor-pointer items-center gap-2 rounded-lg bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-800 transition-colors hover:bg-slate-200"
-                            @click="showPreviewModal = true"
-                        >
-                            <Eye class="h-4 w-4" />
-                            <span>PREVIEW FORM</span>
-                        </button>
-                        <button
-                            type="button"
                             class="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-800 transition-colors hover:bg-slate-100"
                             @click="resetCaseForm"
                         >
@@ -854,335 +917,6 @@ const resetCaseForm = () => {
                     </div>
                 </div>
             </form>
-        </div>
-
-        <!-- PREVIEW MODAL (CASES TERSIMPAN + DRAFT BARU) -->
-        <div
-            v-if="showPreviewModal"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-        >
-            <div
-                class="flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
-            >
-                <div
-                    class="flex shrink-0 items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4"
-                >
-                    <div>
-                        <h2 class="text-sm font-bold text-slate-900">
-                            Preview Laporan Form -
-                            {{
-                                isNewForm
-                                    ? formHeader.name || 'Form Baru'
-                                    : props.form?.name
-                            }}
-                        </h2>
-                        <p class="mt-0.5 text-[11px] text-slate-500">
-                            Menampilkan total
-                            {{ (props.form?.cases?.length || 0) + 1 }} Perkara
-                            ({{ props.form?.cases?.length || 0 }} Tersimpan + 1
-                            Draft Baru)
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        class="cursor-pointer text-slate-500 hover:text-slate-700"
-                        @click="showPreviewModal = false"
-                    >
-                        <X class="h-4 w-4" />
-                    </button>
-                </div>
-
-                <div class="overflow-y-auto p-5">
-                    <div
-                        class="overflow-x-auto rounded border border-slate-300"
-                    >
-                        <table class="w-full border-collapse text-left">
-                            <thead
-                                class="bg-slate-800 text-[10px] tracking-wider text-white uppercase"
-                            >
-                                <tr>
-                                    <th class="border border-slate-700 p-3">
-                                        Satker & Kategori
-                                    </th>
-                                    <th class="border border-slate-700 p-3">
-                                        No. Register Sitaan & Sidik
-                                    </th>
-                                    <th class="border border-slate-700 p-3">
-                                        Tersangka & Pasal
-                                    </th>
-                                    <th class="border border-slate-700 p-3">
-                                        Daftar Barang Bukti
-                                    </th>
-                                    <th
-                                        class="border border-slate-700 p-3 text-center"
-                                    >
-                                        Status
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="text-xs text-slate-700">
-                                <!-- 1. CASES TERSIMPAN SEBELUMNYA -->
-                                <tr
-                                    v-for="(c, cIdx) in props.form?.cases || []"
-                                    :key="'prev-' + cIdx"
-                                    class="border-b border-slate-200 bg-slate-50/80"
-                                >
-                                    <td
-                                        class="border border-slate-300 p-3 align-top"
-                                    >
-                                        <span
-                                            class="mb-1 inline-block rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800"
-                                        >
-                                            Case #{{ cIdx + 1 }} (Tersimpan)
-                                        </span>
-                                        <div class="font-bold text-slate-900">
-                                            {{ c.satuanKerja || '-' }}
-                                        </div>
-                                        <div
-                                            class="mt-0.5 text-[10px] text-slate-500"
-                                        >
-                                            {{ c.kategoriTindakPidana || '-' }}
-                                        </div>
-                                    </td>
-                                    <td
-                                        class="border border-slate-300 p-3 align-top"
-                                    >
-                                        <div>
-                                            <span
-                                                class="font-semibold text-slate-900"
-                                                >Sitaan:</span
-                                            >
-                                            {{ c.noRegBendaSitaan || '-' }}
-                                        </div>
-                                        <div class="mt-1">
-                                            <span
-                                                class="font-semibold text-slate-900"
-                                                >Sidik:</span
-                                            >
-                                            {{ c.noRegPenyidikan || '-' }}
-                                        </div>
-                                    </td>
-                                    <td
-                                        class="border border-slate-300 p-3 align-top"
-                                    >
-                                        <div
-                                            class="font-semibold text-slate-900"
-                                        >
-                                            {{ c.identitasTersangka || '-' }}
-                                        </div>
-                                        <div class="mt-1 text-slate-500">
-                                            Pasal:
-                                            {{ c.pasalDisangkakan || '-' }}
-                                        </div>
-                                    </td>
-                                    <td
-                                        class="border border-slate-300 p-3 align-top"
-                                    >
-                                        <div class="space-y-2">
-                                            <div
-                                                v-for="(
-                                                    bb, idx
-                                                ) in c.barangBuktiList || []"
-                                                :key="idx"
-                                                class="rounded border border-slate-200 bg-white p-2 text-xs"
-                                            >
-                                                <div
-                                                    class="font-bold text-slate-900"
-                                                >
-                                                    {{ idx + 1 }}.
-                                                    {{
-                                                        bb.namaBarangBukti ||
-                                                        'Barang Bukti'
-                                                    }}
-                                                    ({{
-                                                        bb.jenisBarangBukti ||
-                                                        '-'
-                                                    }})
-                                                </div>
-                                                <div
-                                                    class="mt-0.5 text-[11px] text-slate-600"
-                                                >
-                                                    {{ bb.ukuranDetail || '-' }}
-                                                </div>
-                                                <div
-                                                    class="mt-1 flex items-center justify-between text-[11px]"
-                                                >
-                                                    <span
-                                                        class="font-bold text-blue-700"
-                                                        >Jumlah:
-                                                        {{ bb.jumlah || 0 }}
-                                                        {{ bb.satuan }}</span
-                                                    >
-                                                    <span class="text-slate-500"
-                                                        >Lokasi:
-                                                        {{
-                                                            bb.tempatPenyimpanan ||
-                                                            '-'
-                                                        }}</span
-                                                    >
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td
-                                        class="border border-slate-300 p-3 text-center align-top"
-                                    >
-                                        <span
-                                            class="mb-2 inline-block rounded bg-slate-200 px-2 py-1 text-[10px] font-bold text-slate-800"
-                                        >
-                                            {{ c.statusDiselesaikan || '-' }}
-                                        </span>
-                                        <div
-                                            class="max-w-[120px] truncate text-[10px] text-slate-500 italic"
-                                            :title="c.keterangan"
-                                        >
-                                            {{
-                                                c.keterangan || 'Tidak ada ket.'
-                                            }}
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <!-- 2. CASE DRAFT BARU YANG SEDANG DIISI -->
-                                <tr
-                                    class="border-2 border-amber-300 bg-amber-50/50"
-                                >
-                                    <td
-                                        class="border border-slate-300 p-3 align-top"
-                                    >
-                                        <span
-                                            class="mb-1 inline-block rounded bg-amber-200 px-1.5 py-0.5 text-[10px] font-bold text-amber-900"
-                                        >
-                                            Draft Baru
-                                        </span>
-                                        <div class="font-bold text-slate-900">
-                                            {{ formCase.satuanKerja || '-' }}
-                                        </div>
-                                        <div
-                                            class="mt-0.5 text-[10px] text-slate-500"
-                                        >
-                                            {{
-                                                formCase.kategoriTindakPidana ||
-                                                '-'
-                                            }}
-                                        </div>
-                                    </td>
-                                    <td
-                                        class="border border-slate-300 p-3 align-top"
-                                    >
-                                        <div>
-                                            <span
-                                                class="font-semibold text-slate-900"
-                                                >Sitaan:</span
-                                            >
-                                            {{
-                                                formCase.noRegBendaSitaan || '-'
-                                            }}
-                                        </div>
-                                        <div class="mt-1">
-                                            <span
-                                                class="font-semibold text-slate-900"
-                                                >Sidik:</span
-                                            >
-                                            {{
-                                                formCase.noRegPenyidikan || '-'
-                                            }}
-                                        </div>
-                                    </td>
-                                    <td
-                                        class="border border-slate-300 p-3 align-top"
-                                    >
-                                        <div
-                                            class="font-semibold text-slate-900"
-                                        >
-                                            {{
-                                                formCase.identitasTersangka ||
-                                                '-'
-                                            }}
-                                        </div>
-                                        <div class="mt-1 text-slate-500">
-                                            Pasal:
-                                            {{
-                                                formCase.pasalDisangkakan || '-'
-                                            }}
-                                        </div>
-                                    </td>
-                                    <td
-                                        class="border border-slate-300 p-3 align-top"
-                                    >
-                                        <div class="space-y-2">
-                                            <div
-                                                v-for="(
-                                                    bb, idx
-                                                ) in formCase.barangBuktiList"
-                                                :key="idx"
-                                                class="rounded border border-amber-200 bg-white p-2 text-xs"
-                                            >
-                                                <div
-                                                    class="font-bold text-slate-900"
-                                                >
-                                                    {{ idx + 1 }}.
-                                                    {{
-                                                        bb.namaBarangBukti ||
-                                                        'Barang Bukti'
-                                                    }}
-                                                    ({{
-                                                        bb.jenisBarangBukti ||
-                                                        '-'
-                                                    }})
-                                                </div>
-                                                <div
-                                                    class="mt-0.5 text-[11px] text-slate-600"
-                                                >
-                                                    {{ bb.ukuranDetail || '-' }}
-                                                </div>
-                                                <div
-                                                    class="mt-1 flex items-center justify-between text-[11px]"
-                                                >
-                                                    <span
-                                                        class="font-bold text-blue-700"
-                                                        >Jumlah:
-                                                        {{ bb.jumlah || 0 }}
-                                                        {{ bb.satuan }}</span
-                                                    >
-                                                    <span class="text-slate-500"
-                                                        >Lokasi:
-                                                        {{
-                                                            bb.tempatPenyimpanan ||
-                                                            '-'
-                                                        }}</span
-                                                    >
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td
-                                        class="border border-slate-300 p-3 text-center align-top"
-                                    >
-                                        <span
-                                            class="mb-2 inline-block rounded bg-amber-100 px-2 py-1 text-[10px] font-bold text-amber-800"
-                                        >
-                                            {{
-                                                formCase.statusDiselesaikan ||
-                                                '-'
-                                            }}
-                                        </span>
-                                        <div
-                                            class="max-w-[120px] truncate text-[10px] text-slate-500 italic"
-                                            :title="formCase.keterangan"
-                                        >
-                                            {{
-                                                formCase.keterangan ||
-                                                'Tidak ada ket.'
-                                            }}
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
         </div>
     </AuthenticatedLayout>
 </template>

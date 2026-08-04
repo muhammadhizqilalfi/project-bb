@@ -4,7 +4,6 @@ import {
     Gavel,
     Package,
     FileCheck2,
-    Eye,
     Save,
     ArrowRight,
     ArrowLeft,
@@ -29,7 +28,7 @@ type BarangBukti = {
 };
 
 type SavedCase = {
-    kejaksaan?: string;
+    satuanKerja?: string;
     kategoriTindakPidana?: string;
     pasalDidakwakan?: string;
     noRegBendaSitaan?: string;
@@ -66,15 +65,17 @@ const formHeader = ref({
 });
 
 const createEmptyBarangBukti = (): BarangBukti => ({
-    jenisBarangBukti: '',
+    jenisBarangBukti: 'NARKOTIKA',
     macamJenisKadar: '',
     jumlahSatuan: '',
     jenisSatuan: '',
     tempatPenyimpanan: '',
 });
 
+const DEFAULT_SATKER = 'Kejari Banda Aceh';
+
 const formCase = ref({
-    kejaksaan: '',
+    satuanKerja: DEFAULT_SATKER,
     kategoriTindakPidana: '',
     pasalDidakwakan: '',
     noRegBendaSitaan: '',
@@ -86,8 +87,6 @@ const formCase = ref({
     tglPelaksanaanPutusan: '',
     barangBuktiList: [createEmptyBarangBukti()],
 });
-
-const showPreviewModal = ref(false);
 
 const monthOptions = [
     { value: 1, label: 'Januari' },
@@ -109,8 +108,6 @@ const yearOptions = computed(() => {
     return Array.from({ length: 10 }, (_, index) => currentYear + 2 - index);
 });
 
-const satuanKerjaOptions = ['Kejari Banda Aceh', 'Kejaksaan Negeri Banda Aceh'];
-
 const kategoriPidanaOptions = [
     'KAMNEGTIBUM DAN TPUL',
     'NARKOTIKA DAN ZAT ADITIF LAINNYA',
@@ -124,6 +121,7 @@ const amarPutusanOptions = [
     'Dimusnahkan',
     'Dirampas',
     'Dikembalikan',
+    'Sda',
 ];
 
 const satuanOptions = [
@@ -196,7 +194,7 @@ const submitForm = () => {
 
 const resetCaseForm = () => {
     formCase.value = {
-        kejaksaan: '',
+        satuanKerja: DEFAULT_SATKER,
         kategoriTindakPidana: '',
         pasalDidakwakan: '',
         noRegBendaSitaan: '',
@@ -470,22 +468,12 @@ const resetCaseForm = () => {
                                 SATUAN KERJA
                                 <span class="text-red-500">*</span>
                             </label>
-                            <select
-                                v-model="formCase.kejaksaan"
-                                required
-                                class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                            >
-                                <option value="" disabled>
-                                    Pilih Satuan Kerja...
-                                </option>
-                                <option
-                                    v-for="opt in satuanKerjaOptions"
-                                    :key="opt"
-                                    :value="opt"
-                                >
-                                    {{ opt }}
-                                </option>
-                            </select>
+                            <input
+                                v-model="formCase.satuanKerja"
+                                type="text"
+                                readonly
+                                class="w-full cursor-not-allowed rounded-lg border border-transparent bg-slate-200/70 px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none"
+                            />
                         </div>
 
                         <div>
@@ -851,14 +839,6 @@ const resetCaseForm = () => {
                     <div class="flex items-center gap-3">
                         <button
                             type="button"
-                            class="flex cursor-pointer items-center gap-2 rounded-lg bg-slate-100 px-5 py-2.5 text-xs font-bold text-slate-800 transition-colors hover:bg-slate-200"
-                            @click="showPreviewModal = true"
-                        >
-                            <Eye class="h-4 w-4" />
-                            <span>PREVIEW FORM</span>
-                        </button>
-                        <button
-                            type="button"
                             class="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-800 transition-colors hover:bg-slate-100"
                             @click="resetCaseForm"
                         >
@@ -877,339 +857,6 @@ const resetCaseForm = () => {
                     </div>
                 </div>
             </form>
-        </div>
-
-        <!-- PREVIEW MODAL (CASES TERSIMPAN + DRAFT BARU) -->
-        <div
-            v-if="showPreviewModal"
-            class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-        >
-            <div
-                class="flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
-            >
-                <div
-                    class="flex shrink-0 items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4"
-                >
-                    <div>
-                        <h2 class="text-sm font-bold text-slate-900">
-                            Preview Laporan Form -
-                            {{
-                                isNewForm
-                                    ? formHeader.name || 'Form Baru'
-                                    : props.form?.name
-                            }}
-                        </h2>
-                        <p class="mt-0.5 text-[11px] text-slate-500">
-                            Menampilkan total
-                            {{ (props.form?.cases?.length || 0) + 1 }} Perkara
-                            ({{ props.form?.cases?.length || 0 }} Tersimpan + 1
-                            Draft Baru)
-                        </p>
-                    </div>
-                    <button
-                        type="button"
-                        class="cursor-pointer text-slate-500 hover:text-slate-700"
-                        @click="showPreviewModal = false"
-                    >
-                        <X class="h-4 w-4" />
-                    </button>
-                </div>
-
-                <div class="overflow-y-auto p-5">
-                    <div
-                        class="overflow-x-auto rounded border border-slate-300"
-                    >
-                        <table class="w-full border-collapse text-left">
-                            <thead
-                                class="bg-slate-800 text-[10px] tracking-wider text-white uppercase"
-                            >
-                                <tr>
-                                    <th class="border border-slate-700 p-3">
-                                        Kejaksaan & Kategori
-                                    </th>
-                                    <th class="border border-slate-700 p-3">
-                                        No. Reg Sitaan & Tgl Terima
-                                    </th>
-                                    <th class="border border-slate-700 p-3">
-                                        Pasal Didakwakan
-                                    </th>
-                                    <th class="border border-slate-700 p-3">
-                                        Daftar Barang Bukti
-                                    </th>
-                                    <th class="border border-slate-700 p-3">
-                                        Putusan (Amar & Tgl)
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="text-xs text-slate-700">
-                                <!-- 1. CASES TERSIMPAN SEBELUMNYA -->
-                                <tr
-                                    v-for="(c, cIdx) in props.form?.cases || []"
-                                    :key="'prev-3c-' + cIdx"
-                                    class="border-b border-slate-200 bg-slate-50/80"
-                                >
-                                    <td
-                                        class="border border-slate-300 p-3 align-top"
-                                    >
-                                        <span
-                                            class="mb-1 inline-block rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-800"
-                                        >
-                                            Case #{{ cIdx + 1 }} (Tersimpan)
-                                        </span>
-                                        <div class="font-bold text-slate-900">
-                                            {{ c.kejaksaan || '-' }}
-                                        </div>
-                                        <div
-                                            class="mt-0.5 text-[10px] text-slate-500"
-                                        >
-                                            {{ c.kategoriTindakPidana || '-' }}
-                                        </div>
-                                    </td>
-                                    <td
-                                        class="border border-slate-300 p-3 align-top"
-                                    >
-                                        <div>
-                                            <span
-                                                class="font-semibold text-slate-900"
-                                                >Reg:</span
-                                            >
-                                            {{ c.noRegBendaSitaan || '-' }}
-                                        </div>
-                                        <div class="mt-1">
-                                            <span
-                                                class="font-semibold text-slate-900"
-                                                >Tgl Terima:</span
-                                            >
-                                            {{ c.tglPenerimaan || '-' }}
-                                        </div>
-                                    </td>
-                                    <td
-                                        class="border border-slate-300 p-3 align-top font-medium text-slate-800"
-                                    >
-                                        {{ c.pasalDidakwakan || '-' }}
-                                    </td>
-                                    <td
-                                        class="border border-slate-300 p-3 align-top"
-                                    >
-                                        <div class="space-y-2">
-                                            <div
-                                                v-for="(
-                                                    bb, idx
-                                                ) in c.barangBuktiList || []"
-                                                :key="idx"
-                                                class="rounded border border-slate-200 bg-white p-2 text-xs"
-                                            >
-                                                <div
-                                                    class="font-bold text-slate-900"
-                                                >
-                                                    {{ idx + 1 }}.
-                                                    {{
-                                                        bb.jenisBarangBukti ||
-                                                        'Jenis BB'
-                                                    }}
-                                                </div>
-                                                <div
-                                                    class="mt-0.5 text-[11px] text-slate-600"
-                                                >
-                                                    {{
-                                                        bb.macamJenisKadar ||
-                                                        '-'
-                                                    }}
-                                                </div>
-                                                <div
-                                                    class="mt-1 flex items-center justify-between text-[11px]"
-                                                >
-                                                    <span
-                                                        class="font-bold text-blue-700"
-                                                        >Total:
-                                                        {{
-                                                            bb.jumlahSatuan || 0
-                                                        }}
-                                                        {{
-                                                            bb.jenisSatuan
-                                                        }}</span
-                                                    >
-                                                    <span class="text-slate-500"
-                                                        >Lokasi:
-                                                        {{
-                                                            bb.tempatPenyimpanan ||
-                                                            '-'
-                                                        }}</span
-                                                    >
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td
-                                        class="border border-slate-300 p-3 align-top"
-                                    >
-                                        <div
-                                            class="line-clamp-2 font-semibold text-slate-900"
-                                            :title="c.amarPutusan"
-                                        >
-                                            {{ c.amarPutusan || '-' }}
-                                        </div>
-                                        <div
-                                            class="mt-2 text-[10px] text-slate-500"
-                                        >
-                                            <div>
-                                                <span class="font-bold"
-                                                    >No KEP:</span
-                                                >
-                                                {{ c.noKepPengadilan || '-' }}
-                                            </div>
-                                            <div>
-                                                <span class="font-bold"
-                                                    >Pelaksanaan:</span
-                                                >
-                                                {{
-                                                    c.tglPelaksanaanPutusan ||
-                                                    'Belum'
-                                                }}
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                <!-- 2. CASE DRAFT BARU YANG SEDANG DIISI -->
-                                <tr
-                                    class="border-2 border-amber-300 bg-amber-50/50"
-                                >
-                                    <td
-                                        class="border border-slate-300 p-3 align-top"
-                                    >
-                                        <span
-                                            class="mb-1 inline-block rounded bg-amber-200 px-1.5 py-0.5 text-[10px] font-bold text-amber-900"
-                                        >
-                                            Draft Baru
-                                        </span>
-                                        <div class="font-bold text-slate-900">
-                                            {{ formCase.kejaksaan || '-' }}
-                                        </div>
-                                        <div
-                                            class="mt-0.5 text-[10px] text-slate-500"
-                                        >
-                                            {{
-                                                formCase.kategoriTindakPidana ||
-                                                '-'
-                                            }}
-                                        </div>
-                                    </td>
-                                    <td
-                                        class="border border-slate-300 p-3 align-top"
-                                    >
-                                        <div>
-                                            <span
-                                                class="font-semibold text-slate-900"
-                                                >Reg:</span
-                                            >
-                                            {{
-                                                formCase.noRegBendaSitaan || '-'
-                                            }}
-                                        </div>
-                                        <div class="mt-1">
-                                            <span
-                                                class="font-semibold text-slate-900"
-                                                >Tgl Terima:</span
-                                            >
-                                            {{ formCase.tglPenerimaan || '-' }}
-                                        </div>
-                                    </td>
-                                    <td
-                                        class="border border-slate-300 p-3 align-top font-medium text-slate-800"
-                                    >
-                                        {{ formCase.pasalDidakwakan || '-' }}
-                                    </td>
-                                    <td
-                                        class="border border-slate-300 p-3 align-top"
-                                    >
-                                        <div class="space-y-2">
-                                            <div
-                                                v-for="(
-                                                    bb, idx
-                                                ) in formCase.barangBuktiList"
-                                                :key="idx"
-                                                class="rounded border border-amber-200 bg-white p-2 text-xs"
-                                            >
-                                                <div
-                                                    class="font-bold text-slate-900"
-                                                >
-                                                    {{ idx + 1 }}.
-                                                    {{
-                                                        bb.jenisBarangBukti ||
-                                                        'Jenis BB'
-                                                    }}
-                                                </div>
-                                                <div
-                                                    class="mt-0.5 text-[11px] text-slate-600"
-                                                >
-                                                    {{
-                                                        bb.macamJenisKadar ||
-                                                        '-'
-                                                    }}
-                                                </div>
-                                                <div
-                                                    class="mt-1 flex items-center justify-between text-[11px]"
-                                                >
-                                                    <span
-                                                        class="font-bold text-blue-700"
-                                                        >Total:
-                                                        {{
-                                                            bb.jumlahSatuan || 0
-                                                        }}
-                                                        {{
-                                                            bb.jenisSatuan
-                                                        }}</span
-                                                    >
-                                                    <span class="text-slate-500"
-                                                        >Lokasi:
-                                                        {{
-                                                            bb.tempatPenyimpanan ||
-                                                            '-'
-                                                        }}</span
-                                                    >
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td
-                                        class="border border-slate-300 p-3 align-top"
-                                    >
-                                        <div
-                                            class="line-clamp-2 font-semibold text-slate-900"
-                                            :title="formCase.amarPutusan"
-                                        >
-                                            {{ formCase.amarPutusan || '-' }}
-                                        </div>
-                                        <div
-                                            class="mt-2 text-[10px] text-slate-500"
-                                        >
-                                            <div>
-                                                <span class="font-bold"
-                                                    >No KEP:</span
-                                                >
-                                                {{
-                                                    formCase.noKepPengadilan ||
-                                                    '-'
-                                                }}
-                                            </div>
-                                            <div>
-                                                <span class="font-bold"
-                                                    >Pelaksanaan:</span
-                                                >
-                                                {{
-                                                    formCase.tglPelaksanaanPutusan ||
-                                                    'Belum'
-                                                }}
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
         </div>
     </AuthenticatedLayout>
 </template>
