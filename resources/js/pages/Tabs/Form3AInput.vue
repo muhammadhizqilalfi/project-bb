@@ -77,7 +77,11 @@ const createEmptyBarangBukti = (): BarangBukti => ({
 });
 
 const DEFAULT_SATKER = 'Kejari Banda Aceh';
-const keteranganTahapOptions = ['Tahap Persidangan', 'Tahap II'];
+const keteranganTahapOptions = [
+    'Tahap Persidangan',
+    'Tahap II',
+    'Tahap Pelimpahan',
+];
 
 const formCase = ref({
     satuanKerja: DEFAULT_SATKER,
@@ -148,10 +152,7 @@ const satuanOptions = [
 
 const tempatPenyimpananOptions = [
     'Gudang Barang Bukti Kejaksaan Negeri Banda Aceh',
-    'Gudang Barang Bukti Kejaksaan Tinggi Aceh',
-    'Rumah Penyimpanan Benda Sitaan Negara (RUPBASAN)',
-    'Brankas Barang Bukti / Khusus',
-    'Lainnya',
+    'RUPBASAN',
 ];
 
 const addBarangBukti = () => {
@@ -671,11 +672,12 @@ const resetCaseForm = () => {
                                 <button
                                     v-if="formCase.barangBuktiList.length > 1"
                                     type="button"
-                                    class="cursor-pointer rounded-lg p-1.5 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
+                                    class="flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
                                     @click="removeBarangBukti(index)"
                                     title="Hapus Barang Bukti Ini"
                                 >
                                     <Trash2 class="h-4 w-4" />
+                                    <span>Hapus</span>
                                 </button>
                             </div>
 
@@ -709,7 +711,7 @@ const resetCaseForm = () => {
 
                             <!-- BARIS 2: JUMLAH (ANGKA) & URAIAN/KETERANGAN BARANG BUKTI (TEXTAREA AUTOMATIC AUTO-EXPAND) -->
                             <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
-                                <div class="sm:col-span-3">
+                                <div class="sm:col-span-1">
                                     <label
                                         class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
                                     >
@@ -726,7 +728,7 @@ const resetCaseForm = () => {
                                         class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs font-semibold text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                                     />
                                 </div>
-                                <div class="sm:col-span-9">
+                                <div class="sm:col-span-11">
                                     <label
                                         class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
                                     >
