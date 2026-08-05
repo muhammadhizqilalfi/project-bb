@@ -36,8 +36,10 @@ type SavedCase = {
     kategoriTindakPidana?: string;
     noRegBendaSitaan?: string;
     noRegSitaan?: string;
+    tglPenerimaanBB?: string;
     noRegPenyidikan?: string;
     noRegSidik?: string;
+    tglRegPenyidikan?: string;
     identitasTersangka?: string;
     pasalDisangkakan?: string;
     pasalDidakwakan?: string;
@@ -96,26 +98,40 @@ const DEFAULT_SATKER = 'Kejari Banda Aceh';
 
 // Inisialisasi Form dengan data existing (jika mode edit)
 const formCase = ref<SavedCase & { barangBuktiList: BarangBukti[] }>({
-    satuanKerja: props.caseData?.satuanKerja || props.caseData?.kejaksaan || DEFAULT_SATKER,
+    satuanKerja:
+        props.caseData?.satuanKerja ||
+        props.caseData?.kejaksaan ||
+        DEFAULT_SATKER,
     kategoriTindakPidana: props.caseData?.kategoriTindakPidana || '',
-    noRegBendaSitaan: props.caseData?.noRegBendaSitaan || props.caseData?.noRegSitaan || '',
-    noRegPenyidikan: props.caseData?.noRegPenyidikan || props.caseData?.noRegSidik || '',
+    noRegBendaSitaan:
+        props.caseData?.noRegBendaSitaan || props.caseData?.noRegSitaan || '',
+    tglPenerimaanBB: props.caseData?.tglPenerimaanBB || '',
+    noRegPenyidikan:
+        props.caseData?.noRegPenyidikan || props.caseData?.noRegSidik || '',
+    tglRegPenyidikan: props.caseData?.tglRegPenyidikan || '',
     identitasTersangka: props.caseData?.identitasTersangka || '',
-    pasalDisangkakan: props.caseData?.pasalDisangkakan || props.caseData?.pasalDidakwakan || '',
+    pasalDisangkakan:
+        props.caseData?.pasalDisangkakan ||
+        props.caseData?.pasalDidakwakan ||
+        '',
     statusDiselesaikan: props.caseData?.statusDiselesaikan || '-',
     tglPelaksanaanPutusan: props.caseData?.tglPelaksanaanPutusan || '',
     keterangan: props.caseData?.keterangan || '',
-    barangBuktiList: props.caseData?.barangBuktiList && props.caseData.barangBuktiList.length > 0 
-        ? props.caseData.barangBuktiList.map(bb => ({
-            jenisBarangBukti: bb.jenisBarangBukti || 'Narkotika',
-            jumlah: bb.jumlah || 1,
-            uraianBarangBukti: bb.uraianBarangBukti || (bb as any).namaBarangBukti || '',
-            tempatPenyimpanan: bb.tempatPenyimpanan || '',
-            jenisNarkotika: bb.jenisNarkotika || '',
-            jumlahNarkotika: bb.jumlahNarkotika || '',
-            satuanNarkotika: bb.satuanNarkotika || (bb as any).satuan || '',
-          }))
-        : [createEmptyBarangBukti()],
+    barangBuktiList:
+        props.caseData?.barangBuktiList &&
+        props.caseData.barangBuktiList.length > 0
+            ? props.caseData.barangBuktiList.map((bb) => ({
+                  jenisBarangBukti: bb.jenisBarangBukti || 'Narkotika',
+                  jumlah: bb.jumlah || 1,
+                  uraianBarangBukti:
+                      bb.uraianBarangBukti || (bb as any).namaBarangBukti || '',
+                  tempatPenyimpanan: bb.tempatPenyimpanan || '',
+                  jenisNarkotika: bb.jenisNarkotika || '',
+                  jumlahNarkotika: bb.jumlahNarkotika || '',
+                  satuanNarkotika:
+                      bb.satuanNarkotika || (bb as any).satuan || '',
+              }))
+            : [createEmptyBarangBukti()],
 });
 
 const monthOptions = [
@@ -143,11 +159,11 @@ const kategoriPidanaOptions = computed(() => {
     return props.dropdownOptions?.kategori_pidana?.length
         ? props.dropdownOptions.kategori_pidana
         : [
-            'KAMNEGTIBUM DAN TPUL',
-            'NARKOTIKA DAN ZAT ADITIF LAINNYA',
-            'OHARDA',
-            'TERORIS',
-            'KORUPSI',
+              'KAMNEGTIBUM DAN TPUL',
+              'NARKOTIKA DAN ZAT ADITIF LAINNYA',
+              'OHARDA',
+              'TERORIS',
+              'KORUPSI',
           ];
 });
 
@@ -157,13 +173,13 @@ const jenisNarkotikaOptions = computed(() => {
     return props.dropdownOptions?.jenis_narkotika?.length
         ? props.dropdownOptions.jenis_narkotika
         : [
-            'Sabu',
-            'Ganja',
-            'Ekstasi / Pil',
-            'Heroin',
-            'Tembakau Sintetis',
-            'Obat Keras',
-            'Lainnya',
+              'Sabu',
+              'Ganja',
+              'Ekstasi / Pil',
+              'Heroin',
+              'Tembakau Sintetis',
+              'Obat Keras',
+              'Lainnya',
           ];
 });
 
@@ -171,17 +187,17 @@ const satuanOptions = computed(() => {
     return props.dropdownOptions?.satuan?.length
         ? props.dropdownOptions.satuan
         : [
-            'Gram',
-            'Kilogram (Kg)',
-            'Milliliter (ml)',
-            'Liter (L)',
-            'Unit',
-            'Paket',
-            'Pcs',
-            'Buah',
-            'Bungkus',
-            'Batang',
-            'Lembar',
+              'Gram',
+              'Kilogram (Kg)',
+              'Milliliter (ml)',
+              'Liter (L)',
+              'Unit',
+              'Paket',
+              'Pcs',
+              'Buah',
+              'Bungkus',
+              'Batang',
+              'Lembar',
           ];
 });
 
@@ -189,20 +205,16 @@ const tempatPenyimpananOptions = computed(() => {
     return props.dropdownOptions?.tempat_penyimpanan?.length
         ? props.dropdownOptions.tempat_penyimpanan
         : [
-            'Gudang Barang Bukti Kejaksaan Negeri Banda Aceh',
-            'RUPBASAN',
-            'KEJATI',
+              'Gudang Barang Bukti Kejaksaan Negeri Banda Aceh',
+              'RUPBASAN',
+              'KEJATI',
           ];
 });
 
 const keteranganTahapOptions = computed(() => {
     return props.dropdownOptions?.keterangan_tahap?.length
         ? props.dropdownOptions.keterangan_tahap
-        : [
-            'Tahap Persidangan',
-            'Tahap II',
-            'Tahap Pelimpahan',
-          ];
+        : ['Tahap Persidangan', 'Tahap II', 'Tahap Pelimpahan'];
 });
 
 const addBarangBukti = () => {
@@ -233,6 +245,8 @@ const submitForm = () => {
     const casePayload = {
         ...formCase.value,
         case_index: props.caseData?.case_index ?? formCase.value.case_index,
+        tglPenerimaanBB: formCase.value.tglPenerimaanBB || '-',
+        tglRegPenyidikan: formCase.value.tglRegPenyidikan || '-',
         tglPelaksanaanPutusan: formCase.value.tglPelaksanaanPutusan || '-',
     };
 
@@ -256,7 +270,9 @@ const resetCaseForm = () => {
         satuanKerja: DEFAULT_SATKER,
         kategoriTindakPidana: '',
         noRegBendaSitaan: '',
+        tglPenerimaanBB: '',
         noRegPenyidikan: '',
+        tglRegPenyidikan: '',
         identitasTersangka: '',
         pasalDisangkakan: '',
         statusDiselesaikan: '-',
@@ -268,7 +284,15 @@ const resetCaseForm = () => {
 </script>
 
 <template>
-    <Head :title="isEditingCase ? 'Edit Case Form 3A' : (isNewForm ? 'Buat Form 3A Baru' : 'Tambah Case Form 3A')" />
+    <Head
+        :title="
+            isEditingCase
+                ? 'Edit Case Form 3A'
+                : isNewForm
+                  ? 'Buat Form 3A Baru'
+                  : 'Tambah Case Form 3A'
+        "
+    />
 
     <AuthenticatedLayout userRole="karyawan" v-model:active-menu="activeMenu">
         <div class="mx-auto w-full space-y-8 p-8">
@@ -284,8 +308,8 @@ const resetCaseForm = () => {
                             isEditingCase
                                 ? 'Edit Data Case Form 3A'
                                 : isNewForm
-                                ? 'Buat Form 3A & Input Case'
-                                : 'Tambah Case Baru'
+                                  ? 'Buat Form 3A & Input Case'
+                                  : 'Tambah Case Baru'
                         }}
                     </h1>
                     <p class="mt-1 text-xs text-slate-500">
@@ -390,10 +414,18 @@ const resetCaseForm = () => {
                     <p
                         class="text-[11px] font-bold tracking-wider text-amber-800 uppercase"
                     >
-                        {{ isEditingCase ? 'Mengubah Data Perkara (Mode Edit):' : 'Menambahkan Case Untuk Form Existing:' }}
+                        {{
+                            isEditingCase
+                                ? 'Mengubah Data Perkara (Mode Edit):'
+                                : 'Menambahkan Case Untuk Form Existing:'
+                        }}
                     </p>
                     <p class="mt-0.5 text-sm font-extrabold text-slate-900">
-                        {{ isEditingCase ? formCase.noRegBendaSitaan : `${form?.name} (Periode: ${monthOptions.find((m) => m.value === form?.month)?.label} ${form?.year})` }}
+                        {{
+                            isEditingCase
+                                ? formCase.noRegBendaSitaan
+                                : `${form?.name} (Periode: ${monthOptions.find((m) => m.value === form?.month)?.label} ${form?.year})`
+                        }}
                     </p>
                 </div>
                 <span
@@ -521,7 +553,6 @@ const resetCaseForm = () => {
                                 class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
                             >
                                 SATUAN KERJA
-                                <span class="text-red-500">*</span>
                             </label>
                             <input
                                 v-model="formCase.satuanKerja"
@@ -555,6 +586,7 @@ const resetCaseForm = () => {
                             </select>
                         </div>
 
+                        <!-- ROW 1: NO. REG BENDA SITAAN & TGL PENERIMAAN BARANG BUKTI -->
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div>
                                 <label
@@ -566,10 +598,27 @@ const resetCaseForm = () => {
                                     v-model="formCase.noRegBendaSitaan"
                                     type="text"
                                     required
-                                    placeholder="B-000/O.1.10/..."
+                                    placeholder="RB–33/Bna/Eku.2/06/..."
                                     class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                                 />
                             </div>
+                            <div>
+                                <label
+                                    class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
+                                    >TGL PENERIMAAN BARANG BUKTI
+                                    <span class="text-red-500">*</span></label
+                                >
+                                <input
+                                    v-model="formCase.tglPenerimaanBB"
+                                    type="date"
+                                    required
+                                    class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- ROW 2: NO. REG PENYIDIKAN & TGL REGISTER TAHAP PENYIDIKAN -->
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div>
                                 <label
                                     class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
@@ -580,7 +629,20 @@ const resetCaseForm = () => {
                                     v-model="formCase.noRegPenyidikan"
                                     type="text"
                                     required
-                                    placeholder="PRINT-00/O.1.10/..."
+                                    placeholder="DM–36/Bna/Eku.2/06/..."
+                                    class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                />
+                            </div>
+                            <div>
+                                <label
+                                    class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
+                                    >TGL REGISTER TAHAP PENYIDIKAN
+                                    <span class="text-red-500">*</span></label
+                                >
+                                <input
+                                    v-model="formCase.tglRegPenyidikan"
+                                    type="date"
+                                    required
                                     class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                                 />
                             </div>
@@ -596,7 +658,7 @@ const resetCaseForm = () => {
                                 v-model="formCase.identitasTersangka"
                                 rows="3"
                                 required
-                                placeholder="Nama lengkap, alias, NIK, umur, pekerjaan..."
+                                placeholder="Nama lengkap..."
                                 class="w-full resize-none rounded-lg border border-transparent bg-[#F4F6F8] p-3 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                             ></textarea>
                         </div>
@@ -611,7 +673,7 @@ const resetCaseForm = () => {
                                 v-model="formCase.pasalDisangkakan"
                                 type="text"
                                 required
-                                placeholder="Contoh: Pasal 114 ayat (1) UU No. 35 Tahun 2009"
+                                placeholder="Pasal 114 ayat..."
                                 class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                             />
                         </div>
@@ -969,8 +1031,8 @@ const resetCaseForm = () => {
                                 isEditingCase
                                     ? 'UPDATE CASE'
                                     : isNewForm
-                                    ? 'SIMPAN FORM & CASE'
-                                    : 'SIMPAN CASE'
+                                      ? 'SIMPAN FORM & CASE'
+                                      : 'SIMPAN CASE'
                             }}</span>
                         </button>
                     </div>
