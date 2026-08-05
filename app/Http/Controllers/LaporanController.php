@@ -21,11 +21,26 @@ class LaporanController extends Controller
             ->where('year', $year)
             ->get();
 
-        // Hitung total count per form untuk angka pada Tab Badge
+        // Hitung total akumulasi SELURUH case di setiap form untuk badge tab
+        $count3A = 0;
+        foreach (FormTemplate::where('form_type', '3A')->where('month', $month)->where('year', $year)->get() as $f) {
+            $count3A += count($f->cases ?? ($f->latest_case_summary ? [$f->latest_case_summary] : []));
+        }
+
+        $count3B = 0;
+        foreach (FormTemplate::where('form_type', '3B')->where('month', $month)->where('year', $year)->get() as $f) {
+            $count3B += count($f->cases ?? ($f->latest_case_summary ? [$f->latest_case_summary] : []));
+        }
+
+        $count3C = 0;
+        foreach (FormTemplate::where('form_type', '3C')->where('month', $month)->where('year', $year)->get() as $f) {
+            $count3C += count($f->cases ?? ($f->latest_case_summary ? [$f->latest_case_summary] : []));
+        }
+
         $counts = [
-            'form3a' => FormTemplate::where('form_type', '3A')->where('month', $month)->where('year', $year)->count(),
-            'form3b' => FormTemplate::where('form_type', '3B')->where('month', $month)->where('year', $year)->count(),
-            'form3c' => FormTemplate::where('form_type', '3C')->where('month', $month)->where('year', $year)->count(),
+            'form3a' => $count3A,
+            'form3b' => $count3B,
+            'form3c' => $count3C,
         ];
 
         $cases = [];
@@ -36,78 +51,81 @@ class LaporanController extends Controller
         $ekstasiPcs = 0;
 
         foreach ($formsQuery as $form) {
-            $summary = $form->latest_case_summary ?? [];
-            $kategoriCase = $summary['kategoriTindakPidana'] ?? '';
+            // PERBAIKAN: Ambil SELURUH array cases, bukan hanya latest_case_summary
+            $allCases = $form->cases ?? ($form->latest_case_summary ? [$form->latest_case_summary] : []);
 
-            // Filter berdasarkan Kategori Tindak Pidana jika tidak memilih 'ALL'
-            if ($kategori !== 'ALL' && strtoupper($kategoriCase) !== strtoupper($kategori)) {
-                continue;
-            }
+            foreach ($allCases as $caseIndex => $summary) {
+                $kategoriCase = $summary['kategoriTindakPidana'] ?? '';
 
-            $rawBbList = $summary['barangBuktiList'] ?? [];
-
-            // Memastikan daftar barang bukti memuat jumlah unit asli yang diisi saat input
-            $formattedBbList = array_map(function ($bb) {
-                return [
-                    'jenisBarangBukti' => $bb['jenisBarangBukti'] ?? $bb['uraianBarangBukti'] ?? '-',
-                    'uraianBarangBukti' => $bb['uraianBarangBukti'] ?? $bb['jenisBarangBukti'] ?? '-',
-                    'jumlah' => (float) ($bb['jumlah'] ?? $bb['jumlahSatuan'] ?? 0),
-                    'satuan' => $bb['satuan'] ?? $bb['jenisSatuan'] ?? '-',
-                    'tempatPenyimpanan' => $bb['tempatPenyimpanan'] ?? '-',
-                    'jenisNarkotika' => $bb['jenisNarkotika'] ?? null,
-                    'jumlahNarkotika' => isset($bb['jumlahNarkotika']) ? (float) $bb['jumlahNarkotika'] : null,
-                    'satuanNarkotika' => $bb['satuanNarkotika'] ?? null,
-                    'macamJenisKadar' => $bb['macamJenisKadar'] ?? null,
-                ];
-            }, $rawBbList);
-
-            // Hitung akumulasi ringkasan narkotika berdasarkan nilai jumlah & satuan hasil input
-            foreach ($formattedBbList as $bb) {
-                $jenisNarkotika = strtolower($bb['jenisNarkotika'] ?? $bb['uraianBarangBukti'] ?? '');
-                
-                // Utamakan jumlahNarkotika jika diisi, jika tidak gunakan jumlah unit fisik
-                $jumlahVal = $bb['jumlahNarkotika'] !== null ? $bb['jumlahNarkotika'] : $bb['jumlah'];
-                $satuanVal = strtolower($bb['satuanNarkotika'] ?? $bb['satuan'] ?? '');
-
-                // Konversi Kilogram ke Gram jika memilih satuan Kg
-                $massaGram = ($satuanVal === 'kilogram (kg)' || $satuanVal === 'kg') 
-                    ? $jumlahVal * 1000 
-                    : $jumlahVal;
-
-                if (str_contains($jenisNarkotika, 'sabu') || str_contains($jenisNarkotika, 'meth')) {
-                    $sabuGram += $massaGram;
-                } elseif (str_contains($jenisNarkotika, 'ganja') || str_contains($jenisNarkotika, 'cannabis')) {
-                    $ganjaGram += $massaGram;
-                } elseif (str_contains($jenisNarkotika, 'ekstasi') || str_contains($jenisNarkotika, 'inex') || str_contains($jenisNarkotika, 'pil')) {
-                    $ekstasiPcs += $jumlahVal;
+                // Filter berdasarkan Kategori Tindak Pidana jika tidak memilih 'ALL'
+                if ($kategori !== 'ALL' && strtoupper($kategoriCase) !== strtoupper($kategori)) {
+                    continue;
                 }
+
+                $rawBbList = $summary['barangBuktiList'] ?? [];
+
+                // Memastikan daftar barang bukti memuat jumlah unit asli yang diisi saat input
+                $formattedBbList = array_map(function ($bb) {
+                    return [
+                        'jenisBarangBukti' => $bb['jenisBarangBukti'] ?? $bb['uraianBarangBukti'] ?? '-',
+                        'uraianBarangBukti' => $bb['uraianBarangBukti'] ?? $bb['jenisBarangBukti'] ?? '-',
+                        'jumlah' => (float) ($bb['jumlah'] ?? $bb['jumlahSatuan'] ?? 0),
+                        'satuan' => $bb['satuan'] ?? $bb['jenisSatuan'] ?? '-',
+                        'tempatPenyimpanan' => $bb['tempatPenyimpanan'] ?? '-',
+                        'jenisNarkotika' => $bb['jenisNarkotika'] ?? null,
+                        'jumlahNarkotika' => isset($bb['jumlahNarkotika']) ? (float) $bb['jumlahNarkotika'] : null,
+                        'satuanNarkotika' => $bb['satuanNarkotika'] ?? null,
+                        'macamJenisKadar' => $bb['macamJenisKadar'] ?? null,
+                    ];
+                }, $rawBbList);
+
+                // Hitung akumulasi ringkasan narkotika berdasarkan nilai jumlah & satuan hasil input
+                foreach ($formattedBbList as $bb) {
+                    $jenisNarkotika = strtolower($bb['jenisNarkotika'] ?? $bb['uraianBarangBukti'] ?? '');
+                    
+                    $jumlahVal = $bb['jumlahNarkotika'] !== null ? $bb['jumlahNarkotika'] : $bb['jumlah'];
+                    $satuanVal = strtolower($bb['satuanNarkotika'] ?? $bb['satuan'] ?? '');
+
+                    $massaGram = ($satuanVal === 'kilogram (kg)' || $satuanVal === 'kg') 
+                        ? $jumlahVal * 1000 
+                        : $jumlahVal;
+
+                    if (str_contains($jenisNarkotika, 'sabu') || str_contains($jenisNarkotika, 'meth')) {
+                        $sabuGram += $massaGram;
+                    } elseif (str_contains($jenisNarkotika, 'ganja') || str_contains($jenisNarkotika, 'cannabis')) {
+                        $ganjaGram += $massaGram;
+                    } elseif (str_contains($jenisNarkotika, 'ekstasi') || str_contains($jenisNarkotika, 'inex') || str_contains($jenisNarkotika, 'pil')) {
+                        $ekstasiPcs += $jumlahVal;
+                    }
+                }
+
+                $cases[] = [
+                    'id' => (string) $form->id,
+                    'case_index' => $caseIndex, // Kirimkan indeks spesifik case
+                    'satuanKerja' => $summary['satuanKerja'] ?? $summary['kejaksaan'] ?? '-',
+                    'kejaksaan' => $summary['kejaksaan'] ?? $summary['satuanKerja'] ?? '-',
+                    'noRegBendaSitaan' => $summary['noRegBendaSitaan'] ?? $summary['noRegSitaan'] ?? '-',
+                    'noRegSitaan' => $summary['noRegSitaan'] ?? $summary['noRegBendaSitaan'] ?? '-',
+                    'noRegPenyidikan' => $summary['noRegPenyidikan'] ?? $summary['noRegSidik'] ?? '-',
+                    'noRegSidik' => $summary['noRegSidik'] ?? $summary['noRegPenyidikan'] ?? '-',
+                    'identitasTersangka' => $summary['identitasTersangka'] ?? '-',
+                    'pasalDisangkakan' => $summary['pasalDisangkakan'] ?? $summary['pasalDidakwakan'] ?? '-',
+                    'pasalDidakwakan' => $summary['pasalDidakwakan'] ?? $summary['pasalDisangkakan'] ?? '-',
+                    'statusDiselesaikan' => $summary['statusDiselesaikan'] ?? '-',
+                    'tglPelaksanaanPutusan' => $summary['tglPelaksanaanPutusan'] ?? '-',
+                    'keterangan' => $summary['keterangan'] ?? '-',
+                    'barangBuktiList' => $formattedBbList,
+
+                    'sisaBulanLalu' => $summary['sisaBulanLalu'] ?? 0,
+                    'masukBulanLaporan' => $summary['masukBulanLaporan'] ?? 0,
+                    'jumlahBulanLaporan' => $summary['jumlahBulanLaporan'] ?? 0,
+                    'sisaBulanLaporan' => $summary['sisaBulanLaporan'] ?? 0,
+                    'tglPenerimaan' => $summary['tglPenerimaan'] ?? '-',
+                    'noKepPengadilan' => $summary['noKepPengadilan'] ?? '-',
+                    'tglKepPengadilan' => $summary['tglKepPengadilan'] ?? '-',
+                    'amarPutusan' => $summary['amarPutusan'] ?? '-',
+                ];
             }
-
-            $cases[] = [
-                'id' => (string) $form->id,
-                'satuanKerja' => $summary['satuanKerja'] ?? $summary['kejaksaan'] ?? '-',
-                'kejaksaan' => $summary['kejaksaan'] ?? $summary['satuanKerja'] ?? '-',
-                'noRegBendaSitaan' => $summary['noRegBendaSitaan'] ?? $summary['noRegSitaan'] ?? '-',
-                'noRegSitaan' => $summary['noRegSitaan'] ?? $summary['noRegBendaSitaan'] ?? '-',
-                'noRegPenyidikan' => $summary['noRegPenyidikan'] ?? $summary['noRegSidik'] ?? '-',
-                'noRegSidik' => $summary['noRegSidik'] ?? $summary['noRegPenyidikan'] ?? '-',
-                'identitasTersangka' => $summary['identitasTersangka'] ?? '-',
-                'pasalDisangkakan' => $summary['pasalDisangkakan'] ?? $summary['pasalDidakwakan'] ?? '-',
-                'pasalDidakwakan' => $summary['pasalDidakwakan'] ?? $summary['pasalDisangkakan'] ?? '-',
-                'statusDiselesaikan' => $summary['statusDiselesaikan'] ?? '-',
-                'tglPelaksanaanPutusan' => $summary['tglPelaksanaanPutusan'] ?? '-',
-                'keterangan' => $summary['keterangan'] ?? '-',
-                'barangBuktiList' => $formattedBbList,
-
-                'sisaBulanLalu' => $summary['sisaBulanLalu'] ?? 0,
-                'masukBulanLaporan' => $summary['masukBulanLaporan'] ?? 0,
-                'jumlahBulanLaporan' => $summary['jumlahBulanLaporan'] ?? 0,
-                'sisaBulanLaporan' => $summary['sisaBulanLaporan'] ?? 0,
-                'tglPenerimaan' => $summary['tglPenerimaan'] ?? '-',
-                'noKepPengadilan' => $summary['noKepPengadilan'] ?? '-',
-                'tglKepPengadilan' => $summary['tglKepPengadilan'] ?? '-',
-                'amarPutusan' => $summary['amarPutusan'] ?? '-',
-            ];
         }
 
         return Inertia::render('Tabs/Laporan', [

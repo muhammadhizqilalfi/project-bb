@@ -12,28 +12,24 @@ import {
   Package
 } from 'lucide-vue-next';
 
-interface BarangBukti3A {
+interface BarangBuktiItem {
   jenisBarangBukti?: string;
   namaBarangBukti?: string;
   uraianBarangBukti?: string;
   jumlah?: number | string;
   jumlahNarkotika?: number | string;
+  jumlahSatuan?: number | string;
   satuan?: string;
   satuanNarkotika?: string;
+  jenisSatuan?: string;
   ukuranDetail?: string;
   tempatPenyimpanan?: string;
-}
-
-interface BarangBukti3C {
-  jenisBarangBukti?: string;
   macamJenisKadar?: string;
-  jumlahSatuan?: number | string;
-  jenisSatuan?: string;
-  tempatPenyimpanan?: string;
 }
 
 interface CaseItem {
   id: string;
+  case_index?: number;
   // Common / 3A Fields
   satuanKerja?: string;
   kejaksaan?: string;
@@ -47,7 +43,7 @@ interface CaseItem {
   statusDiselesaikan?: string;
   tglPelaksanaanPutusan?: string;
   keterangan?: string;
-  barangBuktiList?: BarangBukti3A[] | BarangBukti3C[];
+  barangBuktiList?: BarangBuktiItem[];
   
   // 3B Fields
   sisaBulanLalu?: number | string;
@@ -168,18 +164,20 @@ const exportFormPdf = () => {
 };
 
 // Handler Edit Case
-const editCase = (id: string) => {
+const editCase = (id: string, index?: number) => {
+  const query = index !== undefined ? `?index=${index}` : '';
   if (selectedForm.value === '3A') {
-    router.get(`/form3a/${id}/edit`);
+    router.get(`/form3a/${id}/edit${query}`);
   } else {
-    router.get(`/form${selectedForm.value.toLowerCase()}/${id}/edit`);
+    router.get(`/form${selectedForm.value.toLowerCase()}/${id}/edit${query}`);
   }
 };
 
 // Handler Hapus Case
-const deleteCase = (id: string) => {
+const deleteCase = (id: string, index?: number) => {
   if (confirm('Apakah Anda yakin ingin menghapus data perkara ini?')) {
-    router.delete(`/form${selectedForm.value.toLowerCase()}/${id}`, {
+    const query = index !== undefined ? `?index=${index}` : '';
+    router.delete(`/form${selectedForm.value.toLowerCase()}/${id}${query}`, {
       preserveScroll: true,
     });
   }
@@ -402,9 +400,9 @@ const formatKg = (gram: number) => {
                   <div class="space-y-2">
                     <div v-for="(bb, bIdx) in (item.barangBuktiList || [])" :key="bIdx">
                       <div class="text-slate-900">
-                        - {{ formatJumlahTerbilang(bb.jumlah || bb.jumlahNarkotika || bb.jumlahSatuan || 1) }} {{ (bb as BarangBukti3A).uraianBarangBukti || (bb as BarangBukti3A).namaBarangBukti || (bb as BarangBukti3A).jenisBarangBukti || 'BB' }}
+                        - {{ formatJumlahTerbilang(bb.jumlah || bb.jumlahNarkotika || bb.jumlahSatuan || 1) }} {{ (bb as BarangBuktiItem).uraianBarangBukti || (bb as BarangBuktiItem).namaBarangBukti || (bb as BarangBuktiItem).jenisBarangBukti || 'BB' }}
                       </div>
-                      <div v-if="(bb as BarangBukti3A).ukuranDetail" class="text-slate-500 text-[10px] mt-0.5">Detail/Ukuran: {{ (bb as BarangBukti3A).ukuranDetail }}</div>
+                      <div v-if="(bb as BarangBuktiItem).ukuranDetail" class="text-slate-500 text-[10px] mt-0.5">Detail/Ukuran: {{ (bb as BarangBuktiItem).ukuranDetail }}</div>
                     </div>
                   </div>
                 </td>
@@ -412,7 +410,7 @@ const formatKg = (gram: number) => {
                 <!-- 6. Tempat Penyimpanan -->
                 <td class="p-3">
                   <div v-for="(bb, bIdx) in (item.barangBuktiList || [])" :key="bIdx" class="text-[11px]">
-                    {{ (bb as BarangBukti3A).tempatPenyimpanan || '-' }}
+                    {{ (bb as BarangBuktiItem).tempatPenyimpanan || '-' }}
                   </div>
                 </td>
                 
@@ -442,20 +440,10 @@ const formatKg = (gram: number) => {
                 <!-- AKSI (EDIT & HAPUS) -->
                 <td class="p-3 text-center">
                   <div class="flex items-center justify-center gap-1">
-                    <button 
-                      type="button" 
-                      @click="editCase(item.id)" 
-                      class="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded cursor-pointer"
-                      title="Edit Case"
-                    >
+                    <button type="button" @click="editCase(item.id, (item as any).case_index)">
                       <Edit3 class="w-4 h-4" />
                     </button>
-                    <button 
-                      type="button" 
-                      @click="deleteCase(item.id)" 
-                      class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer"
-                      title="Hapus Case"
-                    >
+                    <button type="button" @click="deleteCase(item.id, (item as any).case_index)">
                       <Trash2 class="w-4 h-4" />
                     </button>
                   </div>
@@ -554,7 +542,7 @@ const formatKg = (gram: number) => {
                 <td class="p-3">
                   <div class="space-y-1">
                     <div v-for="(bb, bIdx) in (item.barangBuktiList || [])" :key="bIdx" class="font-bold text-slate-900">
-                      - {{ (bb as BarangBukti3C).jenisBarangBukti || '-' }}
+                      - {{ (bb as BarangBuktiItem).jenisBarangBukti || '-' }}
                     </div>
                   </div>
                 </td>
@@ -568,25 +556,25 @@ const formatKg = (gram: number) => {
 
                 <td class="p-3">
                   <div v-for="(bb, bIdx) in (item.barangBuktiList || [])" :key="bIdx" class="text-[11px] text-slate-700">
-                    {{ (bb as BarangBukti3C).macamJenisKadar || '-' }}
+                    {{ (bb as BarangBuktiItem).macamJenisKadar || '-' }}
                   </div>
                 </td>
 
                 <td class="p-3 text-right font-extrabold text-blue-700">
                   <div v-for="(bb, bIdx) in (item.barangBuktiList || [])" :key="bIdx">
-                    {{ formatJumlahTerbilang((bb as BarangBukti3C).jumlahSatuan) || '-' }}
+                    {{ formatJumlahTerbilang((bb as BarangBuktiItem).jumlahSatuan) || '-' }}
                   </div>
                 </td>
 
                 <td class="p-3 text-center font-medium">
                   <div v-for="(bb, bIdx) in (item.barangBuktiList || [])" :key="bIdx">
-                    {{ (bb as BarangBukti3C).jenisSatuan || '-' }}
+                    {{ (bb as BarangBuktiItem).jenisSatuan || '-' }}
                   </div>
                 </td>
 
                 <td class="p-3">
                   <div v-for="(bb, bIdx) in (item.barangBuktiList || [])" :key="bIdx" class="text-[11px]">
-                    {{ (bb as BarangBukti3C).tempatPenyimpanan || '-' }}
+                    {{ (bb as BarangBuktiItem).tempatPenyimpanan || '-' }}
                   </div>
                 </td>
 

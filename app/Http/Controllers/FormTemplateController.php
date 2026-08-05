@@ -85,13 +85,22 @@ class FormTemplateController extends Controller
 
 
 
-    public function edit3A(string $id)
+    public function edit3A(Request $request, string $id)
     {
         $form = $this->findForm('3A', $id);
-        $summary = $form->latest_case_summary ?? [];
+        $caseIndex = $request->query('index');
+
+        $cases = $form->cases ?? ($form->latest_case_summary ? [$form->latest_case_summary] : []);
+
+        if ($caseIndex !== null && isset($cases[$caseIndex])) {
+            $summary = $cases[$caseIndex];
+        } else {
+            $summary = $form->latest_case_summary ?? [];
+        }
 
         $caseData = array_merge($summary, [
             'id' => (string) $form->id,
+            'case_index' => $caseIndex !== null ? (int) $caseIndex : (count($cases) - 1),
         ]);
 
         return Inertia::render('Tabs/Form3AInput', [
@@ -103,6 +112,7 @@ class FormTemplateController extends Controller
     public function update3A(Request $request, string $id)
     {
         $validated = $request->validate([
+            'case_index' => 'nullable|integer',
             'satuanKerja' => 'required|string|max:255',
             'kategoriTindakPidana' => 'required|string|max:255',
             'noRegBendaSitaan' => 'required|string|max:255',
@@ -124,12 +134,15 @@ class FormTemplateController extends Controller
         ]);
 
         $form = $this->findForm('3A', $id);
-        
         $cases = $form->cases ?? [];
-        if (!empty($cases)) {
-            $cases[count($cases) - 1] = $validated;
+
+        $caseIndex = $validated['case_index'] ?? (count($cases) - 1);
+        unset($validated['case_index']);
+
+        if (isset($cases[$caseIndex])) {
+            $cases[$caseIndex] = $validated;
         } else {
-            $cases = [$validated];
+            $cases[] = $validated;
         }
 
         $form->update([
@@ -187,20 +200,29 @@ class FormTemplateController extends Controller
         return redirect('/laporan')->with('success', 'Case berhasil ditambahkan');
     }
 
-    public function destroy3A(string $id)
+    public function destroy3A(Request $request, string $id)
     {
         $form = $this->findForm('3A', $id);
+        $caseIndex = $request->query('index');
+
+        $cases = $form->cases ?? [];
+
+        // Jika ada spesifikasi index dan case di form > 1, hapus elemen tersebut saja
+        if ($caseIndex !== null && isset($cases[$caseIndex])) {
+            array_splice($cases, (int) $caseIndex, 1);
+
+            if (count($cases) > 0) {
+                $form->update([
+                    'cases' => $cases,
+                    'latest_case_summary' => end($cases),
+                ]);
+                return redirect()->back()->with('success', 'Data perkara berhasil dihapus');
+            }
+        }
+
+        // Jika hanya ada 1 case, hapus record form template utuh
         $form->delete();
-
         return redirect()->back()->with('success', 'Data perkara berhasil dihapus');
-    }
-
-    public function create3CWizard()
-    {
-        return Inertia::render('Tabs/Form3CInput', [
-            'form' => null,
-            'caseData' => null,
-        ]);
     }
 
     public function store3CWizard(Request $request)

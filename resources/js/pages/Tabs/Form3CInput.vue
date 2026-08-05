@@ -9,7 +9,6 @@ import {
     ArrowLeft,
     Check,
     RotateCcw,
-    X,
     Plus,
     Trash2,
 } from 'lucide-vue-next';
@@ -20,10 +19,12 @@ import AuthenticatedLayout from '@/Layouts/Layout.vue';
 const activeMenu = ref('FORM');
 
 type BarangBukti = {
-    jenisBarangBukti: string;
-    macamJenisKadar: string;
-    jumlahSatuan: string | number;
+    jumlahSatuan: number | string;
+    uraianBarangBukti: string;
     jenisSatuan: string;
+    macamJenisKadar: string;
+    amarPutusan: string;
+    uraianPutusan: string;
     tempatPenyimpanan: string;
 };
 
@@ -35,7 +36,6 @@ type SavedCase = {
     tglPenerimaan?: string;
     noKepPengadilan?: string;
     tglKepPengadilan?: string;
-    amarPutusan?: string;
     tglPelaksanaanPutusan?: string;
     barangBuktiList?: BarangBukti[];
 };
@@ -65,10 +65,12 @@ const formHeader = ref({
 });
 
 const createEmptyBarangBukti = (): BarangBukti => ({
-    jenisBarangBukti: 'NARKOTIKA',
-    macamJenisKadar: '',
-    jumlahSatuan: '',
+    jumlahSatuan: 1,
+    uraianBarangBukti: '',
     jenisSatuan: '',
+    macamJenisKadar: '',
+    amarPutusan: '',
+    uraianPutusan: '',
     tempatPenyimpanan: '',
 });
 
@@ -82,8 +84,6 @@ const formCase = ref({
     tglPenerimaan: '',
     noKepPengadilan: '',
     tglKepPengadilan: '',
-    amarPutusan: '',
-    uraianPutusan: '',
     tglPelaksanaanPutusan: '',
     barangBuktiList: [createEmptyBarangBukti()],
 });
@@ -105,7 +105,7 @@ const monthOptions = [
 
 const yearOptions = computed(() => {
     const currentYear = new Date().getFullYear();
-    return Array.from({ length: 10 }, (_, index) => currentYear + 2 - index);
+    return Array.from({ length: 10 }, (_, index) => currentYear - index);
 });
 
 const kategoriPidanaOptions = [
@@ -117,10 +117,11 @@ const kategoriPidanaOptions = [
 ];
 
 const amarPutusanOptions = [
-    'Digunakan dalam Perkara Lain',
-    'Dimusnahkan',
-    'Dirampas',
+    'Digunakan dalam Perkara',
+    'Dirampas untuk Negara',
+    'Dirampas untuk Baitul Mal',
     'Dikembalikan',
+    'Dimusnahkan',
     'Sda',
 ];
 
@@ -138,23 +139,9 @@ const satuanOptions = [
     'Lembar',
 ];
 
-const jenisBbOptions = [
-    'Narkotika',
-    'Psikotropika / Zat Adiktif',
-    'Kendaraan',
-    'Senjata Api / Tajam',
-    'Elektronik / HP',
-    'Uang',
-    'Dokumen',
-    'Lain-lain',
-];
-
 const tempatPenyimpananOptions = [
     'Gudang Barang Bukti Kejaksaan Negeri Banda Aceh',
-    'Gudang Barang Bukti Kejaksaan Tinggi Aceh',
-    'Rumah Penyimpanan Benda Sitaan Negara (RUPBASAN)',
-    'Brankas Barang Bukti / Khusus',
-    'Lainnya',
+    'RUPBASAN',
 ];
 
 const addBarangBukti = () => {
@@ -182,13 +169,18 @@ const goToStep1 = () => {
 };
 
 const submitForm = () => {
+    const casePayload = {
+        ...formCase.value,
+        tglPelaksanaanPutusan: formCase.value.tglPelaksanaanPutusan || '-',
+    };
+
     if (isNewForm.value) {
         router.post('/forms/3c/wizard', {
             header: formHeader.value,
-            case: formCase.value,
+            case: casePayload,
         });
     } else {
-        router.post(`/form3c/${props.form?.id}/cases`, formCase.value);
+        router.post(`/form3c/${props.form?.id}/cases`, casePayload);
     }
 };
 
@@ -201,8 +193,6 @@ const resetCaseForm = () => {
         tglPenerimaan: '',
         noKepPengadilan: '',
         tglKepPengadilan: '',
-        amarPutusan: '',
-        uraianPutusan: '',
         tglPelaksanaanPutusan: '',
         barangBuktiList: [createEmptyBarangBukti()],
     };
@@ -442,10 +432,12 @@ const resetCaseForm = () => {
                 class="space-y-6"
             >
                 <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
-                    <!-- PERKARA & PUTUSAN PENGADILAN -->
+                    
+                    <!-- FIELD 1 & FIELD 2 (SISI KIRI) -->
                     <div
                         class="h-fit space-y-5 rounded-xl border border-slate-200/80 bg-white p-6 shadow-xs lg:col-span-5"
                     >
+                        <!-- FIELD 1. PERKARA DAN REGISTER -->
                         <div
                             class="flex items-center gap-3 border-b border-slate-100 pb-3"
                         >
@@ -461,6 +453,7 @@ const resetCaseForm = () => {
                             </h2>
                         </div>
 
+                        <!-- SATUAN KERJA (DEFAULT READ-ONLY) -->
                         <div>
                             <label
                                 class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
@@ -476,6 +469,7 @@ const resetCaseForm = () => {
                             />
                         </div>
 
+                        <!-- OPTION KATEGORI TINDAK PIDANA -->
                         <div>
                             <label
                                 class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-700 uppercase"
@@ -500,21 +494,30 @@ const resetCaseForm = () => {
                             </select>
                         </div>
 
+                        <!-- TEXT AREA PASAL YANG DIDAKWAKAN -->
                         <div>
                             <label
                                 class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
                                 >PASAL YANG DIDAKWAKAN
                                 <span class="text-red-500">*</span></label
                             >
-                            <input
+                            <textarea
                                 v-model="formCase.pasalDidakwakan"
-                                type="text"
+                                rows="1"
                                 required
-                                placeholder="e.g. Pasal 112 ayat (1)"
-                                class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                            />
+                                placeholder="e.g. Pasal 112 ayat (1) jo Pasal 114 ayat (1)"
+                                @input="
+                                    (e) => {
+                                        const el = e.target as HTMLTextAreaElement;
+                                        el.style.height = 'auto';
+                                        el.style.height = el.scrollHeight + 'px';
+                                    }
+                                "
+                                class="w-full resize-none overflow-hidden rounded-lg border border-transparent bg-[#F4F6F8] p-3 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                            ></textarea>
                         </div>
 
+                        <!-- TEXT AREA NO. REG SITAAN & TANGGAL PENERIMAAN BB -->
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div>
                                 <label
@@ -522,13 +525,20 @@ const resetCaseForm = () => {
                                     >NO. REG SITAAN
                                     <span class="text-red-500">*</span></label
                                 >
-                                <input
+                                <textarea
                                     v-model="formCase.noRegBendaSitaan"
-                                    type="text"
+                                    rows="1"
                                     required
                                     placeholder="RB-000/O.1.10/..."
-                                    class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                                />
+                                    @input="
+                                        (e) => {
+                                            const el = e.target as HTMLTextAreaElement;
+                                            el.style.height = 'auto';
+                                            el.style.height = el.scrollHeight + 'px';
+                                        }
+                                    "
+                                    class="w-full resize-none overflow-hidden rounded-lg border border-transparent bg-[#F4F6F8] p-3 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                ></textarea>
                             </div>
                             <div>
                                 <label
@@ -545,6 +555,7 @@ const resetCaseForm = () => {
                             </div>
                         </div>
 
+                        <!-- FIELD 2. PUTUSAN DAN EKSEKUSI HAKIM -->
                         <div class="space-y-4 border-t border-slate-100 pt-3">
                             <div
                                 class="flex items-center gap-2 text-xs font-bold text-slate-800"
@@ -590,46 +601,6 @@ const resetCaseForm = () => {
                             <div>
                                 <label
                                     class="mb-1 block text-[10px] font-bold text-slate-600 uppercase"
-                                >
-                                    AMAR PUTUSAN
-                                    <span class="text-red-500">*</span>
-                                </label>
-                                <select
-                                    v-model="formCase.amarPutusan"
-                                    required
-                                    class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3 py-2 text-xs text-slate-800 transition-all outline-none focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                                >
-                                    <option value="" disabled>
-                                        Pilih Amar Putusan...
-                                    </option>
-                                    <option
-                                        v-for="opt in amarPutusanOptions"
-                                        :key="opt"
-                                        :value="opt"
-                                    >
-                                        {{ opt }}
-                                    </option>
-                                </select>
-                            </div>
-
-                            <!-- KOTAK KETERANGAN / URAIAN AMAR PUTUSAN -->
-                            <div>
-                                <label
-                                    class="mb-1 block text-[10px] font-bold text-slate-600 uppercase"
-                                >
-                                    URAIAN / KETERANGAN PUTUSAN
-                                </label>
-                                <textarea
-                                    v-model="formCase.uraianPutusan"
-                                    rows="2"
-                                    placeholder="Rincian uraian amar putusan hakim..."
-                                    class="w-full resize-none rounded-lg border border-transparent bg-[#F4F6F8] p-2.5 text-xs text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                                ></textarea>
-                            </div>
-
-                            <div>
-                                <label
-                                    class="mb-1 block text-[10px] font-bold text-slate-600 uppercase"
                                     >TGL PELAKSANAAN PUTUSAN</label
                                 >
                                 <input
@@ -641,7 +612,7 @@ const resetCaseForm = () => {
                         </div>
                     </div>
 
-                    <!-- REPEATER MULTI BARANG BUKTI -->
+                    <!-- FIELD 3. DAFTAR BARANG BUKTI (REPEATER SISI KANAN) -->
                     <div class="space-y-5 lg:col-span-7">
                         <div
                             class="flex items-center justify-between rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs"
@@ -656,7 +627,7 @@ const resetCaseForm = () => {
                                     <h2
                                         class="text-xs font-bold tracking-wider text-slate-900 uppercase"
                                     >
-                                        DAFTAR BARANG BUKTI
+                                        3. DAFTAR BARANG BUKTI
                                     </h2>
                                     <p class="text-[11px] text-slate-500">
                                         Total:
@@ -676,6 +647,7 @@ const resetCaseForm = () => {
                             </button>
                         </div>
 
+                        <!-- ITEM BARANG BUKTI REPEATER -->
                         <div
                             v-for="(bb, index) in formCase.barangBuktiList"
                             :key="index"
@@ -693,97 +665,67 @@ const resetCaseForm = () => {
                                 <button
                                     v-if="formCase.barangBuktiList.length > 1"
                                     type="button"
-                                    class="cursor-pointer rounded-lg p-1.5 text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
+                                    class="flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
                                     @click="removeBarangBukti(index)"
                                     title="Hapus Barang Bukti Ini"
                                 >
                                     <Trash2 class="h-4 w-4" />
+                                    <span>Hapus</span>
                                 </button>
                             </div>
 
-                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <div>
+                            <!-- BARIS 1: FIELD OPTION JUMLAH SATUAN | FIELD TEXT AREA URAIAN/KETERANGAN BARANG BUKTI -->
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
+                                <div class="sm:col-span-4">
                                     <label
                                         class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                        >JENIS BARANG BUKTI
-                                        <span class="text-red-500"
-                                            >*</span
-                                        ></label
                                     >
-                                    <!-- SELECT DROPDOWN JENIS BB WITH v-for -->
-                                    <select
-                                        v-model="bb.jenisBarangBukti"
-                                        required
-                                        class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                                    >
-                                        <option value="" disabled>
-                                            Pilih Jenis Barang Bukti...
-                                        </option>
-                                        <option
-                                            v-for="opt in jenisBbOptions"
-                                            :key="opt"
-                                            :value="opt"
-                                        >
-                                            {{ opt }}
-                                        </option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label
-                                        class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                        >TEMPAT PENYIMPANAN
-                                        <span class="text-red-500"
-                                            >*</span
-                                        ></label
-                                    >
-                                    <!-- SELECT DROPDOWN TEMPAT PENYIMPANAN WITH v-for -->
-                                    <select
-                                        v-model="bb.tempatPenyimpanan"
-                                        required
-                                        class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                                    >
-                                        <option value="" disabled>
-                                            Pilih Tempat Penyimpanan...
-                                        </option>
-                                        <option
-                                            v-for="opt in tempatPenyimpananOptions"
-                                            :key="opt"
-                                            :value="opt"
-                                        >
-                                            {{ opt }}
-                                        </option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                <div>
-                                    <label
-                                        class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                        >JUMLAH SATUAN
-                                        <span class="text-red-500"
-                                            >*</span
-                                        ></label
-                                    >
-                                    <!-- INPUT BISA ANGKA DESIMAL (step="any") -->
+                                        JUMLAH SATUAN
+                                        <span class="text-red-500">*</span>
+                                    </label>
                                     <input
                                         v-model="bb.jumlahSatuan"
                                         type="number"
                                         step="any"
+                                        min="1"
                                         required
-                                        placeholder="0.00"
-                                        class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                        placeholder="1"
+                                        class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs font-semibold text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                                     />
                                 </div>
-                                <div>
+                                <div class="sm:col-span-8">
                                     <label
                                         class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                        >JENIS SATUAN
-                                        <span class="text-red-500"
-                                            >*</span
-                                        ></label
                                     >
-                                    <!-- SELECT DROPDOWN SATUAN WITH v-for -->
+                                        URAIAN / KETERANGAN BARANG BUKTI
+                                        <span class="text-red-500">*</span>
+                                    </label>
+                                    <textarea
+                                        v-model="bb.uraianBarangBukti"
+                                        rows="1"
+                                        required
+                                        placeholder="Deskripsi / spesifikasi rinci barang bukti..."
+                                        @input="
+                                            (e) => {
+                                                const el = e.target as HTMLTextAreaElement;
+                                                el.style.height = 'auto';
+                                                el.style.height = el.scrollHeight + 'px';
+                                            }
+                                        "
+                                        class="w-full resize-none overflow-hidden rounded-lg border border-transparent bg-[#F4F6F8] p-3 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                    ></textarea>
+                                </div>
+                            </div>
+
+                            <!-- BARIS 2: FIELD OPTION JENIS SATUAN | FIELD TEXT AREA MACAM JENIS KADAR -->
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
+                                <div class="sm:col-span-4">
+                                    <label
+                                        class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
+                                    >
+                                        JENIS SATUAN
+                                        <span class="text-red-500">*</span>
+                                    </label>
                                     <select
                                         v-model="bb.jenisSatuan"
                                         required
@@ -801,26 +743,109 @@ const resetCaseForm = () => {
                                         </option>
                                     </select>
                                 </div>
+                                <div class="sm:col-span-8">
+                                    <label
+                                        class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
+                                    >
+                                        MACAM JENIS KADAR BARANG BUKTI
+                                        <span class="text-red-500">*</span>
+                                    </label>
+                                    <textarea
+                                        v-model="bb.macamJenisKadar"
+                                        rows="1"
+                                        required
+                                        placeholder="Spesifikasi rinci, kadar kemurnian, nomor mesin..."
+                                        @input="
+                                            (e) => {
+                                                const el = e.target as HTMLTextAreaElement;
+                                                el.style.height = 'auto';
+                                                el.style.height = el.scrollHeight + 'px';
+                                            }
+                                        "
+                                        class="w-full resize-none overflow-hidden rounded-lg border border-transparent bg-[#F4F6F8] p-3 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                    ></textarea>
+                                </div>
                             </div>
 
+                            <!-- BARIS 3: FIELD OPTION AMAR PUTUSAN | FIELD TEXT AREA URAIAN/KETERANGAN AMAR PUTUSAN -->
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
+                                <div class="sm:col-span-4">
+                                    <label
+                                        class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
+                                    >
+                                        AMAR PUTUSAN
+                                        <span class="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        v-model="bb.amarPutusan"
+                                        required
+                                        class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                    >
+                                        <option value="" disabled>
+                                            Pilih Amar Putusan...
+                                        </option>
+                                        <option
+                                            v-for="opt in amarPutusanOptions"
+                                            :key="opt"
+                                            :value="opt"
+                                        >
+                                            {{ opt }}
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="sm:col-span-8">
+                                    <label
+                                        class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
+                                    >
+                                        URAIAN / KETERANGAN AMAR PUTUSAN
+                                    </label>
+                                    <textarea
+                                        v-model="bb.uraianPutusan"
+                                        rows="1"
+                                        placeholder="Rincian / uraian amar putusan hakim..."
+                                        @input="
+                                            (e) => {
+                                                const el = e.target as HTMLTextAreaElement;
+                                                el.style.height = 'auto';
+                                                el.style.height = el.scrollHeight + 'px';
+                                            }
+                                        "
+                                        class="w-full resize-none overflow-hidden rounded-lg border border-transparent bg-[#F4F6F8] p-3 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                    ></textarea>
+                                </div>
+                            </div>
+
+                            <!-- BARIS 4: FIELD OPTION TEMPAT PENYIMPANAN -->
                             <div>
                                 <label
                                     class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                    >MACAM JENIS KADAR BARANG BUKTI
-                                    <span class="text-red-500">*</span></label
                                 >
-                                <textarea
-                                    v-model="bb.macamJenisKadar"
-                                    rows="2"
+                                    TEMPAT PENYIMPANAN
+                                    <span class="text-red-500">*</span>
+                                </label>
+                                <select
+                                    v-model="bb.tempatPenyimpanan"
                                     required
-                                    placeholder="Spesifikasi rinci, kadar kemurnian, nomor mesin..."
-                                    class="w-full resize-none rounded-lg border border-transparent bg-[#F4F6F8] p-3 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                                ></textarea>
+                                    class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                >
+                                    <option value="" disabled>
+                                        Pilih Tempat Penyimpanan...
+                                    </option>
+                                    <option
+                                        v-for="opt in tempatPenyimpananOptions"
+                                        :key="opt"
+                                        :value="opt"
+                                    >
+                                        {{ opt }}
+                                    </option>
+                                </select>
                             </div>
+
                         </div>
                     </div>
                 </div>
 
+                <!-- BOTTOM ACTION BUTTONS -->
                 <div
                     class="flex items-center justify-between border-t border-slate-200 pt-4"
                 >
