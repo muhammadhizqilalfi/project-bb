@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Inertia\Inertia;
 use App\Http\Controllers\FormTemplateController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\DropdownSettingController;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -54,6 +55,12 @@ Route::middleware('auth')->group(function () {
     // Laporan routes
     Route::get('/laporan', [LaporanController::class, 'Laporan'])->name('laporan');
     Route::get('/laporan/export-pdf', [LaporanController::class, 'exportPdf'])->name('laporan.exportPdf');
+
+    // Route Pengaturan Form Master Dropdown
+    Route::get('/pengaturan-form', [DropdownSettingController::class, 'index'])->name('pengaturan.index');
+    Route::post('/settings/dropdowns', [DropdownSettingController::class, 'store'])->name('dropdowns.store');
+    Route::put('/settings/dropdowns/{id}', [DropdownSettingController::class, 'update'])->name('dropdowns.update');
+    Route::delete('/settings/dropdowns/{id}', [DropdownSettingController::class, 'destroy'])->name('dropdowns.destroy');
 
     // Logout
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');

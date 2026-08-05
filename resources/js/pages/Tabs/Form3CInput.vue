@@ -53,6 +53,10 @@ const props = defineProps({
         type: Object as PropType<FormItem | null>,
         default: null,
     },
+    dropdownOptions: {
+        type: Object as PropType<Record<string, string[]>>,
+        default: () => ({}),
+    }
 });
 
 const isNewForm = computed(() => !props.form);
@@ -108,41 +112,37 @@ const yearOptions = computed(() => {
     return Array.from({ length: 10 }, (_, index) => currentYear - index);
 });
 
-const kategoriPidanaOptions = [
-    'KAMNEGTIBUM DAN TPUL',
-    'NARKOTIKA DAN ZAT ADITIF LAINNYA',
-    'OHARDA',
-    'TERORIS',
-    'KORUPSI',
-];
+// OPSI DROPDOWN DINAMIS FORM 3C BERDASARKAN MASTER PENGATURAN
+const kategoriPidanaOptions = computed(() => {
+    return props.dropdownOptions?.kategori_pidana?.length 
+        ? props.dropdownOptions.kategori_pidana 
+        : ['KAMNEGTIBUM DAN TPUL', 'NARKOTIKA DAN ZAT ADITIF LAINNYA', 'OHARDA', 'TERORIS', 'KORUPSI'];
+});
 
-const amarPutusanOptions = [
-    'Digunakan dalam Perkara',
-    'Dirampas untuk Negara',
-    'Dirampas untuk Baitul Mal',
-    'Dikembalikan',
-    'Dimusnahkan',
-    'Sda',
-];
+const amarPutusanOptions = computed(() => {
+    return props.dropdownOptions?.amar_putusan?.length 
+        ? props.dropdownOptions.amar_putusan 
+        : [
+            'Digunakan dalam Perkara',
+            'Dirampas untuk Negara',
+            'Dirampas untuk Baitul Mal',
+            'Dikembalikan',
+            'Dimusnahkan',
+            'Sda',
+        ];
+});
 
-const satuanOptions = [
-    'Gram',
-    'Kilogram (Kg)',
-    'Milliliter (ml)',
-    'Liter (L)',
-    'Unit',
-    'Paket',
-    'Pcs',
-    'Buah',
-    'Bungkus',
-    'Batang',
-    'Lembar',
-];
+const satuanOptions = computed(() => {
+    return props.dropdownOptions?.satuan?.length 
+        ? props.dropdownOptions.satuan 
+        : ['Gram', 'Kilogram (Kg)', 'Milliliter (ml)', 'Liter (L)', 'Unit', 'Paket', 'Pcs', 'Buah', 'Bungkus', 'Batang', 'Lembar'];
+});
 
-const tempatPenyimpananOptions = [
-    'Gudang Barang Bukti Kejaksaan Negeri Banda Aceh',
-    'RUPBASAN',
-];
+const tempatPenyimpananOptions = computed(() => {
+    return props.dropdownOptions?.tempat_penyimpanan?.length 
+        ? props.dropdownOptions.tempat_penyimpanan 
+        : ['Gudang Barang Bukti Kejaksaan Negeri Banda Aceh', 'RUPBASAN'];
+});
 
 const addBarangBukti = () => {
     formCase.value.barangBuktiList.push(createEmptyBarangBukti());
@@ -205,13 +205,9 @@ const resetCaseForm = () => {
     <AuthenticatedLayout userRole="karyawan" v-model:active-menu="activeMenu">
         <div class="mx-auto w-full space-y-8 p-8">
             <!-- PAGE HEADER -->
-            <div
-                class="flex items-center justify-between border-b border-slate-200 pb-4"
-            >
+            <div class="flex items-center justify-between border-b border-slate-200 pb-4">
                 <div>
-                    <h1
-                        class="text-2xl font-extrabold tracking-tight text-slate-900"
-                    >
+                    <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">
                         {{
                             isNewForm
                                 ? 'Buat Form 3C & Input Case'
@@ -219,8 +215,7 @@ const resetCaseForm = () => {
                         }}
                     </h1>
                     <p class="mt-1 text-xs text-slate-500">
-                        Laporan Bulanan Barang Bukti Berdasarkan Putusan
-                        Pengadilan (PN / PT / MA)
+                        Laporan Bulanan Barang Bukti Berdasarkan Putusan Pengadilan (PN / PT / MA)
                     </p>
                 </div>
 
@@ -235,14 +230,9 @@ const resetCaseForm = () => {
             </div>
 
             <!-- PROGRESS STEPPER BAR -->
-            <div
-                class="rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-md"
-            >
+            <div class="rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-md">
                 <div class="mx-auto flex max-w-xl items-center justify-center">
-                    <div
-                        class="flex cursor-pointer items-center gap-3"
-                        @click="goToStep1"
-                    >
+                    <div class="flex cursor-pointer items-center gap-3" @click="goToStep1">
                         <div
                             :class="[
                                 'flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold transition-all duration-300',
@@ -251,20 +241,13 @@ const resetCaseForm = () => {
                                     : 'bg-emerald-500 text-white',
                             ]"
                         >
-                            <Check
-                                v-if="currentStep > 1"
-                                class="h-5 w-5 stroke-[3]"
-                            />
+                            <Check v-if="currentStep > 1" class="h-5 w-5 stroke-[3]" />
                             <span v-else>1</span>
                         </div>
                         <div class="hidden text-left sm:block">
                             <p
                                 class="text-xs font-bold tracking-wider uppercase"
-                                :class="
-                                    currentStep === 1
-                                        ? 'text-[#FFD000]'
-                                        : 'text-slate-300'
-                                "
+                                :class="currentStep === 1 ? 'text-[#FFD000]' : 'text-slate-300'"
                             >
                                 Tahap 1
                             </p>
@@ -276,9 +259,7 @@ const resetCaseForm = () => {
 
                     <div
                         class="mx-4 h-0.5 max-w-[120px] flex-1 transition-all duration-300"
-                        :class="
-                            currentStep >= 2 ? 'bg-emerald-500' : 'bg-slate-700'
-                        "
+                        :class="currentStep >= 2 ? 'bg-emerald-500' : 'bg-slate-700'"
                     ></div>
 
                     <div class="flex items-center gap-3">
@@ -295,11 +276,7 @@ const resetCaseForm = () => {
                         <div class="hidden text-left sm:block">
                             <p
                                 class="text-xs font-bold tracking-wider uppercase"
-                                :class="
-                                    currentStep === 2
-                                        ? 'text-[#FFD000]'
-                                        : 'text-slate-500'
-                                "
+                                :class="currentStep === 2 ? 'text-[#FFD000]' : 'text-slate-500'"
                             >
                                 Tahap 2
                             </p>
@@ -317,24 +294,18 @@ const resetCaseForm = () => {
                 class="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 p-4"
             >
                 <div>
-                    <p
-                        class="text-[11px] font-bold tracking-wider text-amber-800 uppercase"
-                    >
+                    <p class="text-[11px] font-bold tracking-wider text-amber-800 uppercase">
                         Menambahkan Case Untuk Form Existing:
                     </p>
                     <p class="mt-0.5 text-sm font-extrabold text-slate-900">
                         {{ form?.name }} (Periode:
-                        {{
-                            monthOptions.find((m) => m.value === form?.month)
-                                ?.label
-                        }}
+                        {{ monthOptions.find((m) => m.value === form?.month)?.label }}
                         {{ form?.year }})
                     </p>
                 </div>
-                <span
-                    class="rounded-full bg-amber-200 px-2.5 py-1 text-[10px] font-bold text-amber-900 uppercase"
-                    >Form Terkunci</span
-                >
+                <span class="rounded-full bg-amber-200 px-2.5 py-1 text-[10px] font-bold text-amber-900 uppercase">
+                    Form Terkunci
+                </span>
             </div>
 
             <!-- TAHAP 1 -->
@@ -347,18 +318,14 @@ const resetCaseForm = () => {
                         Tahap 1: Pengaturan Form Bulanan
                     </h2>
                     <p class="mt-1 text-xs text-slate-500">
-                        Masukkan judul dan periode laporan bulanan yang akan
-                        dibuat.
+                        Masukkan judul dan periode laporan bulanan yang akan dibuat.
                     </p>
                 </div>
 
                 <div class="space-y-4">
                     <div>
-                        <label
-                            class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-700 uppercase"
-                        >
-                            NAMA FORM LAPORAN
-                            <span class="text-red-500">*</span>
+                        <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-700 uppercase">
+                            NAMA FORM LAPORAN <span class="text-red-500">*</span>
                         </label>
                         <input
                             v-model="formHeader.name"
@@ -371,41 +338,29 @@ const resetCaseForm = () => {
 
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
-                            <label
-                                class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-700 uppercase"
-                                >BULAN
-                                <span class="text-red-500">*</span></label
-                            >
+                            <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-700 uppercase">
+                                BULAN <span class="text-red-500">*</span>
+                            </label>
                             <select
                                 v-model="formHeader.month"
                                 required
                                 class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-4 py-3 text-sm font-semibold text-slate-900 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                             >
-                                <option
-                                    v-for="m in monthOptions"
-                                    :key="m.value"
-                                    :value="m.value"
-                                >
+                                <option v-for="m in monthOptions" :key="m.value" :value="m.value">
                                     {{ m.label }}
                                 </option>
                             </select>
                         </div>
                         <div>
-                            <label
-                                class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-700 uppercase"
-                                >TAHUN
-                                <span class="text-red-500">*</span></label
-                            >
+                            <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-700 uppercase">
+                                TAHUN <span class="text-red-500">*</span>
+                            </label>
                             <select
                                 v-model="formHeader.year"
                                 required
                                 class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-4 py-3 text-sm font-semibold text-slate-900 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                             >
-                                <option
-                                    v-for="y in yearOptions"
-                                    :key="y"
-                                    :value="y"
-                                >
+                                <option v-for="y in yearOptions" :key="y" :value="y">
                                     {{ y }}
                                 </option>
                             </select>
@@ -426,40 +381,23 @@ const resetCaseForm = () => {
             </div>
 
             <!-- TAHAP 2 -->
-            <form
-                v-if="currentStep === 2"
-                @submit.prevent="submitForm"
-                class="space-y-6"
-            >
+            <form v-if="currentStep === 2" @submit.prevent="submitForm" class="space-y-6">
                 <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
                     
                     <!-- FIELD 1 & FIELD 2 (SISI KIRI) -->
-                    <div
-                        class="h-fit space-y-5 rounded-xl border border-slate-200/80 bg-white p-6 shadow-xs lg:col-span-5"
-                    >
-                        <!-- FIELD 1. PERKARA DAN REGISTER -->
-                        <div
-                            class="flex items-center gap-3 border-b border-slate-100 pb-3"
-                        >
-                            <div
-                                class="rounded-lg bg-slate-100 p-2 text-slate-800"
-                            >
+                    <div class="h-fit space-y-5 rounded-xl border border-slate-200/80 bg-white p-6 shadow-xs lg:col-span-5">
+                        <div class="flex items-center gap-3 border-b border-slate-100 pb-3">
+                            <div class="rounded-lg bg-slate-100 p-2 text-slate-800">
                                 <Gavel class="h-5 w-5" />
                             </div>
-                            <h2
-                                class="text-xs font-bold tracking-wider text-slate-900 uppercase"
-                            >
+                            <h2 class="text-xs font-bold tracking-wider text-slate-900 uppercase">
                                 1. PERKARA & REGISTER
                             </h2>
                         </div>
 
-                        <!-- SATUAN KERJA (DEFAULT READ-ONLY) -->
                         <div>
-                            <label
-                                class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                            >
+                            <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
                                 SATUAN KERJA
-                                <span class="text-red-500">*</span>
                             </label>
                             <input
                                 v-model="formCase.satuanKerja"
@@ -469,38 +407,26 @@ const resetCaseForm = () => {
                             />
                         </div>
 
-                        <!-- OPTION KATEGORI TINDAK PIDANA -->
                         <div>
-                            <label
-                                class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-700 uppercase"
-                                >KATEGORI TINDAK PIDANA
-                                <span class="text-red-500">*</span></label
-                            >
+                            <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-700 uppercase">
+                                KATEGORI TINDAK PIDANA <span class="text-red-500">*</span>
+                            </label>
                             <select
                                 v-model="formCase.kategoriTindakPidana"
                                 required
                                 class="w-full rounded-lg border border-amber-300 bg-[#FFFBEB] px-3.5 py-2.5 text-xs font-bold text-slate-900 transition-all outline-none focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                             >
-                                <option value="" disabled>
-                                    -- Pilih Jenis Tindak Pidana --
-                                </option>
-                                <option
-                                    v-for="kat in kategoriPidanaOptions"
-                                    :key="kat"
-                                    :value="kat"
-                                >
+                                <option value="" disabled>-- Pilih Jenis Tindak Pidana --</option>
+                                <option v-for="kat in kategoriPidanaOptions" :key="kat" :value="kat">
                                     {{ kat }}
                                 </option>
                             </select>
                         </div>
 
-                        <!-- TEXT AREA PASAL YANG DIDAKWAKAN -->
                         <div>
-                            <label
-                                class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                >PASAL YANG DIDAKWAKAN
-                                <span class="text-red-500">*</span></label
-                            >
+                            <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
+                                PASAL YANG DIDAKWAKAN <span class="text-red-500">*</span>
+                            </label>
                             <textarea
                                 v-model="formCase.pasalDidakwakan"
                                 rows="1"
@@ -517,14 +443,11 @@ const resetCaseForm = () => {
                             ></textarea>
                         </div>
 
-                        <!-- TEXT AREA NO. REG SITAAN & TANGGAL PENERIMAAN BB -->
                         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <div>
-                                <label
-                                    class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                    >NO. REG SITAAN
-                                    <span class="text-red-500">*</span></label
-                                >
+                                <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
+                                    NO. REG SITAAN <span class="text-red-500">*</span>
+                                </label>
                                 <textarea
                                     v-model="formCase.noRegBendaSitaan"
                                     rows="1"
@@ -541,11 +464,9 @@ const resetCaseForm = () => {
                                 ></textarea>
                             </div>
                             <div>
-                                <label
-                                    class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                    >TGL PENERIMAAN BB
-                                    <span class="text-red-500">*</span></label
-                                >
+                                <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
+                                    TGL PENERIMAAN BB <span class="text-red-500">*</span>
+                                </label>
                                 <input
                                     v-model="formCase.tglPenerimaan"
                                     type="date"
@@ -555,24 +476,17 @@ const resetCaseForm = () => {
                             </div>
                         </div>
 
-                        <!-- FIELD 2. PUTUSAN DAN EKSEKUSI HAKIM -->
                         <div class="space-y-4 border-t border-slate-100 pt-3">
-                            <div
-                                class="flex items-center gap-2 text-xs font-bold text-slate-800"
-                            >
+                            <div class="flex items-center gap-2 text-xs font-bold text-slate-800">
                                 <FileCheck2 class="h-4 w-4 text-slate-600" />
                                 <span>2. PUTUSAN & EKSEKUSI HAKIM</span>
                             </div>
 
                             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 <div>
-                                    <label
-                                        class="mb-1 block text-[10px] font-bold text-slate-600 uppercase"
-                                        >NO. KEP (PN/PT/MA)
-                                        <span class="text-red-500"
-                                            >*</span
-                                        ></label
-                                    >
+                                    <label class="mb-1 block text-[10px] font-bold text-slate-600 uppercase">
+                                        NO. KEP (PN/PT/MA) <span class="text-red-500">*</span>
+                                    </label>
                                     <input
                                         v-model="formCase.noKepPengadilan"
                                         type="text"
@@ -582,13 +496,9 @@ const resetCaseForm = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label
-                                        class="mb-1 block text-[10px] font-bold text-slate-600 uppercase"
-                                        >TGL. KEP (PN/PT/MA)
-                                        <span class="text-red-500"
-                                            >*</span
-                                        ></label
-                                    >
+                                    <label class="mb-1 block text-[10px] font-bold text-slate-600 uppercase">
+                                        TGL. KEP (PN/PT/MA) <span class="text-red-500">*</span>
+                                    </label>
                                     <input
                                         v-model="formCase.tglKepPengadilan"
                                         type="date"
@@ -599,10 +509,7 @@ const resetCaseForm = () => {
                             </div>
 
                             <div>
-                                <label
-                                    class="mb-1 block text-[10px] font-bold text-slate-600 uppercase"
-                                    >TGL PELAKSANAAN PUTUSAN</label
-                                >
+                                <label class="mb-1 block text-[10px] font-bold text-slate-600 uppercase">TGL PELAKSANAAN PUTUSAN</label>
                                 <input
                                     v-model="formCase.tglPelaksanaanPutusan"
                                     type="date"
@@ -614,25 +521,17 @@ const resetCaseForm = () => {
 
                     <!-- FIELD 3. DAFTAR BARANG BUKTI (REPEATER SISI KANAN) -->
                     <div class="space-y-5 lg:col-span-7">
-                        <div
-                            class="flex items-center justify-between rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs"
-                        >
+                        <div class="flex items-center justify-between rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs">
                             <div class="flex items-center gap-3">
-                                <div
-                                    class="rounded-lg bg-slate-100 p-2 text-slate-800"
-                                >
+                                <div class="rounded-lg bg-slate-100 p-2 text-slate-800">
                                     <Package class="h-5 w-5" />
                                 </div>
                                 <div>
-                                    <h2
-                                        class="text-xs font-bold tracking-wider text-slate-900 uppercase"
-                                    >
+                                    <h2 class="text-xs font-bold tracking-wider text-slate-900 uppercase">
                                         3. DAFTAR BARANG BUKTI
                                     </h2>
                                     <p class="text-[11px] text-slate-500">
-                                        Total:
-                                        {{ formCase.barangBuktiList.length }}
-                                        Barang Bukti
+                                        Total: {{ formCase.barangBuktiList.length }} Barang Bukti
                                     </p>
                                 </div>
                             </div>
@@ -647,18 +546,13 @@ const resetCaseForm = () => {
                             </button>
                         </div>
 
-                        <!-- ITEM BARANG BUKTI REPEATER -->
                         <div
                             v-for="(bb, index) in formCase.barangBuktiList"
                             :key="index"
                             class="relative space-y-4 rounded-xl border border-slate-200/80 bg-white p-6 shadow-xs transition-all"
                         >
-                            <div
-                                class="flex items-center justify-between border-b border-slate-100 pb-3"
-                            >
-                                <span
-                                    class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold tracking-wider text-slate-800 uppercase"
-                                >
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                                <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold tracking-wider text-slate-800 uppercase">
                                     Barang Bukti #{{ index + 1 }}
                                 </span>
 
@@ -674,14 +568,10 @@ const resetCaseForm = () => {
                                 </button>
                             </div>
 
-                            <!-- BARIS 1: FIELD OPTION JUMLAH SATUAN | FIELD TEXT AREA URAIAN/KETERANGAN BARANG BUKTI -->
                             <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
                                 <div class="sm:col-span-4">
-                                    <label
-                                        class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                    >
-                                        JUMLAH SATUAN
-                                        <span class="text-red-500">*</span>
+                                    <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
+                                        JUMLAH SATUAN <span class="text-red-500">*</span>
                                     </label>
                                     <input
                                         v-model="bb.jumlahSatuan"
@@ -694,11 +584,8 @@ const resetCaseForm = () => {
                                     />
                                 </div>
                                 <div class="sm:col-span-8">
-                                    <label
-                                        class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                    >
-                                        URAIAN / KETERANGAN BARANG BUKTI
-                                        <span class="text-red-500">*</span>
+                                    <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
+                                        URAIAN / KETERANGAN BARANG BUKTI <span class="text-red-500">*</span>
                                     </label>
                                     <textarea
                                         v-model="bb.uraianBarangBukti"
@@ -717,38 +604,25 @@ const resetCaseForm = () => {
                                 </div>
                             </div>
 
-                            <!-- BARIS 2: FIELD OPTION JENIS SATUAN | FIELD TEXT AREA MACAM JENIS KADAR -->
                             <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
                                 <div class="sm:col-span-4">
-                                    <label
-                                        class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                    >
-                                        JENIS SATUAN
-                                        <span class="text-red-500">*</span>
+                                    <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
+                                        JENIS SATUAN <span class="text-red-500">*</span>
                                     </label>
                                     <select
                                         v-model="bb.jenisSatuan"
                                         required
                                         class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                                     >
-                                        <option value="" disabled>
-                                            Pilih Satuan...
-                                        </option>
-                                        <option
-                                            v-for="s in satuanOptions"
-                                            :key="s"
-                                            :value="s"
-                                        >
+                                        <option value="" disabled>Pilih Satuan...</option>
+                                        <option v-for="s in satuanOptions" :key="s" :value="s">
                                             {{ s }}
                                         </option>
                                     </select>
                                 </div>
                                 <div class="sm:col-span-8">
-                                    <label
-                                        class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                    >
-                                        MACAM JENIS KADAR BARANG BUKTI
-                                        <span class="text-red-500">*</span>
+                                    <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
+                                        MACAM JENIS KADAR BARANG BUKTI <span class="text-red-500">*</span>
                                     </label>
                                     <textarea
                                         v-model="bb.macamJenisKadar"
@@ -767,36 +641,24 @@ const resetCaseForm = () => {
                                 </div>
                             </div>
 
-                            <!-- BARIS 3: FIELD OPTION AMAR PUTUSAN | FIELD TEXT AREA URAIAN/KETERANGAN AMAR PUTUSAN -->
                             <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
                                 <div class="sm:col-span-4">
-                                    <label
-                                        class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                    >
-                                        AMAR PUTUSAN
-                                        <span class="text-red-500">*</span>
+                                    <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
+                                        AMAR PUTUSAN <span class="text-red-500">*</span>
                                     </label>
                                     <select
                                         v-model="bb.amarPutusan"
                                         required
                                         class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                                     >
-                                        <option value="" disabled>
-                                            Pilih Amar Putusan...
-                                        </option>
-                                        <option
-                                            v-for="opt in amarPutusanOptions"
-                                            :key="opt"
-                                            :value="opt"
-                                        >
+                                        <option value="" disabled>Pilih Amar Putusan...</option>
+                                        <option v-for="opt in amarPutusanOptions" :key="opt" :value="opt">
                                             {{ opt }}
                                         </option>
                                     </select>
                                 </div>
                                 <div class="sm:col-span-8">
-                                    <label
-                                        class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                    >
+                                    <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
                                         URAIAN / KETERANGAN AMAR PUTUSAN
                                     </label>
                                     <textarea
@@ -815,27 +677,17 @@ const resetCaseForm = () => {
                                 </div>
                             </div>
 
-                            <!-- BARIS 4: FIELD OPTION TEMPAT PENYIMPANAN -->
                             <div>
-                                <label
-                                    class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                >
-                                    TEMPAT PENYIMPANAN
-                                    <span class="text-red-500">*</span>
+                                <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
+                                    TEMPAT PENYIMPANAN <span class="text-red-500">*</span>
                                 </label>
                                 <select
                                     v-model="bb.tempatPenyimpanan"
                                     required
                                     class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                                 >
-                                    <option value="" disabled>
-                                        Pilih Tempat Penyimpanan...
-                                    </option>
-                                    <option
-                                        v-for="opt in tempatPenyimpananOptions"
-                                        :key="opt"
-                                        :value="opt"
-                                    >
+                                    <option value="" disabled>Pilih Tempat Penyimpanan...</option>
+                                    <option v-for="opt in tempatPenyimpananOptions" :key="opt" :value="opt">
                                         {{ opt }}
                                     </option>
                                 </select>
@@ -845,10 +697,7 @@ const resetCaseForm = () => {
                     </div>
                 </div>
 
-                <!-- BOTTOM ACTION BUTTONS -->
-                <div
-                    class="flex items-center justify-between border-t border-slate-200 pt-4"
-                >
+                <div class="flex items-center justify-between border-t border-slate-200 pt-4">
                     <div>
                         <button
                             v-if="isNewForm"
@@ -875,9 +724,7 @@ const resetCaseForm = () => {
                             class="flex cursor-pointer items-center gap-2 rounded-lg bg-[#0E1B2E] px-6 py-2.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-slate-800"
                         >
                             <Save class="h-4 w-4" />
-                            <span>{{
-                                isNewForm ? 'SIMPAN FORM & CASE' : 'SIMPAN CASE'
-                            }}</span>
+                            <span>{{ isNewForm ? 'SIMPAN FORM & CASE' : 'SIMPAN CASE' }}</span>
                         </button>
                     </div>
                 </div>

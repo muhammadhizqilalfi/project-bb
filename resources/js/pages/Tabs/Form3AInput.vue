@@ -64,7 +64,12 @@ const props = defineProps({
     caseData: {
         type: Object as PropType<SavedCase | null>,
         default: null,
-    }
+    },
+    // Prop Opsi Dropdown Dinamis dari Backend Master Pengaturan Form
+    dropdownOptions: {
+        type: Object as PropType<Record<string, string[]>>,
+        default: () => ({}),
+    },
 });
 
 const isEditingCase = computed(() => !!props.caseData);
@@ -88,11 +93,6 @@ const createEmptyBarangBukti = (): BarangBukti => ({
 });
 
 const DEFAULT_SATKER = 'Kejari Banda Aceh';
-const keteranganTahapOptions = [
-    'Tahap Persidangan',
-    'Tahap II',
-    'Tahap Pelimpahan',
-];
 
 // Inisialisasi Form dengan data existing (jika mode edit)
 const formCase = ref<SavedCase & { barangBuktiList: BarangBukti[] }>({
@@ -138,45 +138,72 @@ const yearOptions = computed(() => {
     return Array.from({ length: 10 }, (_, index) => currentYear - index);
 });
 
-const kategoriPidanaOptions = [
-    'KAMNEGTIBUM DAN TPUL',
-    'NARKOTIKA DAN ZAT ADITIF LAINNYA',
-    'OHARDA',
-    'TERORIS',
-    'KORUPSI',
-];
+// OPSI DROPDOWN DINAMIS BERDASARKAN MASTER DATA (WITH FALLBACK)
+const kategoriPidanaOptions = computed(() => {
+    return props.dropdownOptions?.kategori_pidana?.length
+        ? props.dropdownOptions.kategori_pidana
+        : [
+            'KAMNEGTIBUM DAN TPUL',
+            'NARKOTIKA DAN ZAT ADITIF LAINNYA',
+            'OHARDA',
+            'TERORIS',
+            'KORUPSI',
+          ];
+});
 
 const jenisBbCategoryOptions = ['Narkotika', 'Lainnya'];
 
-const jenisNarkotikaOptions = [
-    'Sabu',
-    'Ganja',
-    'Ekstasi / Pil',
-    'Heroin',
-    'Tembakau Sintetis',
-    'Obat Keras',
-    'Lainnya',
-];
+const jenisNarkotikaOptions = computed(() => {
+    return props.dropdownOptions?.jenis_narkotika?.length
+        ? props.dropdownOptions.jenis_narkotika
+        : [
+            'Sabu',
+            'Ganja',
+            'Ekstasi / Pil',
+            'Heroin',
+            'Tembakau Sintetis',
+            'Obat Keras',
+            'Lainnya',
+          ];
+});
 
-const satuanOptions = [
-    'Gram',
-    'Kilogram (Kg)',
-    'Milliliter (ml)',
-    'Liter (L)',
-    'Unit',
-    'Paket',
-    'Pcs',
-    'Buah',
-    'Bungkus',
-    'Batang',
-    'Lembar',
-];
+const satuanOptions = computed(() => {
+    return props.dropdownOptions?.satuan?.length
+        ? props.dropdownOptions.satuan
+        : [
+            'Gram',
+            'Kilogram (Kg)',
+            'Milliliter (ml)',
+            'Liter (L)',
+            'Unit',
+            'Paket',
+            'Pcs',
+            'Buah',
+            'Bungkus',
+            'Batang',
+            'Lembar',
+          ];
+});
 
-const tempatPenyimpananOptions = [
-    'Gudang Barang Bukti Kejaksaan Negeri Banda Aceh',
-    'RUPBASAN',
-    'KEJATI'
-];
+const tempatPenyimpananOptions = computed(() => {
+    return props.dropdownOptions?.tempat_penyimpanan?.length
+        ? props.dropdownOptions.tempat_penyimpanan
+        : [
+            'Gudang Barang Bukti Kejaksaan Negeri Banda Aceh',
+            'RUPBASAN',
+            'KEJATI',
+          ];
+});
+
+const keteranganTahapOptions = computed(() => {
+    return props.dropdownOptions?.keterangan_tahap?.length
+        ? props.dropdownOptions.keterangan_tahap
+        : [
+            'Tahap Persidangan',
+            'Tahap II',
+            'Tahap Pelimpahan',
+          ];
+});
 
 const addBarangBukti = () => {
     formCase.value.barangBuktiList.push(createEmptyBarangBukti());

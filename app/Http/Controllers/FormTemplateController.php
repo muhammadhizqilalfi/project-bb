@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DropdownOption;
 use App\Models\FormTemplate;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -27,6 +28,16 @@ class FormTemplateController extends Controller
         return Inertia::render('Tabs/Form3AInput', [
             'form' => null,
             'caseData' => null,
+            'dropdownOptions' => $this->getDropdownOptionsForForm('3A'),
+        ]);
+    }
+
+    public function create3CWizard()
+    {
+        return Inertia::render('Tabs/Form3CInput', [
+            'form' => null,
+            'caseData' => null,
+            'dropdownOptions' => $this->getDropdownOptionsForForm('3C'),
         ]);
     }
 
@@ -40,7 +51,9 @@ class FormTemplateController extends Controller
             'case.satuanKerja' => 'required|string|max:255',
             'case.kategoriTindakPidana' => 'required|string|max:255',
             'case.noRegBendaSitaan' => 'required|string|max:255',
+            'case.tglPenerimaanBB' => 'nullable|string',
             'case.noRegPenyidikan' => 'required|string|max:255',
+            'case.tglRegPenyidikan' => 'nullable|string',
             'case.identitasTersangka' => 'required|string',
             'case.pasalDisangkakan' => 'required|string|max:255',
             'case.statusDiselesaikan' => 'required|string|max:255',
@@ -61,7 +74,9 @@ class FormTemplateController extends Controller
             'satuanKerja' => $validated['case']['satuanKerja'],
             'kategoriTindakPidana' => $validated['case']['kategoriTindakPidana'],
             'noRegBendaSitaan' => $validated['case']['noRegBendaSitaan'],
+            'tglPenerimaanBB' => $validated['case']['tglPenerimaanBB'] ?? '-',
             'noRegPenyidikan' => $validated['case']['noRegPenyidikan'],
+            'tglRegPenyidikan' => $validated['case']['tglRegPenyidikan'] ?? '-',
             'identitasTersangka' => $validated['case']['identitasTersangka'],
             'pasalDisangkakan' => $validated['case']['pasalDisangkakan'],
             'statusDiselesaikan' => $validated['case']['statusDiselesaikan'],
@@ -82,8 +97,6 @@ class FormTemplateController extends Controller
 
         return redirect('/laporan')->with('success', 'Form dan case berhasil disimpan');
     }
-
-
 
     public function edit3A(Request $request, string $id)
     {
@@ -106,6 +119,7 @@ class FormTemplateController extends Controller
         return Inertia::render('Tabs/Form3AInput', [
             'form' => $this->mapForm($form),
             'caseData' => $caseData,
+            'dropdownOptions' => $this->getDropdownOptionsForForm('3A'),
         ]);
     }
 
@@ -116,7 +130,9 @@ class FormTemplateController extends Controller
             'satuanKerja' => 'required|string|max:255',
             'kategoriTindakPidana' => 'required|string|max:255',
             'noRegBendaSitaan' => 'required|string|max:255',
+            'tglPenerimaanBB' => 'nullable|string',
             'noRegPenyidikan' => 'required|string|max:255',
+            'tglRegPenyidikan' => 'nullable|string',
             'identitasTersangka' => 'required|string',
             'pasalDisangkakan' => 'required|string|max:255',
             'statusDiselesaikan' => 'required|string|max:255',
@@ -154,13 +170,15 @@ class FormTemplateController extends Controller
         return redirect('/laporan')->with('success', 'Data perkara berhasil diperbarui');
     }
 
-        public function store3ACase(Request $request, string $id)
+    public function store3ACase(Request $request, string $id)
     {
         $validated = $request->validate([
             'satuanKerja' => 'required|string|max:255',
             'kategoriTindakPidana' => 'required|string|max:255',
             'noRegBendaSitaan' => 'required|string|max:255',
+            'tglPenerimaanBB' => 'nullable|string',
             'noRegPenyidikan' => 'required|string|max:255',
+            'tglRegPenyidikan' => 'nullable|string',
             'identitasTersangka' => 'required|string',
             'pasalDisangkakan' => 'required|string|max:255',
             'statusDiselesaikan' => 'required|string|max:255',
@@ -207,7 +225,6 @@ class FormTemplateController extends Controller
 
         $cases = $form->cases ?? [];
 
-        // Jika ada spesifikasi index dan case di form > 1, hapus elemen tersebut saja
         if ($caseIndex !== null && isset($cases[$caseIndex])) {
             array_splice($cases, (int) $caseIndex, 1);
 
@@ -220,7 +237,6 @@ class FormTemplateController extends Controller
             }
         }
 
-        // Jika hanya ada 1 case, hapus record form template utuh
         $form->delete();
         return redirect()->back()->with('success', 'Data perkara berhasil dihapus');
     }
@@ -284,6 +300,7 @@ class FormTemplateController extends Controller
         return Inertia::render('Tabs/Form3CInput', [
             'form' => $this->mapForm($form),
             'caseData' => array_merge($summary, ['id' => (string) $form->id]),
+            'dropdownOptions' => $this->getDropdownOptionsForForm('3C'),
         ]);
     }
 
@@ -339,6 +356,7 @@ class FormTemplateController extends Controller
         return Inertia::render('Tabs/Form3AInput', [
             'form' => $this->mapForm($this->findForm('3A', $id)),
             'caseData' => null,
+            'dropdownOptions' => $this->getDropdownOptionsForForm('3A'),
         ]);
     }
 
@@ -347,6 +365,7 @@ class FormTemplateController extends Controller
         return Inertia::render('Tabs/Form3CInput', [
             'form' => $this->mapForm($this->findForm('3C', $id)),
             'caseData' => null,
+            'dropdownOptions' => $this->getDropdownOptionsForForm('3C'),
         ]);
     }
 
@@ -394,6 +413,15 @@ class FormTemplateController extends Controller
         return redirect('/laporan')->with('success', 'Case 3C berhasil ditambahkan');
     }
 
+    private function getDropdownOptionsForForm(string $formType): array
+    {
+        return DropdownOption::whereIn('form_target', [$formType, 'Keduanya'])
+            ->get()
+            ->groupBy('category')
+            ->map(fn ($items) => $items->pluck('label')->values()->all())
+            ->toArray();
+    }
+
     private function getFormsByType(string $type): array
     {
         return FormTemplate::where('form_type', $this->normalizeFormType($type))
@@ -425,7 +453,6 @@ class FormTemplateController extends Controller
         ];
     }
 
-    // PEMETAAN RINGKASAN BARANG BUKTI BERDASARKAN JUMLAH UNIT HASIL INPUT USER
     private function mapLatestCase(FormTemplate $form): ?array
     {
         if (!$form->latest_case_summary || !is_array($form->latest_case_summary)) {
@@ -435,7 +462,6 @@ class FormTemplateController extends Controller
         $summary = $form->latest_case_summary;
         $bbList = $summary['barangBuktiList'] ?? [];
 
-        // Memetakan setiap barang bukti menggunakan JUMLAH UNIT & SATUAN asli yang diinput user
         $formattedBbList = array_map(function ($bb) {
             $jumlahInput = $bb['jumlah'] ?? $bb['jumlahSatuan'] ?? 0;
             $satuanInput = $bb['satuanNarkotika'] ?? $bb['satuan'] ?? $bb['jenisSatuan'] ?? '-';
@@ -448,7 +474,6 @@ class FormTemplateController extends Controller
             ]);
         }, $bbList);
 
-        // Menghitung total seluruh unit fisik dari barang bukti yang telah diinput
         $totalJumlahUnit = array_reduce($formattedBbList, function ($carry, $bb) {
             return $carry + ($bb['jumlah'] ?? 0);
         }, 0);
@@ -470,10 +495,6 @@ class FormTemplateController extends Controller
 
     private function formatSavedAt(mixed $value): ?string
     {
-        if ($value instanceof UTCDateTime) {
-            return $value->toDateTime()->format('d-m-Y H:i');
-        }
-
         if ($value instanceof \DateTimeInterface) {
             return $value->format('d-m-Y H:i');
         }
