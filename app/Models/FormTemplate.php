@@ -16,11 +16,13 @@ class FormTemplate extends Model
         'name',
         'month',
         'year',
+        'cases',
         'latest_case_summary',
         'latest_case_saved_at',
     ];
 
     protected $casts = [
+        'cases' => 'array',
         'latest_case_summary' => 'array',
         'latest_case_saved_at' => 'datetime',
     ];

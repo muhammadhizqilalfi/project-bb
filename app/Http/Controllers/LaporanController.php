@@ -13,6 +13,7 @@ class LaporanController extends Controller
         $formType = strtoupper($request->input('formType', '3A'));
         $month = (int) $request->input('month', now()->month);
         $year = (int) $request->input('year', now()->year);
+        $kategori = $request->input('kategori', 'ALL');
 
         // Fetch Form Template berdasarkan Tipe, Bulan, dan Tahun
         $formsQuery = FormTemplate::where('form_type', $formType)
@@ -27,7 +28,6 @@ class LaporanController extends Controller
             'form3c' => FormTemplate::where('form_type', '3C')->where('month', $month)->where('year', $year)->count(),
         ];
 
-        // Format data list perkara untuk preview tabel
         $cases = [];
         
         // Akumulator Massa Narkotika
@@ -37,38 +37,76 @@ class LaporanController extends Controller
 
         foreach ($formsQuery as $form) {
             $summary = $form->latest_case_summary ?? [];
-            $bbList = $summary['barangBuktiList'] ?? [];
+            $kategoriCase = $summary['kategoriTindakPidana'] ?? '';
 
-            $totalBeratCaseGram = 0;
-            $kategoriDominan = $summary['kategoriTindakPidana'] ?? 'NARKOTIKA GOL I';
+            // Filter berdasarkan Kategori Tindak Pidana jika tidak memilih 'ALL'
+            if ($kategori !== 'ALL' && strtoupper($kategoriCase) !== strtoupper($kategori)) {
+                continue;
+            }
 
-            foreach ($bbList as $bb) {
-                $jenis = strtolower($bb['jenisBarangBukti'] ?? $bb['namaBarangBukti'] ?? '');
-                $jumlah = (float) ($bb['jumlah'] ?? $bb['jumlahSatuan'] ?? 0);
-                $satuan = strtolower($bb['satuan'] ?? $bb['jenisSatuan'] ?? '');
+            $rawBbList = $summary['barangBuktiList'] ?? [];
 
-                // Konversi jumlah ke gram jika satuan Kg
-                $massaGram = $satuan === 'kilogram (kg)' || $satuan === 'kg' ? $jumlah * 1000 : $jumlah;
-                $totalBeratCaseGram += $massaGram;
+            // Memastikan daftar barang bukti memuat jumlah unit asli yang diisi saat input
+            $formattedBbList = array_map(function ($bb) {
+                return [
+                    'jenisBarangBukti' => $bb['jenisBarangBukti'] ?? $bb['uraianBarangBukti'] ?? '-',
+                    'uraianBarangBukti' => $bb['uraianBarangBukti'] ?? $bb['jenisBarangBukti'] ?? '-',
+                    'jumlah' => (float) ($bb['jumlah'] ?? $bb['jumlahSatuan'] ?? 0),
+                    'satuan' => $bb['satuan'] ?? $bb['jenisSatuan'] ?? '-',
+                    'tempatPenyimpanan' => $bb['tempatPenyimpanan'] ?? '-',
+                    'jenisNarkotika' => $bb['jenisNarkotika'] ?? null,
+                    'jumlahNarkotika' => isset($bb['jumlahNarkotika']) ? (float) $bb['jumlahNarkotika'] : null,
+                    'satuanNarkotika' => $bb['satuanNarkotika'] ?? null,
+                    'macamJenisKadar' => $bb['macamJenisKadar'] ?? null,
+                ];
+            }, $rawBbList);
 
-                // KALKULASI TOTAL OTOMATIS CARD NARKOTIKA
-                if (str_contains($jenis, 'sabu') || str_contains($jenis, 'meth')) {
+            // Hitung akumulasi ringkasan narkotika berdasarkan nilai jumlah & satuan hasil input
+            foreach ($formattedBbList as $bb) {
+                $jenisNarkotika = strtolower($bb['jenisNarkotika'] ?? $bb['uraianBarangBukti'] ?? '');
+                
+                // Utamakan jumlahNarkotika jika diisi, jika tidak gunakan jumlah unit fisik
+                $jumlahVal = $bb['jumlahNarkotika'] !== null ? $bb['jumlahNarkotika'] : $bb['jumlah'];
+                $satuanVal = strtolower($bb['satuanNarkotika'] ?? $bb['satuan'] ?? '');
+
+                // Konversi Kilogram ke Gram jika memilih satuan Kg
+                $massaGram = ($satuanVal === 'kilogram (kg)' || $satuanVal === 'kg') 
+                    ? $jumlahVal * 1000 
+                    : $jumlahVal;
+
+                if (str_contains($jenisNarkotika, 'sabu') || str_contains($jenisNarkotika, 'meth')) {
                     $sabuGram += $massaGram;
-                } elseif (str_contains($jenis, 'ganja') || str_contains($jenis, 'cannabis')) {
+                } elseif (str_contains($jenisNarkotika, 'ganja') || str_contains($jenisNarkotika, 'cannabis')) {
                     $ganjaGram += $massaGram;
-                } elseif (str_contains($jenis, 'ekstasi') || str_contains($jenis, 'inex') || str_contains($jenis, 'pil')) {
-                    $ekstasiPcs += $jumlah;
+                } elseif (str_contains($jenisNarkotika, 'ekstasi') || str_contains($jenisNarkotika, 'inex') || str_contains($jenisNarkotika, 'pil')) {
+                    $ekstasiPcs += $jumlahVal;
                 }
             }
 
             $cases[] = [
                 'id' => (string) $form->id,
-                'noReg' => $summary['noRegBendaSitaan'] ?? $summary['noRegPenyidikan'] ?? $form->name,
-                'namaTersangka' => $summary['identitasTersangka'] ?? '-',
-                'kategoriBarang' => strtoupper($kategoriDominan),
-                'beratGram' => $totalBeratCaseGram,
-                'statusKontrol' => !empty($summary['tglPelaksanaanPutusan']) ? 'Selesai (Siap Ekspor)' : 'Berjalan (Editable)',
-                'barangBuktiList' => $bbList,
+                'satuanKerja' => $summary['satuanKerja'] ?? $summary['kejaksaan'] ?? '-',
+                'kejaksaan' => $summary['kejaksaan'] ?? $summary['satuanKerja'] ?? '-',
+                'noRegBendaSitaan' => $summary['noRegBendaSitaan'] ?? $summary['noRegSitaan'] ?? '-',
+                'noRegSitaan' => $summary['noRegSitaan'] ?? $summary['noRegBendaSitaan'] ?? '-',
+                'noRegPenyidikan' => $summary['noRegPenyidikan'] ?? $summary['noRegSidik'] ?? '-',
+                'noRegSidik' => $summary['noRegSidik'] ?? $summary['noRegPenyidikan'] ?? '-',
+                'identitasTersangka' => $summary['identitasTersangka'] ?? '-',
+                'pasalDisangkakan' => $summary['pasalDisangkakan'] ?? $summary['pasalDidakwakan'] ?? '-',
+                'pasalDidakwakan' => $summary['pasalDidakwakan'] ?? $summary['pasalDisangkakan'] ?? '-',
+                'statusDiselesaikan' => $summary['statusDiselesaikan'] ?? '-',
+                'tglPelaksanaanPutusan' => $summary['tglPelaksanaanPutusan'] ?? '-',
+                'keterangan' => $summary['keterangan'] ?? '-',
+                'barangBuktiList' => $formattedBbList,
+
+                'sisaBulanLalu' => $summary['sisaBulanLalu'] ?? 0,
+                'masukBulanLaporan' => $summary['masukBulanLaporan'] ?? 0,
+                'jumlahBulanLaporan' => $summary['jumlahBulanLaporan'] ?? 0,
+                'sisaBulanLaporan' => $summary['sisaBulanLaporan'] ?? 0,
+                'tglPenerimaan' => $summary['tglPenerimaan'] ?? '-',
+                'noKepPengadilan' => $summary['noKepPengadilan'] ?? '-',
+                'tglKepPengadilan' => $summary['tglKepPengadilan'] ?? '-',
+                'amarPutusan' => $summary['amarPutusan'] ?? '-',
             ];
         }
 
@@ -77,6 +115,7 @@ class LaporanController extends Controller
                 'formType' => $formType,
                 'month' => $month,
                 'year' => $year,
+                'kategori' => $kategori,
             ],
             'counts' => $counts,
             'summaryNarkotika' => [
@@ -91,11 +130,14 @@ class LaporanController extends Controller
     public function exportPdf(Request $request)
     {
         $formType = $request->input('formType', '3A');
-        $ids = explode(',', $request->input('ids', ''));
+        $month = (int) $request->input('month', now()->month);
+        $year = (int) $request->input('year', now()->year);
 
-        $forms = FormTemplate::whereIn('id', $ids)->get();
+        $forms = FormTemplate::where('form_type', $formType)
+            ->where('month', $month)
+            ->where('year', $year)
+            ->get();
 
-        // Mengembalikan view khusus cetak / PDF generator (misal DomPDF/Snappy)
         return view('pdf.laporan-template', [
             'formType' => $formType,
             'forms' => $forms,

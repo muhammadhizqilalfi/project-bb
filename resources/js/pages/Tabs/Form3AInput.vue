@@ -9,7 +9,6 @@ import {
     ArrowLeft,
     Check,
     RotateCcw,
-    X,
     Plus,
     Trash2,
 } from 'lucide-vue-next';
@@ -24,18 +23,23 @@ type BarangBukti = {
     jumlah: number | string;
     uraianBarangBukti: string;
     tempatPenyimpanan: string;
-    jenisNarkotika?: string;
-    jumlahNarkotika?: string | number;
-    satuanNarkotika?: string;
+    jenisNarkotika: string;
+    jumlahNarkotika: string | number;
+    satuanNarkotika: string;
 };
 
 type SavedCase = {
+    id?: string;
     satuanKerja?: string;
+    kejaksaan?: string;
     kategoriTindakPidana?: string;
     noRegBendaSitaan?: string;
+    noRegSitaan?: string;
     noRegPenyidikan?: string;
+    noRegSidik?: string;
     identitasTersangka?: string;
     pasalDisangkakan?: string;
+    pasalDidakwakan?: string;
     statusDiselesaikan?: string;
     tglPelaksanaanPutusan?: string;
     keterangan?: string;
@@ -55,10 +59,16 @@ const props = defineProps({
         type: Object as PropType<FormItem | null>,
         default: null,
     },
+    // Prop tambahan saat mengedit data perkara existing dari Laporan
+    caseData: {
+        type: Object as PropType<SavedCase | null>,
+        default: null,
+    }
 });
 
-const isNewForm = computed(() => !props.form);
-const currentStep = ref(props.form ? 2 : 1);
+const isEditingCase = computed(() => !!props.caseData);
+const isNewForm = computed(() => !props.form && !props.caseData);
+const currentStep = ref(props.form || props.caseData ? 2 : 1);
 
 const formHeader = ref({
     name: props.form?.name || '',
@@ -83,17 +93,28 @@ const keteranganTahapOptions = [
     'Tahap Pelimpahan',
 ];
 
+// Inisialisasi Form dengan data existing (jika mode edit)
 const formCase = ref({
-    satuanKerja: DEFAULT_SATKER,
-    kategoriTindakPidana: '',
-    noRegBendaSitaan: '',
-    noRegPenyidikan: '',
-    identitasTersangka: '',
-    pasalDisangkakan: '',
-    statusDiselesaikan: 'Belum Selesai',
-    tglPelaksanaanPutusan: '',
-    keterangan: '',
-    barangBuktiList: [createEmptyBarangBukti()],
+    satuanKerja: props.caseData?.satuanKerja || props.caseData?.kejaksaan || DEFAULT_SATKER,
+    kategoriTindakPidana: props.caseData?.kategoriTindakPidana || '',
+    noRegBendaSitaan: props.caseData?.noRegBendaSitaan || props.caseData?.noRegSitaan || '',
+    noRegPenyidikan: props.caseData?.noRegPenyidikan || props.caseData?.noRegSidik || '',
+    identitasTersangka: props.caseData?.identitasTersangka || '',
+    pasalDisangkakan: props.caseData?.pasalDisangkakan || props.caseData?.pasalDidakwakan || '',
+    statusDiselesaikan: props.caseData?.statusDiselesaikan || '-',
+    tglPelaksanaanPutusan: props.caseData?.tglPelaksanaanPutusan || '',
+    keterangan: props.caseData?.keterangan || '',
+    barangBuktiList: props.caseData?.barangBuktiList && props.caseData.barangBuktiList.length > 0 
+        ? props.caseData.barangBuktiList.map(bb => ({
+            jenisBarangBukti: bb.jenisBarangBukti || 'Narkotika',
+            jumlah: bb.jumlah || 1,
+            uraianBarangBukti: bb.uraianBarangBukti || (bb as any).namaBarangBukti || '',
+            tempatPenyimpanan: bb.tempatPenyimpanan || '',
+            jenisNarkotika: bb.jenisNarkotika || '',
+            jumlahNarkotika: bb.jumlahNarkotika || '',
+            satuanNarkotika: bb.satuanNarkotika || (bb as any).satuan || '',
+          }))
+        : [createEmptyBarangBukti()],
 });
 
 const monthOptions = [
@@ -185,12 +206,17 @@ const submitForm = () => {
         tglPelaksanaanPutusan: formCase.value.tglPelaksanaanPutusan || '-',
     };
 
-    if (isNewForm.value) {
+    if (isEditingCase.value && props.caseData?.id) {
+        // Mode Update per Item
+        router.put(`/form3a/${props.caseData.id}`, casePayload);
+    } else if (isNewForm.value) {
+        // Mode Buat Baru
         router.post('/forms/3a/wizard', {
             header: formHeader.value,
             case: casePayload,
         });
     } else {
+        // Mode Tambah Case ke Form Existing
         router.post(`/form3a/${props.form?.id}/cases`, casePayload);
     }
 };
@@ -203,7 +229,7 @@ const resetCaseForm = () => {
         noRegPenyidikan: '',
         identitasTersangka: '',
         pasalDisangkakan: '',
-        statusDiselesaikan: 'Belum Selesai',
+        statusDiselesaikan: '-',
         tglPelaksanaanPutusan: '',
         keterangan: '',
         barangBuktiList: [createEmptyBarangBukti()],
@@ -212,7 +238,7 @@ const resetCaseForm = () => {
 </script>
 
 <template>
-    <Head :title="isNewForm ? 'Buat Form 3A Baru' : 'Tambah Case Form 3A'" />
+    <Head :title="isEditingCase ? 'Edit Case Form 3A' : (isNewForm ? 'Buat Form 3A Baru' : 'Tambah Case Form 3A')" />
 
     <AuthenticatedLayout userRole="karyawan" v-model:active-menu="activeMenu">
         <div class="mx-auto w-full space-y-8 p-8">
@@ -225,7 +251,9 @@ const resetCaseForm = () => {
                         class="text-2xl font-extrabold tracking-tight text-slate-900"
                     >
                         {{
-                            isNewForm
+                            isEditingCase
+                                ? 'Edit Data Case Form 3A'
+                                : isNewForm
                                 ? 'Buat Form 3A & Input Case'
                                 : 'Tambah Case Baru'
                         }}
@@ -239,10 +267,10 @@ const resetCaseForm = () => {
                 <button
                     type="button"
                     class="flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 px-3.5 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100"
-                    @click="router.get('/form3a')"
+                    @click="router.get('/laporan')"
                 >
                     <ArrowLeft class="h-4 w-4" />
-                    <span>Kembali ke Daftar</span>
+                    <span>Kembali ke Laporan</span>
                 </button>
             </div>
 
@@ -323,7 +351,7 @@ const resetCaseForm = () => {
                 </div>
             </div>
 
-            <!-- BANNER FORM LAMA -->
+            <!-- BANNER EDIT/FORM EXISTING -->
             <div
                 v-if="!isNewForm"
                 class="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 p-4"
@@ -332,20 +360,15 @@ const resetCaseForm = () => {
                     <p
                         class="text-[11px] font-bold tracking-wider text-amber-800 uppercase"
                     >
-                        Menambahkan Case Untuk Form Existing:
+                        {{ isEditingCase ? 'Mengubah Data Perkara (Mode Edit):' : 'Menambahkan Case Untuk Form Existing:' }}
                     </p>
                     <p class="mt-0.5 text-sm font-extrabold text-slate-900">
-                        {{ form?.name }} (Periode:
-                        {{
-                            monthOptions.find((m) => m.value === form?.month)
-                                ?.label
-                        }}
-                        {{ form?.year }})
+                        {{ isEditingCase ? formCase.noRegBendaSitaan : `${form?.name} (Periode: ${monthOptions.find((m) => m.value === form?.month)?.label} ${form?.year})` }}
                     </p>
                 </div>
                 <span
                     class="rounded-full bg-amber-200 px-2.5 py-1 text-[10px] font-bold text-amber-900 uppercase"
-                    >Form Terkunci</span
+                    >{{ isEditingCase ? 'Mode Edit' : 'Form Terkunci' }}</span
                 >
             </div>
 
@@ -580,7 +603,7 @@ const resetCaseForm = () => {
                                         v-model="formCase.statusDiselesaikan"
                                         class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                                     >
-                                        <option value="Belum Selesai">-</option>
+                                        <option value="-">-</option>
                                     </select>
                                 </div>
                                 <div>
@@ -709,9 +732,9 @@ const resetCaseForm = () => {
                                 </select>
                             </div>
 
-                            <!-- BARIS 2: JUMLAH (ANGKA) & URAIAN/KETERANGAN BARANG BUKTI (TEXTAREA AUTOMATIC AUTO-EXPAND) -->
+                            <!-- BARIS 2: JUMLAH (ANGKA) & URAIAN/KETERANGAN BARANG BUKTI -->
                             <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
-                                <div class="sm:col-span-1">
+                                <div class="sm:col-span-2">
                                     <label
                                         class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
                                     >
@@ -728,7 +751,7 @@ const resetCaseForm = () => {
                                         class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs font-semibold text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                                     />
                                 </div>
-                                <div class="sm:col-span-11">
+                                <div class="sm:col-span-10">
                                     <label
                                         class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
                                     >
@@ -913,7 +936,11 @@ const resetCaseForm = () => {
                         >
                             <Save class="h-4 w-4" />
                             <span>{{
-                                isNewForm ? 'SIMPAN FORM & CASE' : 'SIMPAN CASE'
+                                isEditingCase
+                                    ? 'UPDATE CASE'
+                                    : isNewForm
+                                    ? 'SIMPAN FORM & CASE'
+                                    : 'SIMPAN CASE'
                             }}</span>
                         </button>
                     </div>
