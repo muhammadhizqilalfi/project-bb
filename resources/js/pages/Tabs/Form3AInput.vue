@@ -30,6 +30,7 @@ type BarangBukti = {
 
 type SavedCase = {
     id?: string;
+    case_index?: number;
     satuanKerja?: string;
     kejaksaan?: string;
     kategoriTindakPidana?: string;
@@ -94,7 +95,7 @@ const keteranganTahapOptions = [
 ];
 
 // Inisialisasi Form dengan data existing (jika mode edit)
-const formCase = ref({
+const formCase = ref<SavedCase & { barangBuktiList: BarangBukti[] }>({
     satuanKerja: props.caseData?.satuanKerja || props.caseData?.kejaksaan || DEFAULT_SATKER,
     kategoriTindakPidana: props.caseData?.kategoriTindakPidana || '',
     noRegBendaSitaan: props.caseData?.noRegBendaSitaan || props.caseData?.noRegSitaan || '',
@@ -174,6 +175,7 @@ const satuanOptions = [
 const tempatPenyimpananOptions = [
     'Gudang Barang Bukti Kejaksaan Negeri Banda Aceh',
     'RUPBASAN',
+    'KEJATI'
 ];
 
 const addBarangBukti = () => {
@@ -203,6 +205,7 @@ const goToStep1 = () => {
 const submitForm = () => {
     const casePayload = {
         ...formCase.value,
+        case_index: props.caseData?.case_index ?? formCase.value.case_index,
         tglPelaksanaanPutusan: formCase.value.tglPelaksanaanPutusan || '-',
     };
 

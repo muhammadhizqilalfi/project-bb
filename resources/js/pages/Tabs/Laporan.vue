@@ -126,7 +126,7 @@ const angkaKeTeks = (num: number): string => {
   return String(num);
 };
 
-// Format Jumlah + Terbilang (misal: "1 (Satu)" atau "3 (Tiga)")
+// Format Jumlah + Terbilang
 const formatJumlahTerbilang = (val: any): string => {
   if (val === undefined || val === null || val === '') return '';
   const num = typeof val === 'number' ? val : parseFloat(String(val).replace(/,/g, '.'));
@@ -135,6 +135,13 @@ const formatJumlahTerbilang = (val: any): string => {
     return `${num} (${angkaKeTeks(num)})`;
   }
   return `${num}`;
+};
+
+// Helper untuk mengambil tempat penyimpanan unik
+const getTempatPenyimpananUnik = (list?: BarangBuktiItem[]): string[] => {
+  if (!list || list.length === 0) return ['-'];
+  const locations = list.map(bb => bb.tempatPenyimpanan?.trim() || '-');
+  return Array.from(new Set(locations));
 };
 
 // Trigger Reload saat Filter Berubah
@@ -155,7 +162,6 @@ const changeFormTab = (type: '3A' | '3B' | '3C') => {
   applyFilters();
 };
 
-// Export Handler Berdasarkan Form & Periode
 const exportFormPdf = () => {
   window.open(
     `/laporan/export-pdf?formType=${selectedForm.value}&month=${selectedMonth.value}&year=${selectedYear.value}&kategori=${selectedKategori.value}`,
@@ -163,7 +169,6 @@ const exportFormPdf = () => {
   );
 };
 
-// Handler Edit Case
 const editCase = (id: string, index?: number) => {
   const query = index !== undefined ? `?index=${index}` : '';
   if (selectedForm.value === '3A') {
@@ -173,7 +178,6 @@ const editCase = (id: string, index?: number) => {
   }
 };
 
-// Handler Hapus Case
 const deleteCase = (id: string, index?: number) => {
   if (confirm('Apakah Anda yakin ingin menghapus data perkara ini?')) {
     const query = index !== undefined ? `?index=${index}` : '';
@@ -183,7 +187,6 @@ const deleteCase = (id: string, index?: number) => {
   }
 };
 
-// Helper Format Gram ke Kg
 const formatKg = (gram: number) => {
   if (!gram) return '0.0';
   return (gram / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
@@ -207,7 +210,6 @@ const formatKg = (gram: number) => {
           </p>
         </div>
 
-        <!-- FILTER BAR (TINDAK PIDANA & PERIODE BULAN/TAHUN) -->
         <div class="flex flex-wrap items-center gap-3 bg-white p-2 rounded-xl shadow-xs border border-slate-200">
           <div class="flex items-center gap-2 px-2 text-slate-500 border-r border-slate-200">
             <Filter class="w-4 h-4 text-slate-600" />
@@ -244,7 +246,7 @@ const formatKg = (gram: number) => {
         </div>
       </div>
 
-      <!-- SUMMARY CARDS (KHUSUS NARKOTIKA PERIODIK) -->
+      <!-- SUMMARY CARDS -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div class="bg-white rounded-xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div class="flex items-center gap-4">
@@ -369,7 +371,6 @@ const formatKg = (gram: number) => {
                 <th class="p-3">Keterangan</th>
                 <th class="p-3 w-20">Aksi</th>
               </tr>
-              <!-- BARIS NOMOR KOLOM RESMI (1 - 11) -->
               <tr class="bg-slate-100 divide-x divide-slate-300 text-[10px] text-slate-500 font-semibold border-b border-slate-300">
                 <td class="p-1">1</td>
                 <td class="p-1">2</td>
@@ -387,63 +388,56 @@ const formatKg = (gram: number) => {
             </thead>
             <tbody class="divide-y divide-slate-200 text-slate-800">
               <tr v-for="(item, idx) in cases" :key="item.id" class="hover:bg-slate-50 transition-colors divide-x divide-slate-200">
-                <td class="p-3 text-center font-bold">{{ idx + 1 }}</td>
-                <!-- 2. Satuan Kerja -->
-                <td class="p-3 font-semibold">{{ item.satuanKerja || item.kejaksaan || '-' }}</td>
-                <!-- 3. Register Benda Sitaan Barang Bukti -->
-                <td class="p-3 font-bold text-slate-900">{{ item.noRegBendaSitaan || item.noRegSitaan || '-' }}</td>
-                <!-- 4. Register Tahap Penyidikan -->
-                <td class="p-3">{{ item.noRegPenyidikan || item.noRegSidik || '-' }}</td>
+                <td class="p-3 font-bold text-center">{{ idx + 1 }}</td>
+                <td class="p-3 font-bold text-center">{{ item.satuanKerja || item.kejaksaan || '-' }}</td>
+                <td class="p-3 text-center text-slate-900">{{ item.noRegBendaSitaan || item.noRegSitaan || '-' }}</td>
+                <td class="p-3 text-center">{{ item.noRegPenyidikan || item.noRegSidik || '-' }}</td>
                 
-                <!-- 5. Uraian Benda Sitaan (Format: - Jumlah (Terbilang) Nama Barang) -->
+                <!-- 5. Uraian Benda Sitaan -->
                 <td class="p-3">
-                  <div class="space-y-2">
-                    <div v-for="(bb, bIdx) in (item.barangBuktiList || [])" :key="bIdx">
-                      <div class="text-slate-900">
-                        - {{ formatJumlahTerbilang(bb.jumlah || bb.jumlahNarkotika || bb.jumlahSatuan || 1) }} {{ (bb as BarangBuktiItem).uraianBarangBukti || (bb as BarangBuktiItem).namaBarangBukti || (bb as BarangBuktiItem).jenisBarangBukti || 'BB' }}
-                      </div>
-                      <div v-if="(bb as BarangBuktiItem).ukuranDetail" class="text-slate-500 text-[10px] mt-0.5">Detail/Ukuran: {{ (bb as BarangBuktiItem).ukuranDetail }}</div>
+                  <div class="space-y-8 w-sm">
+                    <div 
+                      v-for="(bb, bIdx) in (item.barangBuktiList || [])" 
+                      :key="bIdx"
+                      class="text-slate-900 whitespace-normal break-words"
+                    >
+                      - {{ formatJumlahTerbilang(bb.jumlah || bb.jumlahNarkotika || bb.jumlahSatuan || 1) }} {{ (bb as BarangBuktiItem).uraianBarangBukti || (bb as BarangBuktiItem).namaBarangBukti || (bb as BarangBuktiItem).jenisBarangBukti || 'BB' }}
                     </div>
                   </div>
                 </td>
 
                 <!-- 6. Tempat Penyimpanan -->
-                <td class="p-3">
-                  <div v-for="(bb, bIdx) in (item.barangBuktiList || [])" :key="bIdx" class="text-[11px]">
-                    {{ (bb as BarangBuktiItem).tempatPenyimpanan || '-' }}
+                <td class="p-3 text-center">
+                  <div class="space-y-5">
+                    <div 
+                      v-for="(gudang, gIdx) in getTempatPenyimpananUnik(item.barangBuktiList)" 
+                      :key="gIdx" 
+                      class="text-[11px] font-medium text-slate-800"
+                    >
+                      {{ gudang }}
+                    </div>
                   </div>
                 </td>
                 
-                <!-- 7. Identitas Tersangka / Terdakwa -->
-                <td class="p-3 font-semibold">{{ item.identitasTersangka || '-' }}</td>
-                <!-- 8. Pasal yang disangkakan / didakwakan -->
+                <td class="p-3">- {{ item.identitasTersangka || '-' }}</td>
                 <td class="p-3">{{ item.pasalDisangkakan || item.pasalDidakwakan || '-' }}</td>
                 
-                <!-- 9. Diselesaikan (Menampilkan persis pilihan option atau '-') -->
                 <td class="p-3 text-center">
-                  <span 
-                    v-if="item.statusDiselesaikan && item.statusDiselesaikan !== '-'" 
-                    class="inline-block"
-                  >
+                  <span v-if="item.statusDiselesaikan && item.statusDiselesaikan !== '-'" class="inline-block">
                     {{ item.statusDiselesaikan }}
                   </span>
-                  <span v-else class="text-slate-400 font-bold">
-                    -
-                  </span>
+                  <span v-else class="text-slate-400 font-bold">-</span>
                 </td>
 
-                <!-- 10. Tanggal Pelaksanaan Putusan Hakim & Ijin Jaksa Agung -->
                 <td class="p-3 text-center">{{ item.tglPelaksanaanPutusan || '-' }}</td>
-                <!-- 11. Keterangan -->
                 <td class="p-3 text-slate-600">{{ item.keterangan || '-' }}</td>
                 
-                <!-- AKSI (EDIT & HAPUS) -->
                 <td class="p-3 text-center">
-                  <div class="flex items-center justify-center gap-1">
-                    <button type="button" @click="editCase(item.id, (item as any).case_index)">
-                      <Edit3 class="w-4 h-4" />
+                  <div class="flex items-center justify-center gap-2">
+                    <button class="p-2 rounded-md hover:bg-blue-200 hover:text-blue-700" type="button" @click="editCase(item.id, (item as any).case_index)">
+                      <Edit3 class="w-4 h-4 hover:text-blue-500" />
                     </button>
-                    <button type="button" @click="deleteCase(item.id, (item as any).case_index)">
+                    <button class="p-2 rounded-md hover:bg-red-200 hover:text-red-700" type="button" @click="deleteCase(item.id, (item as any).case_index)">
                       <Trash2 class="w-4 h-4" />
                     </button>
                   </div>
@@ -539,9 +533,14 @@ const formatKg = (gram: number) => {
                 <td class="p-3 text-center font-bold">{{ idx + 1 }}</td>
                 <td class="p-3 font-semibold">{{ item.kejaksaan || item.satuanKerja || '-' }}</td>
                 
+                <!-- 3. Jenis Barang Bukti (Tanpa garis pemisah) -->
                 <td class="p-3">
-                  <div class="space-y-1">
-                    <div v-for="(bb, bIdx) in (item.barangBuktiList || [])" :key="bIdx" class="font-bold text-slate-900">
+                  <div class="space-y-1.5">
+                    <div 
+                      v-for="(bb, bIdx) in (item.barangBuktiList || [])" 
+                      :key="bIdx" 
+                      class="font-bold text-slate-900"
+                    >
                       - {{ (bb as BarangBuktiItem).jenisBarangBukti || '-' }}
                     </div>
                   </div>
@@ -554,27 +553,53 @@ const formatKg = (gram: number) => {
                   <div class="text-[10px] text-slate-500">Tgl: {{ item.tglPenerimaan || '-' }}</div>
                 </td>
 
+                <!-- 6. Macam Jenis Kadar -->
                 <td class="p-3">
-                  <div v-for="(bb, bIdx) in (item.barangBuktiList || [])" :key="bIdx" class="text-[11px] text-slate-700">
-                    {{ (bb as BarangBuktiItem).macamJenisKadar || '-' }}
+                  <div class="space-y-1.5">
+                    <div 
+                      v-for="(bb, bIdx) in (item.barangBuktiList || [])" 
+                      :key="bIdx" 
+                      class="text-[11px] text-slate-700"
+                    >
+                      {{ (bb as BarangBuktiItem).macamJenisKadar || '-' }}
+                    </div>
                   </div>
                 </td>
 
+                <!-- 7. Jumlah Satuan -->
                 <td class="p-3 text-right font-extrabold text-blue-700">
-                  <div v-for="(bb, bIdx) in (item.barangBuktiList || [])" :key="bIdx">
-                    {{ formatJumlahTerbilang((bb as BarangBuktiItem).jumlahSatuan) || '-' }}
+                  <div class="space-y-1.5">
+                    <div 
+                      v-for="(bb, bIdx) in (item.barangBuktiList || [])" 
+                      :key="bIdx"
+                    >
+                      {{ formatJumlahTerbilang((bb as BarangBuktiItem).jumlahSatuan) || '-' }}
+                    </div>
                   </div>
                 </td>
 
+                <!-- 8. Jenis Satuan -->
                 <td class="p-3 text-center font-medium">
-                  <div v-for="(bb, bIdx) in (item.barangBuktiList || [])" :key="bIdx">
-                    {{ (bb as BarangBuktiItem).jenisSatuan || '-' }}
+                  <div class="space-y-1.5">
+                    <div 
+                      v-for="(bb, bIdx) in (item.barangBuktiList || [])" 
+                      :key="bIdx"
+                    >
+                      {{ (bb as BarangBuktiItem).jenisSatuan || '-' }}
+                    </div>
                   </div>
                 </td>
 
-                <td class="p-3">
-                  <div v-for="(bb, bIdx) in (item.barangBuktiList || [])" :key="bIdx" class="text-[11px]">
-                    {{ (bb as BarangBuktiItem).tempatPenyimpanan || '-' }}
+                <!-- 9. Tempat Penyimpanan (Hanya Unik, Tanpa Garis Pemisah) -->
+                <td class="p-3 text-center">
+                  <div class="space-y-1.5">
+                    <div 
+                      v-for="(gudang, gIdx) in getTempatPenyimpananUnik(item.barangBuktiList)" 
+                      :key="gIdx" 
+                      class="text-[11px] font-medium text-slate-800"
+                    >
+                      {{ gudang }}
+                    </div>
                   </div>
                 </td>
 
