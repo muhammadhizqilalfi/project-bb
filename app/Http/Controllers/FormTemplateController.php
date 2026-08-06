@@ -51,7 +51,7 @@ class FormTemplateController extends Controller
             'case.satuanKerja' => 'required|string|max:255',
             'case.kategoriTindakPidana' => 'required|string|max:255',
             'case.noRegBendaSitaan' => 'required|string|max:255',
-            'case.tglPenerimaanBB' => 'nullable|string',
+            'case.tglPenerimaan' => 'nullable|string',
             'case.noRegPenyidikan' => 'required|string|max:255',
             'case.tglRegPenyidikan' => 'nullable|string',
             'case.identitasTersangka' => 'required|string',
@@ -74,7 +74,7 @@ class FormTemplateController extends Controller
             'satuanKerja' => $validated['case']['satuanKerja'],
             'kategoriTindakPidana' => $validated['case']['kategoriTindakPidana'],
             'noRegBendaSitaan' => $validated['case']['noRegBendaSitaan'],
-            'tglPenerimaanBB' => $validated['case']['tglPenerimaanBB'] ?? '-',
+            'tglPenerimaan' => $validated['case']['tglPenerimaan'] ?? '-',
             'noRegPenyidikan' => $validated['case']['noRegPenyidikan'],
             'tglRegPenyidikan' => $validated['case']['tglRegPenyidikan'] ?? '-',
             'identitasTersangka' => $validated['case']['identitasTersangka'],
@@ -130,7 +130,7 @@ class FormTemplateController extends Controller
             'satuanKerja' => 'required|string|max:255',
             'kategoriTindakPidana' => 'required|string|max:255',
             'noRegBendaSitaan' => 'required|string|max:255',
-            'tglPenerimaanBB' => 'nullable|string',
+            'tglPenerimaan' => 'nullable|string',
             'noRegPenyidikan' => 'required|string|max:255',
             'tglRegPenyidikan' => 'nullable|string',
             'identitasTersangka' => 'required|string',
@@ -160,7 +160,7 @@ class FormTemplateController extends Controller
         } else {
             $cases[] = $validated;
         }
-
+        
         $form->update([
             'cases' => $cases,
             'latest_case_summary' => $validated,
@@ -176,7 +176,7 @@ class FormTemplateController extends Controller
             'satuanKerja' => 'required|string|max:255',
             'kategoriTindakPidana' => 'required|string|max:255',
             'noRegBendaSitaan' => 'required|string|max:255',
-            'tglPenerimaanBB' => 'nullable|string',
+            'tglPenerimaan' => 'nullable|string',
             'noRegPenyidikan' => 'required|string|max:255',
             'tglRegPenyidikan' => 'nullable|string',
             'identitasTersangka' => 'required|string',
@@ -241,6 +241,10 @@ class FormTemplateController extends Controller
         return redirect()->back()->with('success', 'Data perkara berhasil dihapus');
     }
 
+    // ==========================================
+    // PERBAIKAN FORM 3C
+    // ==========================================
+
     public function store3CWizard(Request $request)
     {
         $validated = $request->validate([
@@ -248,33 +252,33 @@ class FormTemplateController extends Controller
             'header.month' => 'required|integer|min:1|max:12',
             'header.year' => 'required|integer|min:2000|max:2100',
 
-            'case.kejaksaan' => 'required|string|max:255',
+            'case.satuanKerja' => 'required|string|max:255',
             'case.kategoriTindakPidana' => 'required|string|max:255',
             'case.pasalDidakwakan' => 'required|string|max:255',
             'case.noRegBendaSitaan' => 'required|string|max:255',
-            'case.tglPenerimaan' => 'required|date',
+            'case.tglPenerimaan' => 'nullable|string',
             'case.noKepPengadilan' => 'required|string|max:255',
-            'case.tglKepPengadilan' => 'required|date',
-            'case.amarPutusan' => 'required|string',
-            'case.tglPelaksanaanPutusan' => 'nullable|date',
+            'case.tglKepPengadilan' => 'nullable|string',
+            'case.tglPelaksanaanPutusan' => 'nullable|string',
 
             'case.barangBuktiList' => 'required|array|min:1',
-            'case.barangBuktiList.*.jenisBarangBukti' => 'required|string|max:255',
-            'case.barangBuktiList.*.macamJenisKadar' => 'required|string',
             'case.barangBuktiList.*.jumlahSatuan' => 'required|numeric',
+            'case.barangBuktiList.*.uraianBarangBukti' => 'required|string',
             'case.barangBuktiList.*.jenisSatuan' => 'required|string|max:255',
+            'case.barangBuktiList.*.macamJenisKadar' => 'required|string',
+            'case.barangBuktiList.*.amarPutusan' => 'required|string|max:255',
+            'case.barangBuktiList.*.uraianPutusan' => 'nullable|string',
             'case.barangBuktiList.*.tempatPenyimpanan' => 'required|string|max:255',
         ]);
 
         $caseData = [
-            'kejaksaan' => $validated['case']['kejaksaan'],
+            'satuanKerja' => $validated['case']['satuanKerja'],
             'kategoriTindakPidana' => $validated['case']['kategoriTindakPidana'],
             'pasalDidakwakan' => $validated['case']['pasalDidakwakan'],
             'noRegBendaSitaan' => $validated['case']['noRegBendaSitaan'],
-            'tglPenerimaan' => $validated['case']['tglPenerimaan'],
+            'tglPenerimaan' => $validated['case']['tglPenerimaan'] ?? '-',
             'noKepPengadilan' => $validated['case']['noKepPengadilan'],
-            'tglKepPengadilan' => $validated['case']['tglKepPengadilan'],
-            'amarPutusan' => $validated['case']['amarPutusan'],
+            'tglKepPengadilan' => $validated['case']['tglKepPengadilan'] ?? '-',
             'tglPelaksanaanPutusan' => $validated['case']['tglPelaksanaanPutusan'] ?? null,
             'barangBuktiList' => $validated['case']['barangBuktiList'],
         ];
@@ -307,21 +311,22 @@ class FormTemplateController extends Controller
     public function update3C(Request $request, string $id)
     {
         $validated = $request->validate([
-            'kejaksaan' => 'required|string|max:255',
+            'satuanKerja' => 'required|string|max:255',
             'kategoriTindakPidana' => 'required|string|max:255',
             'pasalDidakwakan' => 'required|string|max:255',
             'noRegBendaSitaan' => 'required|string|max:255',
-            'tglPenerimaan' => 'required|date',
+            'tglPenerimaan' => 'nullable|string',
             'noKepPengadilan' => 'required|string|max:255',
-            'tglKepPengadilan' => 'required|date',
-            'amarPutusan' => 'required|string',
-            'tglPelaksanaanPutusan' => 'nullable|date',
+            'tglKepPengadilan' => 'nullable|string',
+            'tglPelaksanaanPutusan' => 'nullable|string',
 
             'barangBuktiList' => 'required|array|min:1',
-            'barangBuktiList.*.jenisBarangBukti' => 'required|string|max:255',
-            'barangBuktiList.*.macamJenisKadar' => 'required|string',
             'barangBuktiList.*.jumlahSatuan' => 'required|numeric',
+            'barangBuktiList.*.uraianBarangBukti' => 'required|string',
             'barangBuktiList.*.jenisSatuan' => 'required|string|max:255',
+            'barangBuktiList.*.macamJenisKadar' => 'required|string',
+            'barangBuktiList.*.amarPutusan' => 'required|string|max:255',
+            'barangBuktiList.*.uraianPutusan' => 'nullable|string',
             'barangBuktiList.*.tempatPenyimpanan' => 'required|string|max:255',
         ]);
 
@@ -341,6 +346,51 @@ class FormTemplateController extends Controller
         ]);
 
         return redirect('/laporan')->with('success', 'Data perkara 3C berhasil diperbarui');
+    }
+
+    public function store3CCase(Request $request, string $id)
+    {
+        $validated = $request->validate([
+            'satuanKerja' => 'required|string|max:255',
+            'kategoriTindakPidana' => 'required|string|max:255',
+            'pasalDidakwakan' => 'required|string|max:255',
+            'noRegBendaSitaan' => 'required|string|max:255',
+            'tglPenerimaan' => 'nullable|string',
+            'noKepPengadilan' => 'required|string|max:255',
+            'tglKepPengadilan' => 'nullable|string',
+            'tglPelaksanaanPutusan' => 'nullable|string',
+
+            'barangBuktiList' => 'required|array|min:1',
+            'barangBuktiList.*.jumlahSatuan' => 'required|numeric',
+            'barangBuktiList.*.uraianBarangBukti' => 'required|string',
+            'barangBuktiList.*.jenisSatuan' => 'required|string|max:255',
+            'barangBuktiList.*.macamJenisKadar' => 'required|string',
+            'barangBuktiList.*.amarPutusan' => 'required|string|max:255',
+            'barangBuktiList.*.uraianPutusan' => 'nullable|string',
+            'barangBuktiList.*.tempatPenyimpanan' => 'required|string|max:255',
+        ]);
+
+        $form = $this->findForm('3C', $id);
+
+        $existingCases = $form->cases;
+
+        if (empty($existingCases) && !empty($form->latest_case_summary)) {
+            $existingCases = [$form->latest_case_summary];
+        }
+
+        if (!is_array($existingCases)) {
+            $existingCases = [];
+        }
+
+        $existingCases[] = $validated;
+
+        $form->update([
+            'cases' => $existingCases,
+            'latest_case_summary' => $validated,
+            'latest_case_saved_at' => now(),
+        ]);
+
+        return redirect('/laporan')->with('success', 'Case 3C berhasil ditambahkan');
     }
 
     public function destroy3C(string $id)
@@ -367,50 +417,6 @@ class FormTemplateController extends Controller
             'caseData' => null,
             'dropdownOptions' => $this->getDropdownOptionsForForm('3C'),
         ]);
-    }
-
-    public function store3CCase(Request $request, string $id)
-    {
-        $validated = $request->validate([
-            'kejaksaan' => 'required|string|max:255',
-            'kategoriTindakPidana' => 'required|string|max:255',
-            'pasalDidakwakan' => 'required|string|max:255',
-            'noRegBendaSitaan' => 'required|string|max:255',
-            'tglPenerimaan' => 'required|date',
-            'noKepPengadilan' => 'required|string|max:255',
-            'tglKepPengadilan' => 'required|date',
-            'amarPutusan' => 'required|string',
-            'tglPelaksanaanPutusan' => 'nullable|date',
-
-            'barangBuktiList' => 'required|array|min:1',
-            'barangBuktiList.*.jenisBarangBukti' => 'required|string|max:255',
-            'barangBuktiList.*.macamJenisKadar' => 'required|string',
-            'barangBuktiList.*.jumlahSatuan' => 'required|numeric',
-            'barangBuktiList.*.jenisSatuan' => 'required|string|max:255',
-            'barangBuktiList.*.tempatPenyimpanan' => 'required|string|max:255',
-        ]);
-
-        $form = $this->findForm('3C', $id);
-
-        $existingCases = $form->cases;
-
-        if (empty($existingCases) && !empty($form->latest_case_summary)) {
-            $existingCases = [$form->latest_case_summary];
-        }
-
-        if (!is_array($existingCases)) {
-            $existingCases = [];
-        }
-
-        $existingCases[] = $validated;
-
-        $form->update([
-            'cases' => $existingCases,
-            'latest_case_summary' => $validated,
-            'latest_case_saved_at' => now(),
-        ]);
-
-        return redirect('/laporan')->with('success', 'Case 3C berhasil ditambahkan');
     }
 
     private function getDropdownOptionsForForm(string $formType): array
@@ -479,15 +485,15 @@ class FormTemplateController extends Controller
         }, 0);
 
         return [
-            'satuanKerja' => $summary['satuanKerja'] ?? $summary['kejaksaan'] ?? '-',
+            'satuanKerja' => $summary['satuanKerja'] ?? '-',
             'kategoriTindakPidana' => $summary['kategoriTindakPidana'] ?? '-',
             'jenisBarangBukti' => $formattedBbList[0]['jenisBarangBukti'] ?? $formattedBbList[0]['uraianBarangBukti'] ?? '-',
             'noRegBendaSitaan' => $summary['noRegBendaSitaan'] ?? '-',
             'noRegPenyidikan' => $summary['noRegPenyidikan'] ?? '-',
             'jumlah' => $totalJumlahUnit > 0 ? $totalJumlahUnit : ($summary['jumlah'] ?? 0),
             'satuan' => $formattedBbList[0]['satuan'] ?? '-',
-            'statusDiselesaikan' => $summary['statusDiselesaikan'] ?? $summary['amarPutusan'] ?? '-',
-            'amarPutusan' => $summary['amarPutusan'] ?? '-',
+            'statusDiselesaikan' => $summary['statusDiselesaikan'] ?? $formattedBbList[0]['amarPutusan'] ?? '-',
+            'amarPutusan' => $formattedBbList[0]['amarPutusan'] ?? '-',
             'barangBuktiList' => $formattedBbList,
             'savedAt' => $this->formatSavedAt($form->latest_case_saved_at),
         ];

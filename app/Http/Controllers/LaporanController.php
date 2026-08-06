@@ -101,13 +101,10 @@ class LaporanController extends Controller
 
                 $cases[] = [
                     'id' => (string) $form->id,
-                    'case_index' => $caseIndex, // Kirimkan indeks spesifik case
-                    'satuanKerja' => $summary['satuanKerja'] ?? $summary['kejaksaan'] ?? '-',
-                    'kejaksaan' => $summary['kejaksaan'] ?? $summary['satuanKerja'] ?? '-',
-                    'noRegBendaSitaan' => $summary['noRegBendaSitaan'] ?? $summary['noRegSitaan'] ?? '-',
-                    'noRegSitaan' => $summary['noRegSitaan'] ?? $summary['noRegBendaSitaan'] ?? '-',
-                    'noRegPenyidikan' => $summary['noRegPenyidikan'] ?? $summary['noRegSidik'] ?? '-',
-                    'noRegSidik' => $summary['noRegSidik'] ?? $summary['noRegPenyidikan'] ?? '-',
+                    'case_index' => $caseIndex,
+                    'satuanKerja' => $summary['satuanKerja'] ?? '-',
+                    'noRegBendaSitaan' => $summary['noRegBendaSitaan'] ?? '-',
+                    'noRegPenyidikan' => $summary['noRegPenyidikan'] ?? '-',
                     'identitasTersangka' => $summary['identitasTersangka'] ?? '-',
                     'pasalDisangkakan' => $summary['pasalDisangkakan'] ?? $summary['pasalDidakwakan'] ?? '-',
                     'pasalDidakwakan' => $summary['pasalDidakwakan'] ?? $summary['pasalDisangkakan'] ?? '-',
@@ -121,6 +118,7 @@ class LaporanController extends Controller
                     'jumlahBulanLaporan' => $summary['jumlahBulanLaporan'] ?? 0,
                     'sisaBulanLaporan' => $summary['sisaBulanLaporan'] ?? 0,
                     'tglPenerimaan' => $summary['tglPenerimaan'] ?? '-',
+                    'tglRegPenyidikan' => $summary['tglRegPenyidikan'] ?? '-',
                     'noKepPengadilan' => $summary['noKepPengadilan'] ?? '-',
                     'tglKepPengadilan' => $summary['tglKepPengadilan'] ?? '-',
                     'amarPutusan' => $summary['amarPutusan'] ?? '-',

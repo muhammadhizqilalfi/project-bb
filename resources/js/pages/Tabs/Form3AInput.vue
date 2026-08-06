@@ -32,13 +32,10 @@ type SavedCase = {
     id?: string;
     case_index?: number;
     satuanKerja?: string;
-    kejaksaan?: string;
     kategoriTindakPidana?: string;
     noRegBendaSitaan?: string;
-    noRegSitaan?: string;
-    tglPenerimaanBB?: string;
+    tglPenerimaan?: string;
     noRegPenyidikan?: string;
-    noRegSidik?: string;
     tglRegPenyidikan?: string;
     identitasTersangka?: string;
     pasalDisangkakan?: string;
@@ -100,14 +97,13 @@ const DEFAULT_SATKER = 'Kejari Banda Aceh';
 const formCase = ref<SavedCase & { barangBuktiList: BarangBukti[] }>({
     satuanKerja:
         props.caseData?.satuanKerja ||
-        props.caseData?.kejaksaan ||
         DEFAULT_SATKER,
     kategoriTindakPidana: props.caseData?.kategoriTindakPidana || '',
     noRegBendaSitaan:
-        props.caseData?.noRegBendaSitaan || props.caseData?.noRegSitaan || '',
-    tglPenerimaanBB: props.caseData?.tglPenerimaanBB || '',
+        props.caseData?.noRegBendaSitaan || '',
+    tglPenerimaan: props.caseData?.tglPenerimaan || '',
     noRegPenyidikan:
-        props.caseData?.noRegPenyidikan || props.caseData?.noRegSidik || '',
+        props.caseData?.noRegPenyidikan || '',
     tglRegPenyidikan: props.caseData?.tglRegPenyidikan || '',
     identitasTersangka: props.caseData?.identitasTersangka || '',
     pasalDisangkakan:
@@ -158,13 +154,7 @@ const yearOptions = computed(() => {
 const kategoriPidanaOptions = computed(() => {
     return props.dropdownOptions?.kategori_pidana?.length
         ? props.dropdownOptions.kategori_pidana
-        : [
-              'KAMNEGTIBUM DAN TPUL',
-              'NARKOTIKA DAN ZAT ADITIF LAINNYA',
-              'OHARDA',
-              'TERORIS',
-              'KORUPSI',
-          ];
+        : ['KAMNEGTIBUM DAN TPUL','NARKOTIKA DAN ZAT ADITIF LAINNYA','OHARDA','TERORIS','KORUPSI',];
 });
 
 const jenisBbCategoryOptions = ['Narkotika', 'Lainnya'];
@@ -172,43 +162,19 @@ const jenisBbCategoryOptions = ['Narkotika', 'Lainnya'];
 const jenisNarkotikaOptions = computed(() => {
     return props.dropdownOptions?.jenis_narkotika?.length
         ? props.dropdownOptions.jenis_narkotika
-        : [
-              'Sabu',
-              'Ganja',
-              'Ekstasi / Pil',
-              'Heroin',
-              'Tembakau Sintetis',
-              'Obat Keras',
-              'Lainnya',
-          ];
+        : ['Sabu','Ganja','Ekstasi / Pil','Heroin','Tembakau Sintetis','Obat Keras','Lainnya',];
 });
 
 const satuanOptions = computed(() => {
     return props.dropdownOptions?.satuan?.length
         ? props.dropdownOptions.satuan
-        : [
-              'Gram',
-              'Kilogram (Kg)',
-              'Milliliter (ml)',
-              'Liter (L)',
-              'Unit',
-              'Paket',
-              'Pcs',
-              'Buah',
-              'Bungkus',
-              'Batang',
-              'Lembar',
-          ];
+        : ['Gram','Kilogram (Kg)','Milliliter (ml)','Liter (L)','Unit','Paket','Pcs','Buah','Bungkus','Batang','Lembar',];
 });
 
 const tempatPenyimpananOptions = computed(() => {
     return props.dropdownOptions?.tempat_penyimpanan?.length
         ? props.dropdownOptions.tempat_penyimpanan
-        : [
-              'Gudang Barang Bukti Kejaksaan Negeri Banda Aceh',
-              'RUPBASAN',
-              'KEJATI',
-          ];
+        : ['Gudang Barang Bukti Kejaksaan Negeri Banda Aceh', 'RUPBASAN', 'KEJATI',];
 });
 
 const keteranganTahapOptions = computed(() => {
@@ -241,13 +207,14 @@ const goToStep1 = () => {
     }
 };
 
+
 const submitForm = () => {
     const casePayload = {
         ...formCase.value,
         case_index: props.caseData?.case_index ?? formCase.value.case_index,
-        tglPenerimaanBB: formCase.value.tglPenerimaanBB || '-',
-        tglRegPenyidikan: formCase.value.tglRegPenyidikan || '-',
-        tglPelaksanaanPutusan: formCase.value.tglPelaksanaanPutusan || '-',
+        tglPenerimaan: formCase.value.tglPenerimaan,
+        tglRegPenyidikan: formCase.value.tglRegPenyidikan,
+        tglPelaksanaanPutusan: formCase.value.tglPelaksanaanPutusan,
     };
 
     if (isEditingCase.value && props.caseData?.id) {
@@ -270,7 +237,7 @@ const resetCaseForm = () => {
         satuanKerja: DEFAULT_SATKER,
         kategoriTindakPidana: '',
         noRegBendaSitaan: '',
-        tglPenerimaanBB: '',
+        tglPenerimaan: '',
         noRegPenyidikan: '',
         tglRegPenyidikan: '',
         identitasTersangka: '',
@@ -598,7 +565,7 @@ const resetCaseForm = () => {
                                     v-model="formCase.noRegBendaSitaan"
                                     type="text"
                                     required
-                                    placeholder="RB–33/Bna/Eku.2/06/..."
+                                    placeholder="Cth. RB–33/Bna/Eku.2/06/..."
                                     class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                                 />
                             </div>
@@ -609,7 +576,7 @@ const resetCaseForm = () => {
                                     <span class="text-red-500">*</span></label
                                 >
                                 <input
-                                    v-model="formCase.tglPenerimaanBB"
+                                    v-model="formCase.tglPenerimaan"
                                     type="date"
                                     required
                                     class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
@@ -629,7 +596,7 @@ const resetCaseForm = () => {
                                     v-model="formCase.noRegPenyidikan"
                                     type="text"
                                     required
-                                    placeholder="DM–36/Bna/Eku.2/06/..."
+                                    placeholder="Cth. DM–36/Bna/Eku.2/06/..."
                                     class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                                 />
                             </div>
@@ -673,7 +640,7 @@ const resetCaseForm = () => {
                                 v-model="formCase.pasalDisangkakan"
                                 type="text"
                                 required
-                                placeholder="Pasal 114 ayat..."
+                                placeholder="Cth. Pasal 114 ayat..."
                                 class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                             />
                         </div>

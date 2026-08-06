@@ -2,15 +2,7 @@
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import AuthenticatedLayout from '@/Layouts/Layout.vue';
-import {
-  FileText,
-  Calendar,
-  Filter,
-  Edit3,
-  Trash2,
-  FileDown,
-  Package
-} from 'lucide-vue-next';
+import {FileText,Calendar,Filter,Edit3,Trash2,FileDown,Package} from 'lucide-vue-next';
 
 interface BarangBuktiItem {
   jenisBarangBukti?: string;
@@ -30,12 +22,8 @@ interface BarangBuktiItem {
 interface CaseItem {
   id: string;
   case_index?: number;
-  // Common / 3A Fields
   satuanKerja?: string;
-  kejaksaan?: string;
-  noRegSitaan?: string;
   noRegBendaSitaan?: string;
-  noRegSidik?: string;
   noRegPenyidikan?: string;
   identitasTersangka?: string;
   pasalDisangkakan?: string;
@@ -44,6 +32,8 @@ interface CaseItem {
   tglPelaksanaanPutusan?: string;
   keterangan?: string;
   barangBuktiList?: BarangBuktiItem[];
+  tglRegPenyidikan?: string;
+  tglPenerimaan?: string;
   
   // 3B Fields
   sisaBulanLalu?: number | string;
@@ -52,7 +42,6 @@ interface CaseItem {
   sisaBulanLaporan?: number | string;
 
   // 3C Fields
-  tglPenerimaan?: string;
   noKepPengadilan?: string;
   tglKepPengadilan?: string;
   amarPutusan?: string;
@@ -389,10 +378,10 @@ const formatKg = (gram: number) => {
             <tbody class="divide-y divide-slate-200 text-slate-800">
               <tr v-for="(item, idx) in cases" :key="item.id" class="hover:bg-slate-50 transition-colors divide-x divide-slate-200">
                 <td class="p-3 font-bold text-center">{{ idx + 1 }}</td>
-                <td class="p-3 font-bold text-center">{{ item.satuanKerja || item.kejaksaan || '-' }}</td>
-                <td class="p-3 text-center text-slate-900">{{ item.noRegBendaSitaan || item.noRegSitaan || '-' }}</td>
-                <td class="p-3 text-center">{{ item.noRegPenyidikan || item.noRegSidik || '-' }}</td>
-                
+                <td class="p-3 font-bold text-center">{{ item.satuanKerja || '-' }}</td>
+                <td class="p-3 text-center text-slate-900" >{{ item.noRegBendaSitaan }} {{ item.tglPenerimaan || '-' }}</td>
+                <td class="p-3 text-center">{{ item.noRegPenyidikan || '-' }} {{ item.tglRegPenyidikan || '-' }}</td>
+
                 <!-- 5. Uraian Benda Sitaan -->
                 <td class="p-3">
                   <div class="space-y-8 w-sm">
@@ -473,7 +462,7 @@ const formatKg = (gram: number) => {
             <tbody class="divide-y divide-slate-200 text-slate-800">
               <tr v-for="(item, idx) in cases" :key="item.id" class="hover:bg-slate-50 transition-colors divide-x divide-slate-200 text-center">
                 <td class="p-3 font-bold">{{ idx + 1 }}</td>
-                <td class="p-3 font-semibold text-left">{{ item.kejaksaan || item.satuanKerja || '-' }}</td>
+                <td class="p-3 font-semibold text-left">{{ item.satuanKerja || '-' }}</td>
                 <td class="p-3 font-medium">{{ item.sisaBulanLalu || '0' }}</td>
                 <td class="p-3 font-medium">{{ item.masukBulanLaporan || '0' }}</td>
                 <td class="p-3 font-bold text-blue-700">{{ item.jumlahBulanLaporan || '0' }}</td>
@@ -531,7 +520,7 @@ const formatKg = (gram: number) => {
             <tbody class="divide-y divide-slate-200 text-slate-800">
               <tr v-for="(item, idx) in cases" :key="item.id" class="hover:bg-slate-50 transition-colors divide-x divide-slate-200">
                 <td class="p-3 text-center font-bold">{{ idx + 1 }}</td>
-                <td class="p-3 font-semibold">{{ item.kejaksaan || item.satuanKerja || '-' }}</td>
+                <td class="p-3 font-semibold">{{ item.satuanKerja || '-' }}</td>
                 
                 <!-- 3. Jenis Barang Bukti (Tanpa garis pemisah) -->
                 <td class="p-3">
@@ -549,7 +538,7 @@ const formatKg = (gram: number) => {
                 <td class="p-3 font-medium">{{ item.pasalDidakwakan || item.pasalDisangkakan || '-' }}</td>
                 
                 <td class="p-3">
-                  <div class="font-bold text-slate-900">{{ item.noRegSitaan || item.noRegBendaSitaan || '-' }}</div>
+                  <div class="font-bold text-slate-900">{{ item.noRegBendaSitaan || '-' }}</div>
                   <div class="text-[10px] text-slate-500">Tgl: {{ item.tglPenerimaan || '-' }}</div>
                 </td>
 
