@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Inertia\Inertia;
 use App\Http\Controllers\FormTemplateController;
 use App\Http\Controllers\LaporanController;
+use App\Http\Controllers\DropdownOptionController;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -31,6 +32,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/form3a/create', [FormTemplateController::class, 'create3AWizard']);
     Route::post('/forms/3a/wizard', [FormTemplateController::class, 'store3AWizard']);
     Route::get('/form3a/{id}/edit', [FormTemplateController::class, 'edit3A']);
+    Route::put('/form3a/{id}', [FormTemplateController::class, 'update3A']);
+    Route::delete('/form3a/{id}', [FormTemplateController::class, 'destroy3A']);
     Route::get('/form3a/{id}/cases/create', [FormTemplateController::class, 'create3ACase']);
     Route::post('/form3a/{id}/cases', [FormTemplateController::class, 'store3ACase']);
 
@@ -44,17 +47,20 @@ Route::middleware('auth')->group(function () {
     Route::get('/form3c/create', [FormTemplateController::class, 'create3CWizard']);
     Route::post('/forms/3c/wizard', [FormTemplateController::class, 'store3CWizard']);
     Route::get('/form3c/{id}/edit', [FormTemplateController::class, 'edit3C']);
+    Route::put('/form3c/{id}', [FormTemplateController::class, 'update3C']);
+    Route::delete('/form3c/{id}', [FormTemplateController::class, 'destroy3C']);
     Route::get('/form3c/{id}/cases/create', [FormTemplateController::class, 'create3CCase']);
     Route::post('/form3c/{id}/cases', [FormTemplateController::class, 'store3CCase']);
 
-    // Common Form Delete
-    Route::delete('/forms/{type}/{id}', [FormTemplateController::class, 'destroy'])->whereIn('type', ['3a', '3c']);
-
     // Laporan routes
-    Route::middleware(['auth'])->group(function () {
     Route::get('/laporan', [LaporanController::class, 'Laporan'])->name('laporan');
     Route::get('/laporan/export-pdf', [LaporanController::class, 'exportPdf'])->name('laporan.exportPdf');
-    });
+
+    // Route Pengaturan Form Master Dropdown
+    Route::get('/settings', [DropdownOptionController::class, 'index'])->name('pengaturan.index');
+    Route::post('/settings', [DropdownOptionController::class, 'store'])->name('dropdowns.store');
+    Route::put('/settings/{id}', [DropdownOptionController::class, 'update'])->name('dropdowns.update');
+    Route::delete('/settings/{id}', [DropdownOptionController::class, 'destroy'])->name('dropdowns.destroy');
 
     // Logout
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');

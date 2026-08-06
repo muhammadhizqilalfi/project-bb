@@ -2,46 +2,38 @@
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import AuthenticatedLayout from '@/Layouts/Layout.vue';
-import {
-  FileText,
-  Calendar,
-  Filter,
-  Edit3,
-  FileDown,
-  Package
-} from 'lucide-vue-next';
+import {FileText,Calendar,Filter,Edit3,Trash2,FileDown,Package} from 'lucide-vue-next';
 
-interface BarangBukti3A {
+interface BarangBuktiItem {
   jenisBarangBukti?: string;
   namaBarangBukti?: string;
+  uraianBarangBukti?: string;
   jumlah?: number | string;
+  jumlahNarkotika?: number | string;
+  jumlahSatuan?: number | string;
   satuan?: string;
+  satuanNarkotika?: string;
+  jenisSatuan?: string;
   ukuranDetail?: string;
   tempatPenyimpanan?: string;
-}
-
-interface BarangBukti3C {
-  jenisBarangBukti?: string;
   macamJenisKadar?: string;
-  jumlahSatuan?: number | string;
-  jenisSatuan?: string;
-  tempatPenyimpanan?: string;
 }
 
 interface CaseItem {
   id: string;
-  // Common / 3A Fields
+  case_index?: number;
   satuanKerja?: string;
-  kejaksaan?: string;
-  noRegSitaan?: string;
-  noRegSidik?: string;
+  noRegBendaSitaan?: string;
+  noRegPenyidikan?: string;
   identitasTersangka?: string;
   pasalDisangkakan?: string;
   pasalDidakwakan?: string;
   statusDiselesaikan?: string;
   tglPelaksanaanPutusan?: string;
   keterangan?: string;
-  barangBuktiList?: BarangBukti3A[] | BarangBukti3C[];
+  barangBuktiList?: BarangBuktiItem[];
+  tglRegPenyidikan?: string;
+  tglPenerimaan?: string;
   
   // 3B Fields
   sisaBulanLalu?: number | string;
@@ -50,7 +42,6 @@ interface CaseItem {
   sisaBulanLaporan?: number | string;
 
   // 3C Fields
-  tglPenerimaan?: string;
   noKepPengadilan?: string;
   tglKepPengadilan?: string;
   amarPutusan?: string;
@@ -109,6 +100,39 @@ const kategoriPidanaOptions = [
   { value: 'KORUPSI', label: 'KORUPSI' }
 ];
 
+// Helper Mengubah Angka ke Teks Terbilang
+const angkaKeTeks = (num: number): string => {
+  if (num === 0) return 'Nol';
+  const satuan = ['', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima', 'Enam', 'Tujuh', 'Delapan', 'Sembilan', 'Sepuluh', 'Sebelas'];
+  if (num < 12) return satuan[num];
+  if (num < 20) return angkaKeTeks(num - 10) + ' Belas';
+  if (num < 100) return angkaKeTeks(Math.floor(num / 10)) + ' Puluh' + (num % 10 !== 0 ? ' ' + angkaKeTeks(num % 10) : '');
+  if (num < 200) return 'Seratus' + (num % 100 !== 0 ? ' ' + angkaKeTeks(num % 100) : '');
+  if (num < 1000) return angkaKeTeks(Math.floor(num / 100)) + ' Ratus' + (num % 100 !== 0 ? ' ' + angkaKeTeks(num % 100) : '');
+  if (num < 2000) return 'Seribu' + (num % 1000 !== 0 ? ' ' + angkaKeTeks(num % 1000) : '');
+  if (num < 1000000) return angkaKeTeks(Math.floor(num / 1000)) + ' Ribu' + (num % 1000 !== 0 ? ' ' + angkaKeTeks(num % 1000) : '');
+  if (num < 1000000000) return angkaKeTeks(Math.floor(num / 1000000)) + ' Juta' + (num % 1000000 !== 0 ? ' ' + angkaKeTeks(num % 1000000) : '');
+  return String(num);
+};
+
+// Format Jumlah + Terbilang
+const formatJumlahTerbilang = (val: any): string => {
+  if (val === undefined || val === null || val === '') return '';
+  const num = typeof val === 'number' ? val : parseFloat(String(val).replace(/,/g, '.'));
+  if (isNaN(num)) return String(val);
+  if (Number.isInteger(num)) {
+    return `${num} (${angkaKeTeks(num)})`;
+  }
+  return `${num}`;
+};
+
+// Helper untuk mengambil tempat penyimpanan unik
+const getTempatPenyimpananUnik = (list?: BarangBuktiItem[]): string[] => {
+  if (!list || list.length === 0) return ['-'];
+  const locations = list.map(bb => bb.tempatPenyimpanan?.trim() || '-');
+  return Array.from(new Set(locations));
+};
+
 // Trigger Reload saat Filter Berubah
 const applyFilters = () => {
   router.get('/laporan', {
@@ -127,7 +151,6 @@ const changeFormTab = (type: '3A' | '3B' | '3C') => {
   applyFilters();
 };
 
-// Export Handler Berdasarkan Form & Periode
 const exportFormPdf = () => {
   window.open(
     `/laporan/export-pdf?formType=${selectedForm.value}&month=${selectedMonth.value}&year=${selectedYear.value}&kategori=${selectedKategori.value}`,
@@ -135,11 +158,24 @@ const exportFormPdf = () => {
   );
 };
 
-const editCase = (id: string) => {
-  router.get(`/form${selectedForm.value.toLowerCase()}/${id}/edit`);
+const editCase = (id: string, index?: number) => {
+  const query = index !== undefined ? `?index=${index}` : '';
+  if (selectedForm.value === '3A') {
+    router.get(`/form3a/${id}/edit${query}`);
+  } else {
+    router.get(`/form${selectedForm.value.toLowerCase()}/${id}/edit${query}`);
+  }
 };
 
-// Helper Format Gram ke Kg
+const deleteCase = (id: string, index?: number) => {
+  if (confirm('Apakah Anda yakin ingin menghapus data perkara ini?')) {
+    const query = index !== undefined ? `?index=${index}` : '';
+    router.delete(`/form${selectedForm.value.toLowerCase()}/${id}${query}`, {
+      preserveScroll: true,
+    });
+  }
+};
+
 const formatKg = (gram: number) => {
   if (!gram) return '0.0';
   return (gram / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
@@ -163,7 +199,6 @@ const formatKg = (gram: number) => {
           </p>
         </div>
 
-        <!-- FILTER BAR (TINDAK PIDANA & PERIODE BULAN/TAHUN) -->
         <div class="flex flex-wrap items-center gap-3 bg-white p-2 rounded-xl shadow-xs border border-slate-200">
           <div class="flex items-center gap-2 px-2 text-slate-500 border-r border-slate-200">
             <Filter class="w-4 h-4 text-slate-600" />
@@ -200,7 +235,7 @@ const formatKg = (gram: number) => {
         </div>
       </div>
 
-      <!-- SUMMARY CARDS (KHUSUS NARKOTIKA PERIODIK) -->
+      <!-- SUMMARY CARDS -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div class="bg-white rounded-xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
           <div class="flex items-center gap-4">
@@ -304,13 +339,11 @@ const formatKg = (gram: number) => {
         </button>
       </div>
 
-      <!-- MAIN DATA PREVIEW TABLE DENGAN KETENTUAN MASING-MASING TEMPLATE FORM -->
+      <!-- MAIN DATA PREVIEW TABLE -->
       <div class="bg-white rounded-2xl shadow-xs border border-slate-300 overflow-hidden">
         <div class="overflow-x-auto">
           
-          <!-- ========================================== -->
-          <!-- 1. TEMPLATE PREVIEW FORM 3A                -->
-          <!-- ========================================== -->
+          <!-- TEMPLATE PREVIEW FORM 3A -->
           <table v-if="selectedForm === '3A'" class="w-full text-left border-collapse text-xs">
             <thead class="bg-slate-50 text-slate-900 border-b border-slate-300 font-bold text-[11px] uppercase tracking-wider text-center">
               <tr class="divide-x divide-slate-300 border-b border-slate-300">
@@ -318,16 +351,15 @@ const formatKg = (gram: number) => {
                 <th class="p-3">Satuan Kerja</th>
                 <th class="p-3">Register Benda Sitaan Barang Bukti</th>
                 <th class="p-3">Register Tahap Penyidikan</th>
-                <th class="p-3">Uraian Benda Sitaan Jumlah / Satuan / Jenis Barang / Ukuran</th>
+                <th class="p-3">Uraian Benda Sitaan Jumlah / Jenis Barang / Ukuran</th>
                 <th class="p-3">Tempat Penyimpanan</th>
                 <th class="p-3">Identitas Tersangka / Terdakwa</th>
                 <th class="p-3">Pasal yang disangkakan / didakwakan</th>
                 <th class="p-3">Diselesaikan</th>
                 <th class="p-3">Tanggal Pelaksanaan Putusan Hakim & Ijin Jaksa Agung</th>
                 <th class="p-3">Keterangan</th>
-                <th class="p-3 w-16">Aksi</th>
+                <th class="p-3 w-20">Aksi</th>
               </tr>
-              <!-- BARIS NOMOR KOLOM RESMI (1 - 11) -->
               <tr class="bg-slate-100 divide-x divide-slate-300 text-[10px] text-slate-500 font-semibold border-b border-slate-300">
                 <td class="p-1">1</td>
                 <td class="p-1">2</td>
@@ -345,45 +377,65 @@ const formatKg = (gram: number) => {
             </thead>
             <tbody class="divide-y divide-slate-200 text-slate-800">
               <tr v-for="(item, idx) in cases" :key="item.id" class="hover:bg-slate-50 transition-colors divide-x divide-slate-200">
-                <td class="p-3 text-center font-bold">{{ idx + 1 }}</td>
-                <td class="p-3 font-semibold">{{ item.satuanKerja || item.kejaksaan || '-' }}</td>
-                <td class="p-3 font-bold text-slate-900">{{ item.noRegSitaan || '-' }}</td>
-                <td class="p-3">{{ item.noRegSidik || '-' }}</td>
-                
-                <!-- URAIAN BENDA SITAAN (LIST BARANG BUKTI) -->
+                <td class="p-3 font-bold text-center">{{ idx + 1 }}</td>
+                <td class="p-3 font-bold text-center">{{ item.satuanKerja || '-' }}</td>
+                <td class="p-3 text-center text-slate-900" >{{ item.noRegBendaSitaan }} {{ item.tglPenerimaan || '-' }}</td>
+                <td class="p-3 text-center">{{ item.noRegPenyidikan || '-' }} {{ item.tglRegPenyidikan || '-' }}</td>
+
+                <!-- 5. Uraian Benda Sitaan -->
                 <td class="p-3">
-                  <div class="space-y-2">
-                    <div v-for="(bb, bIdx) in (item.barangBuktiList || [])" :key="bIdx" class="bg-slate-50 p-2 rounded border border-slate-200 text-[11px]">
-                      <div class="font-bold text-slate-900">{{ bIdx + 1 }}. {{ (bb as BarangBukti3A).namaBarangBukti || (bb as BarangBukti3A).jenisBarangBukti || 'BB' }}</div>
-                      <div>Detail: {{ (bb as BarangBukti3A).ukuranDetail || '-' }}</div>
-                      <div class="font-bold text-blue-700 mt-0.5">Jumlah: {{ (bb as BarangBukti3A).jumlah || 0 }} {{ (bb as BarangBukti3A).satuan }}</div>
+                  <div class="space-y-8 w-sm">
+                    <div 
+                      v-for="(bb, bIdx) in (item.barangBuktiList || [])" 
+                      :key="bIdx"
+                      class="text-slate-900 whitespace-normal break-words"
+                    >
+                      - {{ formatJumlahTerbilang(bb.jumlah || bb.jumlahNarkotika || bb.jumlahSatuan || 1) }} {{ (bb as BarangBuktiItem).uraianBarangBukti || (bb as BarangBuktiItem).namaBarangBukti || (bb as BarangBuktiItem).jenisBarangBukti || 'BB' }}
                     </div>
                   </div>
                 </td>
 
-                <td class="p-3">{{ (item.barangBuktiList?.[0] as BarangBukti3A)?.tempatPenyimpanan || '-' }}</td>
-                <td class="p-3 font-semibold">{{ item.identitasTersangka || '-' }}</td>
-                <td class="p-3">{{ item.pasalDisangkakan || item.pasalDidakwakan || '-' }}</td>
+                <!-- 6. Tempat Penyimpanan -->
                 <td class="p-3 text-center">
-                  <span class="inline-block bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded text-[10px]">
-                    {{ item.statusDiselesaikan || '-' }}
-                  </span>
+                  <div class="space-y-5">
+                    <div 
+                      v-for="(gudang, gIdx) in getTempatPenyimpananUnik(item.barangBuktiList)" 
+                      :key="gIdx" 
+                      class="text-[11px] font-medium text-slate-800"
+                    >
+                      {{ gudang }}
+                    </div>
+                  </div>
                 </td>
-                <td class="p-3 text-center">{{ item.tglPelaksanaanPutusan || '-' }}</td>
-                <td class="p-3 text-slate-600 italic">{{ item.keterangan || '-' }}</td>
+                
+                <td class="p-3">- {{ item.identitasTersangka || '-' }}</td>
+                <td class="p-3">{{ item.pasalDisangkakan || item.pasalDidakwakan || '-' }}</td>
+                
                 <td class="p-3 text-center">
-                  <button type="button" @click="editCase(item.id)" class="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded">
-                    <Edit3 class="w-4 h-4" />
-                  </button>
+                  <span v-if="item.statusDiselesaikan && item.statusDiselesaikan !== '-'" class="inline-block">
+                    {{ item.statusDiselesaikan }}
+                  </span>
+                  <span v-else class="text-slate-400 font-bold">-</span>
+                </td>
+
+                <td class="p-3 text-center">{{ item.tglPelaksanaanPutusan || '-' }}</td>
+                <td class="p-3 text-slate-600">{{ item.keterangan || '-' }}</td>
+                
+                <td class="p-3 text-center">
+                  <div class="flex items-center justify-center gap-2">
+                    <button class="p-2 rounded-md hover:bg-blue-200 hover:text-blue-700" type="button" @click="editCase(item.id, (item as any).case_index)">
+                      <Edit3 class="w-4 h-4 hover:text-blue-500" />
+                    </button>
+                    <button class="p-2 rounded-md hover:bg-red-200 hover:text-red-700" type="button" @click="deleteCase(item.id, (item as any).case_index)">
+                      <Trash2 class="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
           </table>
 
-
-          <!-- ========================================== -->
-          <!-- 2. TEMPLATE PREVIEW FORM 3B                -->
-          <!-- ========================================== -->
+          <!-- TEMPLATE PREVIEW FORM 3B -->
           <table v-if="selectedForm === '3B'" class="w-full text-left border-collapse text-xs">
             <thead class="bg-slate-50 text-slate-900 border-b border-slate-300 font-bold text-[11px] uppercase tracking-wider text-center">
               <tr class="divide-x divide-slate-300 border-b border-slate-300">
@@ -394,9 +446,8 @@ const formatKg = (gram: number) => {
                 <th class="p-3">Jumlah Bulan Laporan</th>
                 <th class="p-3">Sisa Bulan Laporan</th>
                 <th class="p-3">Keterangan</th>
-                <th class="p-3 w-16">Aksi</th>
+                <th class="p-3 w-20">Aksi</th>
               </tr>
-              <!-- BARIS NOMOR KOLOM RESMI (1 - 7) -->
               <tr class="bg-slate-100 divide-x divide-slate-300 text-[10px] text-slate-500 font-semibold border-b border-slate-300">
                 <td class="p-1">1</td>
                 <td class="p-1">2</td>
@@ -411,25 +462,27 @@ const formatKg = (gram: number) => {
             <tbody class="divide-y divide-slate-200 text-slate-800">
               <tr v-for="(item, idx) in cases" :key="item.id" class="hover:bg-slate-50 transition-colors divide-x divide-slate-200 text-center">
                 <td class="p-3 font-bold">{{ idx + 1 }}</td>
-                <td class="p-3 font-semibold text-left">{{ item.kejaksaan || item.satuanKerja || '-' }}</td>
+                <td class="p-3 font-semibold text-left">{{ item.satuanKerja || '-' }}</td>
                 <td class="p-3 font-medium">{{ item.sisaBulanLalu || '0' }}</td>
                 <td class="p-3 font-medium">{{ item.masukBulanLaporan || '0' }}</td>
                 <td class="p-3 font-bold text-blue-700">{{ item.jumlahBulanLaporan || '0' }}</td>
                 <td class="p-3 font-medium">{{ item.sisaBulanLaporan || '0' }}</td>
                 <td class="p-3 text-slate-600 italic text-left">{{ item.keterangan || '-' }}</td>
                 <td class="p-3">
-                  <button type="button" @click="editCase(item.id)" class="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded">
-                    <Edit3 class="w-4 h-4" />
-                  </button>
+                  <div class="flex items-center justify-center gap-1">
+                    <button type="button" @click="editCase(item.id)" class="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded cursor-pointer">
+                      <Edit3 class="w-4 h-4" />
+                    </button>
+                    <button type="button" @click="deleteCase(item.id)" class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer">
+                      <Trash2 class="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
           </table>
 
-
-          <!-- ========================================== -->
-          <!-- 3. TEMPLATE PREVIEW FORM 3C                -->
-          <!-- ========================================== -->
+          <!-- TEMPLATE PREVIEW FORM 3C -->
           <table v-if="selectedForm === '3C'" class="w-full text-left border-collapse text-xs">
             <thead class="bg-slate-50 text-slate-900 border-b border-slate-300 font-bold text-[11px] uppercase tracking-wider text-center">
               <tr class="divide-x divide-slate-300 border-b border-slate-300">
@@ -445,9 +498,9 @@ const formatKg = (gram: number) => {
                 <th class="p-3">Tgl & No. KEP PN/PT/MA</th>
                 <th class="p-3">Amar Putusan</th>
                 <th class="p-3">Tanggal Pelaksanaan Putusan Hakim</th>
-                <th class="p-3 w-16">Aksi</th>
+                <th class="p-3 w-20">Aksi</th>
               </tr>
-              <!-- BARIS NOMOR KOLOM RESMI (1 - 12) -->
+
               <tr class="bg-slate-100 divide-x divide-slate-300 text-[10px] text-slate-500 font-semibold border-b border-slate-300">
                 <td class="p-1">1</td>
                 <td class="p-1">2</td>
@@ -467,13 +520,17 @@ const formatKg = (gram: number) => {
             <tbody class="divide-y divide-slate-200 text-slate-800">
               <tr v-for="(item, idx) in cases" :key="item.id" class="hover:bg-slate-50 transition-colors divide-x divide-slate-200">
                 <td class="p-3 text-center font-bold">{{ idx + 1 }}</td>
-                <td class="p-3 font-semibold">{{ item.kejaksaan || item.satuanKerja || '-' }}</td>
+                <td class="p-3 font-semibold">{{ item.satuanKerja || '-' }}</td>
                 
-                <!-- JENIS BARANG BUKTI -->
+                <!-- 3. Jenis Barang Bukti (Tanpa garis pemisah) -->
                 <td class="p-3">
-                  <div class="space-y-1">
-                    <div v-for="(bb, bIdx) in (item.barangBuktiList || [])" :key="bIdx" class="font-bold text-slate-900">
-                      {{ bIdx + 1 }}. {{ (bb as BarangBukti3C).jenisBarangBukti || '-' }}
+                  <div class="space-y-1.5">
+                    <div 
+                      v-for="(bb, bIdx) in (item.barangBuktiList || [])" 
+                      :key="bIdx" 
+                      class="font-bold text-slate-900"
+                    >
+                      - {{ (bb as BarangBuktiItem).jenisBarangBukti || '-' }}
                     </div>
                   </div>
                 </td>
@@ -481,35 +538,57 @@ const formatKg = (gram: number) => {
                 <td class="p-3 font-medium">{{ item.pasalDidakwakan || item.pasalDisangkakan || '-' }}</td>
                 
                 <td class="p-3">
-                  <div class="font-bold text-slate-900">{{ item.noRegSitaan || '-' }}</div>
+                  <div class="font-bold text-slate-900">{{ item.noRegBendaSitaan || '-' }}</div>
                   <div class="text-[10px] text-slate-500">Tgl: {{ item.tglPenerimaan || '-' }}</div>
                 </td>
 
-                <!-- MACAM JENIS KADAR -->
+                <!-- 6. Macam Jenis Kadar -->
                 <td class="p-3">
-                  <div v-for="(bb, bIdx) in (item.barangBuktiList || [])" :key="bIdx" class="text-[11px] text-slate-700">
-                    {{ (bb as BarangBukti3C).macamJenisKadar || '-' }}
+                  <div class="space-y-1.5">
+                    <div 
+                      v-for="(bb, bIdx) in (item.barangBuktiList || [])" 
+                      :key="bIdx" 
+                      class="text-[11px] text-slate-700"
+                    >
+                      {{ (bb as BarangBuktiItem).macamJenisKadar || '-' }}
+                    </div>
                   </div>
                 </td>
 
-                <!-- JUMLAH SATUAN -->
+                <!-- 7. Jumlah Satuan -->
                 <td class="p-3 text-right font-extrabold text-blue-700">
-                  <div v-for="(bb, bIdx) in (item.barangBuktiList || [])" :key="bIdx">
-                    {{ (bb as BarangBukti3C).jumlahSatuan || 0 }}
+                  <div class="space-y-1.5">
+                    <div 
+                      v-for="(bb, bIdx) in (item.barangBuktiList || [])" 
+                      :key="bIdx"
+                    >
+                      {{ formatJumlahTerbilang((bb as BarangBuktiItem).jumlahSatuan) || '-' }}
+                    </div>
                   </div>
                 </td>
 
-                <!-- JENIS SATUAN -->
+                <!-- 8. Jenis Satuan -->
                 <td class="p-3 text-center font-medium">
-                  <div v-for="(bb, bIdx) in (item.barangBuktiList || [])" :key="bIdx">
-                    {{ (bb as BarangBukti3C).jenisSatuan || '-' }}
+                  <div class="space-y-1.5">
+                    <div 
+                      v-for="(bb, bIdx) in (item.barangBuktiList || [])" 
+                      :key="bIdx"
+                    >
+                      {{ (bb as BarangBuktiItem).jenisSatuan || '-' }}
+                    </div>
                   </div>
                 </td>
 
-                <!-- TEMPAT PENYIMPANAN -->
-                <td class="p-3">
-                  <div v-for="(bb, bIdx) in (item.barangBuktiList || [])" :key="bIdx" class="text-[11px]">
-                    {{ (bb as BarangBukti3C).tempatPenyimpanan || '-' }}
+                <!-- 9. Tempat Penyimpanan (Hanya Unik, Tanpa Garis Pemisah) -->
+                <td class="p-3 text-center">
+                  <div class="space-y-1.5">
+                    <div 
+                      v-for="(gudang, gIdx) in getTempatPenyimpananUnik(item.barangBuktiList)" 
+                      :key="gIdx" 
+                      class="text-[11px] font-medium text-slate-800"
+                    >
+                      {{ gudang }}
+                    </div>
                   </div>
                 </td>
 
@@ -522,18 +601,20 @@ const formatKg = (gram: number) => {
                 <td class="p-3 text-center">{{ item.tglPelaksanaanPutusan || '-' }}</td>
                 
                 <td class="p-3 text-center">
-                  <button type="button" @click="editCase(item.id)" class="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded">
-                    <Edit3 class="w-4 h-4" />
-                  </button>
+                  <div class="flex items-center justify-center gap-1">
+                    <button type="button" @click="editCase(item.id)" class="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded cursor-pointer">
+                      <Edit3 class="w-4 h-4" />
+                    </button>
+                    <button type="button" @click="deleteCase(item.id)" class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer">
+                      <Trash2 class="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
           </table>
-
-
-          <!-- ========================================== -->
-          <!-- EMPTY STATE (JIKA TIDAK ADA DATA)          -->
-          <!-- ========================================== -->
+      
+          <!-- EMPTY STATE -->
           <div v-if="cases.length === 0" class="p-12 text-center text-slate-400">
             <FileText class="w-10 h-10 mx-auto stroke-1 text-slate-300 mb-2" />
             <p class="text-xs font-bold text-slate-600">Tidak ada laporan data perkara ditemukan pada periode/kategori ini.</p>

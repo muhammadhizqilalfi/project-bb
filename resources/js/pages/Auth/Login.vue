@@ -1,6 +1,6 @@
 <template>
 
-    <Head title="Login - Sistem Rekapitulasi Barang Bukti" />
+    <Head title="Login - Sistem Rekapitulasi Barang " />
 
     <div class="min-h-screen grid place-items-center bg-[#F8F9FA] p-4 relative overflow-hidden">
         <!-- Watermark Background Logo -->

@@ -21,5 +21,7 @@ class DatabaseSeeder extends Seeder
             'nip' => '12345678901',
             'password' => Hash::make('admin123'),
         ]);
+
+        $this->call(DropdownOptionSeeder::class);
     }
 }
