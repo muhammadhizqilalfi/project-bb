@@ -17,6 +17,8 @@ interface BarangBuktiItem {
   ukuranDetail?: string;
   tempatPenyimpanan?: string;
   macamJenisKadar?: string;
+  amarPutusan?: string;
+  uraianPutusan?: string;
 }
 
 interface CaseItem {
@@ -117,7 +119,7 @@ const angkaKeTeks = (num: number): string => {
 
 // Format Jumlah + Terbilang
 const formatJumlahTerbilang = (val: any): string => {
-  if (val === undefined || val === null || val === '') return '';
+  if (val === undefined || val === null || val === '') return '-';
   const num = typeof val === 'number' ? val : parseFloat(String(val).replace(/,/g, '.'));
   if (isNaN(num)) return String(val);
   if (Number.isInteger(num)) {
@@ -126,11 +128,45 @@ const formatJumlahTerbilang = (val: any): string => {
   return `${num}`;
 };
 
-// Helper untuk mengambil tempat penyimpanan unik
-const getTempatPenyimpananUnik = (list?: BarangBuktiItem[]): string[] => {
-  if (!list || list.length === 0) return ['-'];
-  const locations = list.map(bb => bb.tempatPenyimpanan?.trim() || '-');
-  return Array.from(new Set(locations));
+// Helper Type-Safe untuk memastikan array bertipe BarangBuktiItem[]
+const getBbList = (list?: BarangBuktiItem[]): BarangBuktiItem[] => {
+  if (!list || list.length === 0) {
+    return [{} as BarangBuktiItem];
+  }
+  return list;
+};
+
+// Helper Type-Safe logika 'Sda' (Sama dengan atas) untuk Amar Putusan
+const isSdaAmarPutusan = (list: BarangBuktiItem[] | undefined, index: number): boolean => {
+  if (!list || index <= 0) return false;
+  const current = list[index];
+  const prev = list[index - 1];
+  if (!current || !prev) return false;
+  return Boolean(
+    current.amarPutusan && 
+    current.amarPutusan === prev.amarPutusan && 
+    current.uraianPutusan === prev.uraianPutusan
+  );
+};
+
+// Logika Rowspan Tempat Penyimpanan (Gudang yang sama digabung, gudang beda dipisah baris/garis)
+const shouldRenderTempatPenyimpanan = (list: BarangBuktiItem[] | undefined, index: number): boolean => {
+  if (!list || list.length === 0) return true;
+  if (index === 0) return true;
+  return list[index]?.tempatPenyimpanan !== list[index - 1]?.tempatPenyimpanan;
+};
+
+const getTempatPenyimpananRowspan = (list: BarangBuktiItem[] | undefined, index: number): number => {
+  if (!list || list.length === 0) return 1;
+  let count = 1;
+  for (let i = index + 1; i < list.length; i++) {
+    if (list[i]?.tempatPenyimpanan === list[index]?.tempatPenyimpanan) {
+      count++;
+    } else {
+      break;
+    }
+  }
+  return count;
 };
 
 // Trigger Reload saat Filter Berubah
@@ -376,62 +412,79 @@ const formatKg = (gram: number) => {
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-200 text-slate-800">
-              <tr v-for="(item, idx) in cases" :key="item.id" class="hover:bg-slate-50 transition-colors divide-x divide-slate-200">
-                <td class="p-3 font-bold text-center">{{ idx + 1 }}</td>
-                <td class="p-3 font-bold text-center">{{ item.satuanKerja || '-' }}</td>
-                <td class="p-3 text-center text-slate-900" >{{ item.noRegBendaSitaan }} {{ item.tglPenerimaan || '-' }}</td>
-                <td class="p-3 text-center">{{ item.noRegPenyidikan || '-' }} {{ item.tglRegPenyidikan || '-' }}</td>
+              <template v-for="(item, idx) in cases" :key="item.id">
+                <tr 
+                  v-for="(bb, bIdx) in getBbList(item.barangBuktiList)" 
+                  :key="bIdx" 
+                  class="hover:bg-slate-50 transition-colors divide-x divide-slate-200"
+                  :class="{'border-b-2 border-slate-300': bIdx === getBbList(item.barangBuktiList).length - 1}"
+                >
+                  <!-- 1 & 2. Identitas Perkara (Rowspan) -->
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 font-bold text-center align-top">{{ idx + 1 }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 font-bold text-center align-top">{{ item.satuanKerja || '-' }}</td>
 
-                <!-- 5. Uraian Benda Sitaan -->
-                <td class="p-3">
-                  <div class="space-y-8 w-sm">
-                    <div 
-                      v-for="(bb, bIdx) in (item.barangBuktiList || [])" 
-                      :key="bIdx"
-                      class="text-slate-900 whitespace-normal break-words"
-                    >
-                      - {{ formatJumlahTerbilang(bb.jumlah || bb.jumlahNarkotika || bb.jumlahSatuan || 1) }} {{ (bb as BarangBuktiItem).uraianBarangBukti || (bb as BarangBuktiItem).namaBarangBukti || (bb as BarangBuktiItem).jenisBarangBukti || 'BB' }}
+                  <!-- 3. Reg Sitaan (Rowspan) -->
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top text-center">
+                    <div class="flex flex-col items-center text-xs text-slate-800">
+                      <div>{{ item.noRegBendaSitaan || '-' }}</div>
+                      <div v-if="item.tglPenerimaan && item.tglPenerimaan !== '-'" class="mt-1 text-[11px] text-slate-500">
+                        {{ item.tglPenerimaan }}
+                      </div>
                     </div>
-                  </div>
-                </td>
+                  </td>
 
-                <!-- 6. Tempat Penyimpanan -->
-                <td class="p-3 text-center">
-                  <div class="space-y-5">
-                    <div 
-                      v-for="(gudang, gIdx) in getTempatPenyimpananUnik(item.barangBuktiList)" 
-                      :key="gIdx" 
-                      class="text-[11px] font-medium text-slate-800"
-                    >
-                      {{ gudang }}
+                  <!-- 4. Reg Penyidikan (Rowspan) -->
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top text-center">
+                    <div class="flex flex-col items-center text-xs text-slate-800">
+                      <div>{{ item.noRegPenyidikan || '-' }}</div>
+                      <div v-if="item.tglRegPenyidikan && item.tglRegPenyidikan !== '-'" class="mt-1 text-[11px] text-slate-500">
+                        {{ item.tglRegPenyidikan }}
+                      </div>
                     </div>
-                  </div>
-                </td>
-                
-                <td class="p-3">- {{ item.identitasTersangka || '-' }}</td>
-                <td class="p-3">{{ item.pasalDisangkakan || item.pasalDidakwakan || '-' }}</td>
-                
-                <td class="p-3 text-center">
-                  <span v-if="item.statusDiselesaikan && item.statusDiselesaikan !== '-'" class="inline-block">
-                    {{ item.statusDiselesaikan }}
-                  </span>
-                  <span v-else class="text-slate-400 font-bold">-</span>
-                </td>
+                  </td>
 
-                <td class="p-3 text-center">{{ item.tglPelaksanaanPutusan || '-' }}</td>
-                <td class="p-3 text-slate-600">{{ item.keterangan || '-' }}</td>
-                
-                <td class="p-3 text-center">
-                  <div class="flex items-center justify-center gap-2">
-                    <button class="p-2 rounded-md hover:bg-blue-200 hover:text-blue-700" type="button" @click="editCase(item.id, (item as any).case_index)">
-                      <Edit3 class="w-4 h-4 hover:text-blue-500" />
-                    </button>
-                    <button class="p-2 rounded-md hover:bg-red-200 hover:text-red-700" type="button" @click="deleteCase(item.id, (item as any).case_index)">
-                      <Trash2 class="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                  <!-- 5. Uraian Benda Sitaan (Per Barang Bukti Sejajar) -->
+                  <td class="p-3 align-top">
+                    <div class="text-[11px] text-slate-900 whitespace-normal break-words">
+                      - {{ formatJumlahTerbilang(bb.jumlah || bb.jumlahNarkotika || bb.jumlahSatuan || 1) }} {{ bb.uraianBarangBukti || bb.namaBarangBukti || bb.jenisBarangBukti || 'BB' }}
+                    </div>
+                  </td>
+
+                  <!-- 6. Tempat Penyimpanan (Rowspan Dinamis) -->
+                  <td 
+                    v-if="shouldRenderTempatPenyimpanan(item.barangBuktiList, bIdx)" 
+                    :rowspan="getTempatPenyimpananRowspan(item.barangBuktiList, bIdx)" 
+                    class="p-3 text-center align-middle"
+                  >
+                    <div class="text-[11px] font-medium text-slate-800">{{ bb.tempatPenyimpanan || '-' }}</div>
+                  </td>
+                  
+                  <!-- 7 - 11. Informasi Perkara (Rowspan) -->
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top">- {{ item.identitasTersangka || '-' }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top">{{ item.pasalDisangkakan || item.pasalDidakwakan || '-' }}</td>
+                  
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 text-center align-top">
+                    <span v-if="item.statusDiselesaikan && item.statusDiselesaikan !== '-'" class="inline-block">
+                      {{ item.statusDiselesaikan }}
+                    </span>
+                    <span v-else class="text-slate-400 font-bold">-</span>
+                  </td>
+
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 text-center align-top">{{ item.tglPelaksanaanPutusan || '-' }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 text-slate-700 align-top text-center">{{ item.keterangan || '-' }}</td>
+                  
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 text-center align-top">
+                    <div class="flex items-center justify-center gap-2">
+                      <button class="p-2 rounded-md hover:bg-blue-200 hover:text-blue-700" type="button" @click="editCase(item.id, (item as any).case_index)">
+                        <Edit3 class="w-4 h-4 hover:text-blue-500" />
+                      </button>
+                      <button class="p-2 rounded-md hover:bg-red-200 hover:text-red-700" type="button" @click="deleteCase(item.id, (item as any).case_index)">
+                        <Trash2 class="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </template>
             </tbody>
           </table>
 
@@ -518,99 +571,94 @@ const formatKg = (gram: number) => {
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-200 text-slate-800">
-              <tr v-for="(item, idx) in cases" :key="item.id" class="hover:bg-slate-50 transition-colors divide-x divide-slate-200">
-                <td class="p-3 text-center font-bold">{{ idx + 1 }}</td>
-                <td class="p-3 font-semibold">{{ item.satuanKerja || '-' }}</td>
-                
-                <!-- 3. Jenis Barang Bukti (Tanpa garis pemisah) -->
-                <td class="p-3">
-                  <div class="space-y-1.5">
-                    <div 
-                      v-for="(bb, bIdx) in (item.barangBuktiList || [])" 
-                      :key="bIdx" 
-                      class="font-bold text-slate-900"
-                    >
-                      - {{ (bb as BarangBuktiItem).jenisBarangBukti || '-' }}
+              <template v-for="(item, idx) in cases" :key="item.id">
+                <tr 
+                  v-for="(bb, bIdx) in getBbList(item.barangBuktiList)" 
+                  :key="bIdx" 
+                  class="hover:bg-slate-50 transition-colors divide-x divide-slate-200"
+                  :class="{'border-b-2 border-slate-300': bIdx === getBbList(item.barangBuktiList).length - 1}"
+                >
+                  <!-- 1 & 2. Identitas Perkara (Rowspan) -->
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 text-center font-bold align-top">{{ idx + 1 }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 font-bold text-center align-top">{{ item.satuanKerja || '-' }}</td>
+                  
+                  <!-- 3. Jenis Barang Bukti (Per-baris Sejajar) -->
+                  <td class="p-3 align-top">
+                    <div class="text-[11px] text-slate-800 whitespace-normal break-words">
+                      - {{ formatJumlahTerbilang(bb.jumlah) }} {{ bb.jenisBarangBukti || '-' }}
                     </div>
-                  </div>
-                </td>
+                  </td>
 
-                <td class="p-3 font-medium">{{ item.pasalDidakwakan || item.pasalDisangkakan || '-' }}</td>
-                
-                <td class="p-3">
-                  <div class="font-bold text-slate-900">{{ item.noRegBendaSitaan || '-' }}</div>
-                  <div class="text-[10px] text-slate-500">Tgl: {{ item.tglPenerimaan || '-' }}</div>
-                </td>
-
-                <!-- 6. Macam Jenis Kadar -->
-                <td class="p-3">
-                  <div class="space-y-1.5">
-                    <div 
-                      v-for="(bb, bIdx) in (item.barangBuktiList || [])" 
-                      :key="bIdx" 
-                      class="text-[11px] text-slate-700"
-                    >
-                      {{ (bb as BarangBuktiItem).macamJenisKadar || '-' }}
+                  <!-- 4 & 5. Pasal & Reg Sitaan (Rowspan) -->
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top text-xs text-slate-800">{{ item.pasalDidakwakan || item.pasalDisangkakan || '-' }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top text-center">
+                    <div class="flex flex-col items-center text-xs text-slate-800">
+                      <div>{{ item.noRegBendaSitaan || '-' }}</div>
+                      <div v-if="item.tglPenerimaan && item.tglPenerimaan !== '-'" class="mt-1 text-[11px] text-slate-500">
+                        {{ item.tglPenerimaan }}
+                      </div>
                     </div>
-                  </div>
-                </td>
+                  </td>
 
-                <!-- 7. Jumlah Satuan -->
-                <td class="p-3 text-right font-extrabold text-blue-700">
-                  <div class="space-y-1.5">
-                    <div 
-                      v-for="(bb, bIdx) in (item.barangBuktiList || [])" 
-                      :key="bIdx"
-                    >
-                      {{ formatJumlahTerbilang((bb as BarangBuktiItem).jumlahSatuan) || '-' }}
+                  <!-- 6, 7, 8. Rincian Barang Bukti (Per-baris Sejajar) -->
+                  <td class="p-3 align-top">
+                    <div class="text-[11px] text-slate-800 whitespace-normal break-words">- {{ bb.macamJenisKadar || '-' }}</div>
+                  </td>
+                  <td class="p-3 align-top">
+                    <div class="text-[11px] text-slate-800 whitespace-normal break-words">- {{ formatJumlahTerbilang(bb.jumlah) }}</div>
+                  </td>
+                  <td class="p-3 align-top">
+                    <div class="text-[11px] text-slate-800 whitespace-normal break-words">- {{ bb.satuan || '-' }}</div>
+                  </td>
+
+                  <!-- 9. Tempat Penyimpanan (Rowspan Dinamis) -->
+                  <td 
+                    v-if="shouldRenderTempatPenyimpanan(item.barangBuktiList, bIdx)" 
+                    :rowspan="getTempatPenyimpananRowspan(item.barangBuktiList, bIdx)" 
+                    class="p-3 text-center align-middle"
+                  >
+                    <div class="text-[11px] font-medium text-slate-800">{{ bb.tempatPenyimpanan || '-' }}</div>
+                  </td>
+
+                  <!-- 10. Keputusan Pengadilan (Rowspan) -->
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top text-center">
+                    <div class="flex flex-col items-center text-xs text-slate-800">
+                      <div>{{ item.noKepPengadilan || '-' }}</div>
+                      <div v-if="item.tglKepPengadilan && item.tglKepPengadilan !== '-'" class="mt-1 text-[11px] text-slate-500">
+                        {{ item.tglKepPengadilan }}
+                      </div>
                     </div>
-                  </div>
-                </td>
-
-                <!-- 8. Jenis Satuan -->
-                <td class="p-3 text-center font-medium">
-                  <div class="space-y-1.5">
-                    <div 
-                      v-for="(bb, bIdx) in (item.barangBuktiList || [])" 
-                      :key="bIdx"
-                    >
-                      {{ (bb as BarangBuktiItem).jenisSatuan || '-' }}
+                  </td>
+                  
+                  <!-- 11. Amar Putusan dengan Logika "Sda" -->
+                  <td class="p-3 align-top">
+                    <div class="text-[11px] text-slate-800 whitespace-normal break-words">
+                      <!-- Jika data sama persis dengan baris di atasnya, tampilkan '- Sda' saja -->
+                      <template v-if="isSdaAmarPutusan(item.barangBuktiList, bIdx)">
+                        - Sda
+                      </template>
+                      
+                      <!-- Jika baris pertama / nilainya berbeda, tampilkan lengkap -->
+                      <template v-else>
+                        - {{ bb.amarPutusan || '-' }} {{ bb.uraianPutusan ? bb.uraianPutusan : '' }}
+                      </template>
                     </div>
-                  </div>
-                </td>
+                  </td>
 
-                <!-- 9. Tempat Penyimpanan (Hanya Unik, Tanpa Garis Pemisah) -->
-                <td class="p-3 text-center">
-                  <div class="space-y-1.5">
-                    <div 
-                      v-for="(gudang, gIdx) in getTempatPenyimpananUnik(item.barangBuktiList)" 
-                      :key="gIdx" 
-                      class="text-[11px] font-medium text-slate-800"
-                    >
-                      {{ gudang }}
+                  <!-- 12 & Aksi (Rowspan) -->
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 text-center align-top">{{ item.tglPelaksanaanPutusan || '-' }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 text-center align-top">
+                    <div class="flex items-center justify-center gap-1">
+                      <button type="button" @click="editCase(item.id)" class="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded cursor-pointer">
+                        <Edit3 class="w-4 h-4" />
+                      </button>
+                      <button type="button" @click="deleteCase(item.id)" class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer">
+                        <Trash2 class="w-4 h-4" />
+                      </button>
                     </div>
-                  </div>
-                </td>
-
-                <td class="p-3">
-                  <div class="font-semibold text-slate-900">{{ item.noKepPengadilan || '-' }}</div>
-                  <div class="text-[10px] text-slate-500">Tgl: {{ item.tglKepPengadilan || '-' }}</div>
-                </td>
-
-                <td class="p-3 font-medium text-slate-900">{{ item.amarPutusan || '-' }}</td>
-                <td class="p-3 text-center">{{ item.tglPelaksanaanPutusan || '-' }}</td>
-                
-                <td class="p-3 text-center">
-                  <div class="flex items-center justify-center gap-1">
-                    <button type="button" @click="editCase(item.id)" class="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded cursor-pointer">
-                      <Edit3 class="w-4 h-4" />
-                    </button>
-                    <button type="button" @click="deleteCase(item.id)" class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer">
-                      <Trash2 class="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                  </td>
+                </tr>
+              </template>
             </tbody>
           </table>
       

@@ -76,6 +76,8 @@ class LaporanController extends Controller
                         'jumlahNarkotika' => isset($bb['jumlahNarkotika']) ? (float) $bb['jumlahNarkotika'] : null,
                         'satuanNarkotika' => $bb['satuanNarkotika'] ?? null,
                         'macamJenisKadar' => $bb['macamJenisKadar'] ?? null,
+                        'amarPutusan' => $bb['amarPutusan'] ?? null,
+                        'uraianPutusan' => $bb['uraianPutusan'] ?? null,
                     ];
                 }, $rawBbList);
 
