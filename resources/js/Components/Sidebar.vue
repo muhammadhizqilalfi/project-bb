@@ -120,7 +120,7 @@ const activeMenu = computed(() => {
     const url = page.url;
 
     if (url.startsWith('/laporan')) return 'LAPORAN';
-    if (url.startsWith('/pengaturan-form')) return 'PENGATURAN FORM';
+    if (url.startsWith('/settings')) return 'PENGATURAN FORM';
     if (url.startsWith('/form3a') || url.startsWith('/form3b') || url.startsWith('/form3c')) return 'FORM';
 
     return 'BERANDA';
@@ -139,7 +139,7 @@ const selectMenu = (menuName) => {
     } else if (menuName === 'LAPORAN') {
         router.get('/laporan');
     } else if (menuName === 'PENGATURAN FORM') {
-        router.get('/pengaturan-form');
+        router.get('/settings');
     }
 };
 </script>

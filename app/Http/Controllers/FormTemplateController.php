@@ -241,10 +241,6 @@ class FormTemplateController extends Controller
         return redirect()->back()->with('success', 'Data perkara berhasil dihapus');
     }
 
-    // ==========================================
-    // PERBAIKAN FORM 3C
-    // ==========================================
-
     public function store3CWizard(Request $request)
     {
         $validated = $request->validate([
@@ -421,7 +417,7 @@ class FormTemplateController extends Controller
 
     private function getDropdownOptionsForForm(string $formType): array
     {
-        return DropdownOption::whereIn('form_target', [$formType, 'Keduanya'])
+        return DropdownOption::whereIn('form_target', [$formType, 'Both'])
             ->get()
             ->groupBy('category')
             ->map(fn ($items) => $items->pluck('label')->values()->all())

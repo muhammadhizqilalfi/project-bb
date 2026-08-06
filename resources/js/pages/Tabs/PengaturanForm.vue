@@ -2,22 +2,7 @@
 import { ref, computed } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/Layout.vue';
-import {
-  Sliders,
-  Plus,
-  Trash2,
-  Edit3,
-  Search,
-  CheckCircle2,
-  AlertCircle,
-  Database,
-  Scale,
-  Pill,
-  Ruler,
-  Warehouse,
-  Bookmark,
-  X
-} from 'lucide-vue-next';
+import {Sliders,Plus,Trash2,Edit3,Search,Database,Scale,Pill,Ruler,Warehouse,Bookmark,X} from 'lucide-vue-next';
 
 interface DropdownItem {
   id: string | number;
@@ -32,33 +17,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  optionsData: () => [
-    // Default Fallback Data (Jika belum terkoneksi penuh dengan API Backend)
-    { id: 1, category: 'kategori_pidana', label: 'KAMNEGTIBUM DAN TPUL', formTarget: '3A' },
-    { id: 2, category: 'kategori_pidana', label: 'NARKOTIKA DAN ZAT ADITIF LAINNYA', formTarget: 'Keduanya' },
-    { id: 3, category: 'kategori_pidana', label: 'OHARDA', formTarget: '3A' },
-    { id: 4, category: 'kategori_pidana', label: 'TERORIS', formTarget: '3A' },
-    { id: 5, category: 'kategori_pidana', label: 'KORUPSI', formTarget: 'Keduanya' },
-    
-    { id: 6, category: 'jenis_narkotika', label: 'Sabu', formTarget: '3A' },
-    { id: 7, category: 'jenis_narkotika', label: 'Ganja', formTarget: '3A' },
-    { id: 8, category: 'jenis_narkotika', label: 'Ekstasi / Pil', formTarget: '3A' },
-    { id: 9, category: 'jenis_narkotika', label: 'Heroin', formTarget: '3A' },
-    { id: 10, category: 'jenis_narkotika', label: 'Tembakau Sintetis', formTarget: '3A' },
-
-    { id: 11, category: 'satuan', label: 'Gram', formTarget: '3A' },
-    { id: 12, category: 'satuan', label: 'Kilogram (Kg)', formTarget: '3A' },
-    { id: 13, category: 'satuan', label: 'Pcs / Butir', formTarget: 'Keduanya' },
-    { id: 14, category: 'satuan', label: 'Unit', formTarget: 'Keduanya' },
-
-    { id: 15, category: 'tempat_penyimpanan', label: 'Gudang Barang Bukti Kejaksaan Negeri Banda Aceh', formTarget: 'Keduanya' },
-    { id: 16, category: 'tempat_penyimpanan', label: 'RUPBASAN Banda Aceh', formTarget: 'Keduanya' },
-
-    { id: 17, category: 'keterangan_tahap', label: 'Tahap Persidangan', formTarget: '3A' },
-    { id: 18, category: 'keterangan_tahap', label: 'Tahap II', formTarget: '3A' },
-    { id: 19, category: 'keterangan_tahap', label: 'Tahap Pelimpahan', formTarget: '3A' },
-  ]
-});
+  optionsData: () => []});
 
 const activeMenu = ref('PENGATURAN FORM');
 const selectedCategory = ref<string>('kategori_pidana');
@@ -91,6 +50,7 @@ const isModalOpen = ref(false);
 const editingId = ref<string | number | null>(null);
 
 const form = useForm({
+  id: null as string | number | null,
   category: selectedCategory.value,
   label: '',
   formTarget: 'Keduanya' as '3A' | '3C' | 'Keduanya',
@@ -105,10 +65,11 @@ const openAddModal = () => {
 };
 
 const openEditModal = (item: DropdownItem) => {
-  editingId.value = item.id;
+  form.id = item.id;
   form.category = item.category;
   form.label = item.label;
   form.formTarget = item.formTarget;
+  editingId.value = item.id;
   isModalOpen.value = true;
 };
 
@@ -125,13 +86,13 @@ const saveOption = () => {
 
   if (editingId.value) {
     // Mode Edit
-    router.put(`/settings/dropdowns/${editingId.value}`, form.data(), {
+    router.put(`/settings/${editingId.value}`, form.data(), {
       preserveScroll: true,
       onSuccess: () => closeModal(),
     });
   } else {
     // Mode Tambah Baru
-    router.post('/settings/dropdowns', form.data(), {
+    router.post('/settings', form.data(), {
       preserveScroll: true,
       onSuccess: () => closeModal(),
     });
@@ -140,7 +101,7 @@ const saveOption = () => {
 
 const deleteOption = (item: DropdownItem) => {
   if (confirm(`Apakah Anda yakin ingin menghapus opsi "${item.label}"?`)) {
-    router.delete(`/settings/dropdowns/${item.id}`, {
+    router.delete(`/settings/${item.id}`, {
       preserveScroll: true,
     });
   }
@@ -270,7 +231,7 @@ const deleteOption = (item: DropdownItem) => {
                           'bg-emerald-50 text-emerald-700 border-emerald-200'
                         ]"
                       >
-                        Form {{ item.formTarget }}
+                        {{ item.formTarget }}
                       </span>
                     </td>
                     <td class="p-4 text-center">

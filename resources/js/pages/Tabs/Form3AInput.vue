@@ -93,7 +93,6 @@ const createEmptyBarangBukti = (): BarangBukti => ({
 
 const DEFAULT_SATKER = 'Kejari Banda Aceh';
 
-// Inisialisasi Form dengan data existing (jika mode edit)
 const formCase = ref<SavedCase & { barangBuktiList: BarangBukti[] }>({
     satuanKerja:
         props.caseData?.satuanKerja ||
@@ -151,37 +150,17 @@ const yearOptions = computed(() => {
 });
 
 // OPSI DROPDOWN DINAMIS BERDASARKAN MASTER DATA (WITH FALLBACK)
-const kategoriPidanaOptions = computed(() => {
-    return props.dropdownOptions?.kategori_pidana?.length
-        ? props.dropdownOptions.kategori_pidana
-        : ['KAMNEGTIBUM DAN TPUL','NARKOTIKA DAN ZAT ADITIF LAINNYA','OHARDA','TERORIS','KORUPSI',];
-});
+const kategoriPidanaOptions = computed(() => props.dropdownOptions?.kategori_pidana?? []);
 
 const jenisBbCategoryOptions = ['Narkotika', 'Lainnya'];
 
-const jenisNarkotikaOptions = computed(() => {
-    return props.dropdownOptions?.jenis_narkotika?.length
-        ? props.dropdownOptions.jenis_narkotika
-        : ['Sabu','Ganja','Ekstasi / Pil','Heroin','Tembakau Sintetis','Obat Keras','Lainnya',];
-});
+const jenisNarkotikaOptions = computed(() => props.dropdownOptions?.jenis_narkotika ?? []);
 
-const satuanOptions = computed(() => {
-    return props.dropdownOptions?.satuan?.length
-        ? props.dropdownOptions.satuan
-        : ['Gram','Kilogram (Kg)','Milliliter (ml)','Liter (L)','Unit','Paket','Pcs','Buah','Bungkus','Batang','Lembar',];
-});
+const satuanOptions = computed(() => props.dropdownOptions?.satuan ?? []);
 
-const tempatPenyimpananOptions = computed(() => {
-    return props.dropdownOptions?.tempat_penyimpanan?.length
-        ? props.dropdownOptions.tempat_penyimpanan
-        : ['Gudang Barang Bukti Kejaksaan Negeri Banda Aceh', 'RUPBASAN', 'KEJATI',];
-});
+const tempatPenyimpananOptions = computed(() => props.dropdownOptions?.tempat_penyimpanan ?? []);
 
-const keteranganTahapOptions = computed(() => {
-    return props.dropdownOptions?.keterangan_tahap?.length
-        ? props.dropdownOptions.keterangan_tahap
-        : ['Tahap Persidangan', 'Tahap II', 'Tahap Pelimpahan'];
-});
+const keteranganTahapOptions = computed(() => props.dropdownOptions?.keterangan_tahap ?? []);
 
 const addBarangBukti = () => {
     formCase.value.barangBuktiList.push(createEmptyBarangBukti());
@@ -544,11 +523,11 @@ const resetCaseForm = () => {
                                     -- Pilih Jenis Tindak Pidana --
                                 </option>
                                 <option
-                                    v-for="kat in kategoriPidanaOptions"
-                                    :key="kat"
-                                    :value="kat"
+                                    v-for="opt in dropdownOptions.kategori_pidana"
+                                    :key="opt"
+                                    :value="opt"
                                 >
-                                    {{ kat }}
+                                    {{ opt }}
                                 </option>
                             </select>
                         </div>
@@ -691,7 +670,7 @@ const resetCaseForm = () => {
                                         Pilih Keterangan Tahap...
                                     </option>
                                     <option
-                                        v-for="opt in keteranganTahapOptions"
+                                        v-for="opt in dropdownOptions.keterangan_tahap"
                                         :key="opt"
                                         :value="opt"
                                     >

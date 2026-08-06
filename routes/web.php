@@ -6,7 +6,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Inertia\Inertia;
 use App\Http\Controllers\FormTemplateController;
 use App\Http\Controllers\LaporanController;
-use App\Http\Controllers\DropdownSettingController;
+use App\Http\Controllers\DropdownOptionController;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -57,10 +57,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/laporan/export-pdf', [LaporanController::class, 'exportPdf'])->name('laporan.exportPdf');
 
     // Route Pengaturan Form Master Dropdown
-    Route::get('/pengaturan-form', [DropdownSettingController::class, 'index'])->name('pengaturan.index');
-    Route::post('/settings/dropdowns', [DropdownSettingController::class, 'store'])->name('dropdowns.store');
-    Route::put('/settings/dropdowns/{id}', [DropdownSettingController::class, 'update'])->name('dropdowns.update');
-    Route::delete('/settings/dropdowns/{id}', [DropdownSettingController::class, 'destroy'])->name('dropdowns.destroy');
+    Route::get('/settings', [DropdownOptionController::class, 'index'])->name('pengaturan.index');
+    Route::post('/settings', [DropdownOptionController::class, 'store'])->name('dropdowns.store');
+    Route::put('/settings/{id}', [DropdownOptionController::class, 'update'])->name('dropdowns.update');
+    Route::delete('/settings/{id}', [DropdownOptionController::class, 'destroy'])->name('dropdowns.destroy');
 
     // Logout
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
