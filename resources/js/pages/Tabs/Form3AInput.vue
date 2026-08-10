@@ -523,7 +523,7 @@ const resetCaseForm = () => {
                                     -- Pilih Jenis Tindak Pidana --
                                 </option>
                                 <option
-                                    v-for="opt in dropdownOptions.kategori_pidana"
+                                    v-for="opt in kategoriPidanaOptions"
                                     :key="opt"
                                     :value="opt"
                                 >
@@ -670,7 +670,7 @@ const resetCaseForm = () => {
                                         Pilih Keterangan Tahap...
                                     </option>
                                     <option
-                                        v-for="opt in dropdownOptions.keterangan_tahap"
+                                        v-for="opt in keteranganTahapOptions"
                                         :key="opt"
                                         :value="opt"
                                     >

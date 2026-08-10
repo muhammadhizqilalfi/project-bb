@@ -417,7 +417,7 @@ class FormTemplateController extends Controller
 
     private function getDropdownOptionsForForm(string $formType): array
     {
-        return DropdownOption::whereIn('form_target', [$formType, 'Both'])
+        return DropdownOption::whereIn('form_target', [$formType, 'Keduanya'])
             ->get()
             ->groupBy('category')
             ->map(fn ($items) => $items->pluck('label')->values()->all())
