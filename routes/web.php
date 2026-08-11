@@ -55,6 +55,7 @@ Route::middleware('auth')->group(function () {
     // Laporan routes
     Route::get('/laporan', [LaporanController::class, 'Laporan'])->name('laporan');
     Route::get('/laporan/export-pdf', [LaporanController::class, 'exportPdf'])->name('laporan.exportPdf');
+    Route::get('/laporan/export-docx', [LaporanController::class, 'exportDocx'])->name('laporan.exportDocx');
 
     // Route Pengaturan Form Master Dropdown
     Route::get('/settings', [DropdownOptionController::class, 'index'])->name('pengaturan.index');
