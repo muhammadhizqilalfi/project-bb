@@ -178,7 +178,8 @@ class LaporanController extends Controller
 
         $data = $this->getLaporanData($request);
 
-        $htmlView = view('exports-laporan', $data)->render();
+        $htmlView = view('exports-laporan', $data)
+            ->render();
 
         $fileName = "Laporan_Form_{$data['filters']['formType']}_{$data['filters']['month']}_{$data['filters']['year']}.doc";
 
