@@ -153,8 +153,6 @@ class LaporanController extends Controller
 
         $data = $this->getLaporanData($request);
 
-        // 13 x 8.5 inch dalam PDF points.
-        // 1 inch = 72 points.
         $paper = [0, 0, 13 * 72, 8.5 * 72];
 
         $pdf = Pdf::loadView('exports-laporan-pdf', $data)
