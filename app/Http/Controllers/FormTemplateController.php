@@ -62,6 +62,8 @@ class FormTemplateController extends Controller
         ]);
     }
 
+    // 3A
+
     public function create3AWizard()
     {
         return Inertia::render('Tabs/Form3AInput', [
@@ -279,6 +281,8 @@ class FormTemplateController extends Controller
         $form->delete();
         return redirect()->back()->with('success', 'Data perkara berhasil dihapus');
     }
+
+    // 3C
 
     public function store3CWizard(Request $request)
     {

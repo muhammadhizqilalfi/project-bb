@@ -36,7 +36,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/form3a/{id}/cases', [FormTemplateController::class, 'store3ACase']);
 
     // Form 3B routes
-    Route::get('/form3b', [Form3BController::class, 'index'])->name('form3b');
+    Route::get('/form3b', [FormTemplateController::class, 'index3B'])->name('form3b');
 
     // Form 3C routes
     Route::get('/form3c', [FormTemplateController::class, 'index3C'])->name('form3c');
