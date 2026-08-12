@@ -335,14 +335,27 @@ class FormTemplateController extends Controller
         return redirect('/laporan')->with('success', 'Form 3C berhasil disimpan');
     }
 
-    public function edit3C(string $id)
+    public function edit3C(Request $request, string $id)
     {
         $form = $this->findForm('3C', $id);
-        $summary = $form->latest_case_summary ?? [];
+        $caseIndex = $request->query('index');
+
+        $cases = $form->cases ?? ($form->latest_case_summary ? [$form->latest_case_summary] : []);
+
+        if ($caseIndex !== null && isset($cases[$caseIndex])) {
+            $summary = $cases[$caseIndex];
+        } else {
+            $summary = $form->latest_case_summary ?? [];
+        }
+
+        $caseData = array_merge($summary, [
+            'id' => (string) $form->id,
+            'case_index' => $caseIndex !== null ? (int) $caseIndex : (count($cases) - 1),
+        ]);
 
         return Inertia::render('Tabs/Form3CInput', [
             'form' => $this->mapForm($form),
-            'caseData' => array_merge($summary, ['id' => (string) $form->id]),
+            'caseData' => $caseData,
             'dropdownOptions' => $this->getDropdownOptionsForForm('3C'),
         ]);
     }
@@ -350,6 +363,7 @@ class FormTemplateController extends Controller
     public function update3C(Request $request, string $id)
     {
         $validated = $request->validate([
+            'case_index' => 'nullable|integer',
             'satuanKerja' => 'required|string|max:255',
             'kategoriTindakPidana' => 'required|string|max:255',
             'pasalDidakwakan' => 'required|string|max:255',
@@ -370,12 +384,15 @@ class FormTemplateController extends Controller
         ]);
 
         $form = $this->findForm('3C', $id);
-
         $cases = $form->cases ?? [];
-        if (!empty($cases)) {
-            $cases[count($cases) - 1] = $validated;
+
+        $caseIndex = $validated['case_index'] ?? (count($cases) - 1);
+        unset($validated['case_index']);
+
+        if (isset($cases[$caseIndex])) {
+            $cases[$caseIndex] = $validated;
         } else {
-            $cases = [$validated];
+            $cases[] = $validated;
         }
 
         $form->update([
@@ -432,11 +449,26 @@ class FormTemplateController extends Controller
         return redirect('/laporan')->with('success', 'Case 3C berhasil ditambahkan');
     }
 
-    public function destroy3C(string $id)
+    public function destroy3C(Request $request, string $id)
     {
         $form = $this->findForm('3C', $id);
-        $form->delete();
+        $caseIndex = $request->query('index');
 
+        $cases = $form->cases ?? [];
+
+        if ($caseIndex !== null && isset($cases[$caseIndex])) {
+            array_splice($cases, (int) $caseIndex, 1);
+
+            if (count($cases) > 0) {
+                $form->update([
+                    'cases' => $cases,
+                    'latest_case_summary' => end($cases),
+                ]);
+                return redirect()->back()->with('success', 'Data perkara 3C berhasil dihapus');
+            }
+        }
+
+        $form->delete();
         return redirect()->back()->with('success', 'Data perkara 3C berhasil dihapus');
     }
 

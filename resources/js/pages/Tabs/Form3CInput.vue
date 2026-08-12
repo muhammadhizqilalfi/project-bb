@@ -1,6 +1,17 @@
 <script setup lang="ts">
 import { Head, router } from '@inertiajs/vue3';
-import {Gavel,Package,FileCheck2,Save,ArrowRight,ArrowLeft,Check,RotateCcw,Plus,Trash2,} from 'lucide-vue-next';
+import {
+    Gavel,
+    Package,
+    FileCheck2,
+    Save,
+    ArrowRight,
+    ArrowLeft,
+    Check,
+    RotateCcw,
+    Plus,
+    Trash2,
+} from 'lucide-vue-next';
 import { ref, computed } from 'vue';
 import type { PropType } from 'vue';
 import AuthenticatedLayout from '@/Layouts/Layout.vue';
@@ -44,12 +55,10 @@ const props = defineProps({
         type: Object as PropType<FormItem | null>,
         default: null,
     },
-    // Prop tambahan saat mengedit data perkara existing dari Laporan
     caseData: {
         type: Object as PropType<SavedCase | null>,
         default: null,
     },
-    // Prop Opsi Dropdown Dinamis dari Backend Master Pengaturan Form
     dropdownOptions: {
         type: Object as PropType<Record<string, string[]>>,
         default: () => ({}),
@@ -78,7 +87,6 @@ const createEmptyBarangBukti = (): BarangBukti => ({
 
 const DEFAULT_SATKER = 'Kejari Banda Aceh';
 
-// Inisialisasi Form dengan data existing (jika mode edit)
 const formCase = ref<SavedCase & { barangBuktiList: BarangBukti[] }>({
     case_index: props.caseData?.case_index ?? undefined,
     satuanKerja: props.caseData?.satuanKerja || DEFAULT_SATKER,
@@ -90,8 +98,7 @@ const formCase = ref<SavedCase & { barangBuktiList: BarangBukti[] }>({
     tglKepPengadilan: props.caseData?.tglKepPengadilan || '',
     tglPelaksanaanPutusan: props.caseData?.tglPelaksanaanPutusan || '',
     barangBuktiList:
-        props.caseData?.barangBuktiList &&
-        props.caseData.barangBuktiList.length > 0
+        props.caseData?.barangBuktiList && props.caseData.barangBuktiList.length > 0
             ? props.caseData.barangBuktiList.map((bb) => ({
                   jumlahSatuan: bb.jumlahSatuan || 1,
                   uraianBarangBukti: bb.uraianBarangBukti || '',
@@ -124,29 +131,28 @@ const yearOptions = computed(() => {
     return Array.from({ length: 10 }, (_, index) => currentYear - index);
 });
 
-// OPSI DROPDOWN DINAMIS FORM 3C BERDASARKAN MASTER PENGATURAN (WITH FALLBACK)
 const kategoriPidanaOptions = computed(() => {
     return props.dropdownOptions?.kategori_pidana?.length
         ? props.dropdownOptions.kategori_pidana
-        : ['KAMNEGTIBUM DAN TPUL','NARKOTIKA DAN ZAT ADITIF LAINNYA','OHARDA','TERORIS','KORUPSI',];
+        : ['KAMNEGTIBUM DAN TPUL', 'NARKOTIKA DAN ZAT ADITIF LAINNYA', 'OHARDA', 'TERORIS', 'KORUPSI'];
 });
 
 const amarPutusanOptions = computed(() => {
     return props.dropdownOptions?.amar_putusan?.length
         ? props.dropdownOptions.amar_putusan
-        : ['Digunakan dalam Perkara','Dirampas untuk Negara','Dirampas untuk Baitul Mal','Dikembalikan','Dimusnahkan','Sda',];
+        : ['Digunakan dalam Perkara', 'Dirampas untuk Negara', 'Dirampas untuk Baitul Mal', 'Dikembalikan', 'Dimusnahkan', 'Sda'];
 });
 
 const satuanOptions = computed(() => {
     return props.dropdownOptions?.satuan?.length
         ? props.dropdownOptions.satuan
-        : ['Gram','Kilogram (Kg)','Milliliter (ml)','Liter (L)','Unit','Paket','Pcs','Buah','Bungkus','Batang','Lembar',];
+        : ['Gram', 'Kilogram (Kg)', 'Milliliter (ml)', 'Liter (L)', 'Unit', 'Paket', 'Pcs', 'Buah', 'Bungkus', 'Batang', 'Lembar'];
 });
 
 const tempatPenyimpananOptions = computed(() => {
     return props.dropdownOptions?.tempat_penyimpanan?.length
         ? props.dropdownOptions.tempat_penyimpanan
-        : ['Gudang Barang Bukti Kejaksaan Negeri Banda Aceh','RUPBASAN','KEJATI',];
+        : ['Gudang Barang Bukti Kejaksaan Negeri Banda Aceh', 'RUPBASAN', 'KEJATI'];
 });
 
 const addBarangBukti = () => {
@@ -181,16 +187,13 @@ const submitForm = () => {
     };
 
     if (isEditingCase.value && props.caseData?.id) {
-        // Mode Update per Item
         router.put(`/form3c/${props.caseData.id}`, casePayload);
     } else if (isNewForm.value) {
-        // Mode Buat Baru
         router.post('/forms/3c/wizard', {
             header: formHeader.value,
             case: casePayload,
         });
     } else {
-        // Mode Tambah Case ke Form Existing
         router.post(`/form3c/${props.form?.id}/cases`, casePayload);
     }
 };
@@ -219,7 +222,6 @@ const handlePaste = (
     const pastedText = event.clipboardData?.getData('text');
     if (!pastedText) return;
 
-    // Pembersihan Enter dan spasi berlebih dari PDF/Word
     const cleanedText = pastedText
         .replace(/[\r\n]+/g, ' ')
         .replace(/\s+/g, ' ')
@@ -228,16 +230,13 @@ const handlePaste = (
     const target = event.target as HTMLTextAreaElement | HTMLInputElement | null;
     if (!target) return;
 
-    // Deteksi apakah dipanggil dengan 2 argumen atau 3 argumen
     let targetObj: Record<string, any>;
     let key: string;
 
     if (typeof targetObjOrFieldName === 'string') {
-        // Jika dipanggil 2 argumen: handlePaste(e, 'identitasTersangka')
         targetObj = formCase.value;
         key = targetObjOrFieldName;
     } else {
-        // Jika dipanggil 3 argumen: handlePaste(e, bb, 'uraianBarangBukti')
         targetObj = targetObjOrFieldName;
         key = fieldName || '';
     }
@@ -248,7 +247,6 @@ const handlePaste = (
     const end = target.selectionEnd ?? 0;
     const currentValue = (targetObj[key] as string) || '';
 
-    // Update nilai properti targetObj
     targetObj[key] = currentValue.substring(0, start) + cleanedText + currentValue.substring(end);
 
     setTimeout(() => {
@@ -277,13 +275,9 @@ const handlePaste = (
     <AuthenticatedLayout userRole="karyawan" v-model:active-menu="activeMenu">
         <div class="mx-auto w-full space-y-8 p-8">
             <!-- PAGE HEADER -->
-            <div
-                class="flex items-center justify-between border-b border-slate-200 pb-4"
-            >
+            <div class="flex items-center justify-between border-b border-slate-200 pb-4">
                 <div>
-                    <h1
-                        class="text-2xl font-extrabold tracking-tight text-slate-900"
-                    >
+                    <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">
                         {{
                             isEditingCase
                                 ? 'Edit Data Case Form 3C'
@@ -308,14 +302,9 @@ const handlePaste = (
             </div>
 
             <!-- PROGRESS STEPPER BAR -->
-            <div
-                class="rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-md"
-            >
+            <div class="rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-md">
                 <div class="mx-auto flex max-w-xl items-center justify-center">
-                    <div
-                        class="flex cursor-pointer items-center gap-3"
-                        @click="goToStep1"
-                    >
+                    <div class="flex cursor-pointer items-center gap-3" @click="goToStep1">
                         <div
                             :class="[
                                 'flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold transition-all duration-300',
@@ -324,34 +313,20 @@ const handlePaste = (
                                     : 'bg-emerald-500 text-white',
                             ]"
                         >
-                            <Check
-                                v-if="currentStep > 1"
-                                class="h-5 w-5 stroke-[3]"
-                            />
+                            <Check v-if="currentStep > 1" class="h-5 w-5 stroke-[3]" />
                             <span v-else>1</span>
                         </div>
                         <div class="hidden text-left sm:block">
-                            <p
-                                class="text-xs font-bold tracking-wider uppercase"
-                                :class="
-                                    currentStep === 1
-                                        ? 'text-[#FFD000]'
-                                        : 'text-slate-300'
-                                "
-                            >
+                            <p class="text-xs font-bold tracking-wider uppercase" :class="currentStep === 1 ? 'text-[#FFD000]' : 'text-slate-300'">
                                 Tahap 1
                             </p>
-                            <p class="text-[11px] font-medium text-slate-400">
-                                Informasi Form
-                            </p>
+                            <p class="text-[11px] font-medium text-slate-400">Informasi Form</p>
                         </div>
                     </div>
 
                     <div
                         class="mx-4 h-0.5 max-w-[120px] flex-1 transition-all duration-300"
-                        :class="
-                            currentStep >= 2 ? 'bg-emerald-500' : 'bg-slate-700'
-                        "
+                        :class="currentStep >= 2 ? 'bg-emerald-500' : 'bg-slate-700'"
                     ></div>
 
                     <div class="flex items-center gap-3">
@@ -366,19 +341,10 @@ const handlePaste = (
                             2
                         </div>
                         <div class="hidden text-left sm:block">
-                            <p
-                                class="text-xs font-bold tracking-wider uppercase"
-                                :class="
-                                    currentStep === 2
-                                        ? 'text-[#FFD000]'
-                                        : 'text-slate-500'
-                                "
-                            >
+                            <p class="text-xs font-bold tracking-wider uppercase" :class="currentStep === 2 ? 'text-[#FFD000]' : 'text-slate-500'">
                                 Tahap 2
                             </p>
-                            <p class="text-[11px] font-medium text-slate-400">
-                                Input Data Case
-                            </p>
+                            <p class="text-[11px] font-medium text-slate-400">Input Data Case</p>
                         </div>
                     </div>
                 </div>
@@ -390,9 +356,7 @@ const handlePaste = (
                 class="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 p-4"
             >
                 <div>
-                    <p
-                        class="text-[11px] font-bold tracking-wider text-amber-800 uppercase"
-                    >
+                    <p class="text-[11px] font-bold tracking-wider text-amber-800 uppercase">
                         {{
                             isEditingCase
                                 ? 'Mengubah Data Perkara (Mode Edit):'
@@ -407,9 +371,7 @@ const handlePaste = (
                         }}
                     </p>
                 </div>
-                <span
-                    class="rounded-full bg-amber-200 px-2.5 py-1 text-[10px] font-bold text-amber-900 uppercase"
-                >
+                <span class="rounded-full bg-amber-200 px-2.5 py-1 text-[10px] font-bold text-amber-900 uppercase">
                     {{ isEditingCase ? 'Mode Edit' : 'Form Terkunci' }}
                 </span>
             </div>
@@ -430,13 +392,12 @@ const handlePaste = (
 
                 <div class="space-y-4">
                     <div>
-                        <label
-                            class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-700 uppercase"
-                        >
+                        <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-700 uppercase">
                             NAMA FORM LAPORAN <span class="text-red-500">*</span>
                         </label>
                         <input
                             v-model="formHeader.name"
+                            @paste="handlePaste($event, formHeader, 'name')"
                             type="text"
                             required
                             placeholder="Contoh: FORM 3C Juli 2026"
@@ -446,9 +407,7 @@ const handlePaste = (
 
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
-                            <label
-                                class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-700 uppercase"
-                            >
+                            <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-700 uppercase">
                                 BULAN <span class="text-red-500">*</span>
                             </label>
                             <select
@@ -456,19 +415,13 @@ const handlePaste = (
                                 required
                                 class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-4 py-3 text-sm font-semibold text-slate-900 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                             >
-                                <option
-                                    v-for="m in monthOptions"
-                                    :key="m.value"
-                                    :value="m.value"
-                                >
+                                <option v-for="m in monthOptions" :key="m.value" :value="m.value">
                                     {{ m.label }}
                                 </option>
                             </select>
                         </div>
                         <div>
-                            <label
-                                class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-700 uppercase"
-                            >
+                            <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-700 uppercase">
                                 TAHUN <span class="text-red-500">*</span>
                             </label>
                             <select
@@ -476,11 +429,7 @@ const handlePaste = (
                                 required
                                 class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-4 py-3 text-sm font-semibold text-slate-900 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                             >
-                                <option
-                                    v-for="y in yearOptions"
-                                    :key="y"
-                                    :value="y"
-                                >
+                                <option v-for="y in yearOptions" :key="y" :value="y">
                                     {{ y }}
                                 </option>
                             </select>
@@ -500,106 +449,61 @@ const handlePaste = (
                 </div>
             </div>
 
-            <!-- TAHAP 2 -->
-            <form
-                v-if="currentStep === 2"
-                @submit.prevent="submitForm"
-                class="space-y-6"
-            >
-                <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
-                    <!-- FIELD 1 & FIELD 2 (SISI KIRI) -->
-                    <div
-                        class="h-fit space-y-5 rounded-xl border border-slate-200/80 bg-white p-6 shadow-xs lg:col-span-5"
-                    >
-                        <div
-                            class="flex items-center gap-3 border-b border-slate-100 pb-3"
-                        >
-                            <div
-                                class="rounded-lg bg-slate-100 p-2 text-slate-800"
-                            >
-                                <Gavel class="h-5 w-5" />
-                            </div>
-                            <h2
-                                class="text-xs font-bold tracking-wider text-slate-900 uppercase"
-                            >
-                                1. PERKARA & REGISTER
-                            </h2>
+            <!-- TAHAP 2 (LAYOUT BERTINGKAT SESUAI SKETSA) -->
+            <form v-if="currentStep === 2" @submit.prevent="submitForm" class="space-y-6">
+                <!-- 1. IDENTITAS PERKARA, REGISTER & PUTUSAN (FULL WIDTH TOP) -->
+                <div class="space-y-5 rounded-xl border border-slate-200/80 bg-white p-6 shadow-xs">
+                    <div class="flex items-center gap-3 border-b border-slate-100 pb-3">
+                        <div class="rounded-lg bg-slate-100 p-2 text-slate-800">
+                            <Gavel class="h-5 w-5" />
                         </div>
+                        <h2 class="text-xs font-bold tracking-wider text-slate-900 uppercase">
+                            IDENTITAS PERKARA, REGISTER & PUTUSAN
+                        </h2>
+                    </div>
 
-                        <div>
-                            <label
-                                class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                            >
-                                SATUAN KERJA
-                            </label>
-                            <input
-                                v-model="formCase.satuanKerja"
-                                type="text"
-                                readonly
-                                class="w-full cursor-not-allowed rounded-lg border border-transparent bg-slate-200/70 px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none"
-                            />
-                        </div>
-
-                        <div>
-                            <label
-                                class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-700 uppercase"
-                            >
-                                KATEGORI TINDAK PIDANA <span class="text-red-500">*</span>
-                            </label>
-                            <select
-                                v-model="formCase.kategoriTindakPidana"
-                                required
-                                class="w-full rounded-lg border border-amber-300 bg-[#FFFBEB] px-3.5 py-2.5 text-xs font-bold text-slate-900 transition-all outline-none focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                            >
-                                <option value="" disabled>
-                                    -- Pilih Jenis Tindak Pidana --
-                                </option>
-                                <option
-                                    v-for="kat in kategoriPidanaOptions"
-                                    :key="kat"
-                                    :value="kat"
-                                >
-                                    {{ kat }}
-                                </option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label
-                                class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                            >
-                                PASAL YANG DIDAKWAKAN <span class="text-red-500">*</span>
-                            </label>
-                            <textarea
-                                v-model="formCase.pasalDidakwakan"
-                                rows="2"
-                                required
-                                placeholder="Cth. Pasal 112 ayat (1) jo Pasal 114..."
-                                @paste="(e) => handlePaste(e, 'pasalDidakwakan')"
-                                @input="
-                                    (e) => {
-                                        const el = e.target as HTMLTextAreaElement;
-                                        el.style.height = 'auto';
-                                        el.style.height = el.scrollHeight + 'px';
-                                    }
-                                "
-                                class="w-full resize-none overflow-hidden rounded-lg border border-transparent bg-[#F4F6F8] p-3 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                            ></textarea>
-                        </div>
-
-                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <!-- GRID 2 KOLOM INTERNAL -->
+                    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                        <!-- KOLOM KIRI: PERKARA & REGISTER -->
+                        <div class="space-y-4">
                             <div>
-                                <label
-                                    class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
+                                <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
+                                    SATUAN KERJA
+                                </label>
+                                <input
+                                    v-model="formCase.satuanKerja"
+                                    type="text"
+                                    readonly
+                                    class="w-full cursor-not-allowed rounded-lg border border-transparent bg-slate-200/70 px-3.5 py-2.5 text-xs font-bold text-slate-700 outline-none"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-700 uppercase">
+                                    KATEGORI TINDAK PIDANA <span class="text-red-500">*</span>
+                                </label>
+                                <select
+                                    v-model="formCase.kategoriTindakPidana"
+                                    required
+                                    class="w-full rounded-lg border border-amber-300 bg-[#FFFBEB] px-3.5 py-2.5 text-xs font-bold text-slate-900 transition-all outline-none focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                                 >
-                                    NO. REG SITAAN <span class="text-red-500">*</span>
+                                    <option value="" disabled>-- Pilih Jenis Tindak Pidana --</option>
+                                    <option v-for="kat in kategoriPidanaOptions" :key="kat" :value="kat">
+                                        {{ kat }}
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
+                                    PASAL YANG DIDAKWAKAN <span class="text-red-500">*</span>
                                 </label>
                                 <textarea
-                                    v-model="formCase.noRegBendaSitaan"
-                                    rows="1"
+                                    v-model="formCase.pasalDidakwakan"
+                                    rows="2"
                                     required
-                                    placeholder="Cth. RB-27/Bna/Eoh.2/06/..."
-                                    @paste="(e) => handlePaste(e, 'noRegBendaSitaan')"
+                                    placeholder="Cth. Pasal 112 ayat (1) jo Pasal 114..."
+                                    @paste="(e) => handlePaste(e, 'pasalDidakwakan')"
                                     @input="
                                         (e) => {
                                             const el = e.target as HTMLTextAreaElement;
@@ -610,34 +514,52 @@ const handlePaste = (
                                     class="w-full resize-none overflow-hidden rounded-lg border border-transparent bg-[#F4F6F8] p-3 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                                 ></textarea>
                             </div>
-                            <div>
-                                <label
-                                    class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                >
-                                    TGL PENERIMAAN BB <span class="text-red-500">*</span>
-                                </label>
-                                <input
-                                    v-model="formCase.tglPenerimaan"
-                                    type="date"
-                                    required
-                                    class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                                />
+
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <div>
+                                    <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
+                                        NO. REG SITAAN <span class="text-red-500">*</span>
+                                    </label>
+                                    <textarea
+                                        v-model="formCase.noRegBendaSitaan"
+                                        rows="1"
+                                        required
+                                        placeholder="Cth. RB-27/Bna/Eoh.2/06/..."
+                                        @paste="(e) => handlePaste(e, 'noRegBendaSitaan')"
+                                        @input="
+                                            (e) => {
+                                                const el = e.target as HTMLTextAreaElement;
+                                                el.style.height = 'auto';
+                                                el.style.height = el.scrollHeight + 'px';
+                                            }
+                                        "
+                                        class="w-full resize-none overflow-hidden rounded-lg border border-transparent bg-[#F4F6F8] p-3 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                    ></textarea>
+                                </div>
+                                <div>
+                                    <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
+                                        TGL PENERIMAAN BB <span class="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        v-model="formCase.tglPenerimaan"
+                                        type="date"
+                                        required
+                                        class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                    />
+                                </div>
                             </div>
                         </div>
 
-                        <div class="space-y-4 border-t border-slate-100 pt-3">
-                            <div
-                                class="flex items-center gap-2 text-xs font-bold text-slate-800"
-                            >
+                        <!-- KOLOM KANAN: PUTUSAN & EKSEKUSI HAKIM -->
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-2 border-b border-slate-100 pb-2 text-xs font-bold text-slate-800">
                                 <FileCheck2 class="h-4 w-4 text-slate-600" />
-                                <span>2. PUTUSAN & EKSEKUSI HAKIM</span>
+                                <span>PUTUSAN & EKSEKUSI HAKIM</span>
                             </div>
 
                             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                                 <div>
-                                    <label
-                                        class="mb-1 block text-[10px] font-bold text-slate-600 uppercase"
-                                    >
+                                    <label class="mb-1 block text-[10px] font-bold text-slate-600 uppercase">
                                         NO. KEP (PN/PT/MA) <span class="text-red-500">*</span>
                                     </label>
                                     <input
@@ -645,29 +567,25 @@ const handlePaste = (
                                         type="text"
                                         required
                                         placeholder="Cth. 1/Pid.Sus-Anak/2026/PN Bna..."
+                                        @paste="(e) => handlePaste(e, 'noKepPengadilan')"
                                         class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                                     />
                                 </div>
                                 <div>
-                                    <label
-                                        class="mb-1 block text-[10px] font-bold text-slate-600 uppercase"
-                                    >
+                                    <label class="mb-1 block text-[10px] font-bold text-slate-600 uppercase">
                                         TGL. KEP (PN/PT/MA) <span class="text-red-500">*</span>
                                     </label>
                                     <input
                                         v-model="formCase.tglKepPengadilan"
                                         type="date"
                                         required
-                                        @paste="(e) => handlePaste(e, 'tglKepPengadilan')"
                                         class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label
-                                    class="mb-1 block text-[10px] font-bold text-slate-600 uppercase"
-                                >
+                                <label class="mb-1 block text-[10px] font-bold text-slate-600 uppercase">
                                     TGL PELAKSANAAN PUTUSAN
                                 </label>
                                 <input
@@ -678,234 +596,208 @@ const handlePaste = (
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- FIELD 3. DAFTAR BARANG BUKTI (REPEATER SISI KANAN) -->
-                    <div class="space-y-5 lg:col-span-7">
-                        <div
-                            class="flex items-center justify-between rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs"
-                        >
-                            <div class="flex items-center gap-3">
-                                <div
-                                    class="rounded-lg bg-slate-100 p-2 text-slate-800"
-                                >
-                                    <Package class="h-5 w-5" />
-                                </div>
-                                <div>
-                                    <h2
-                                        class="text-xs font-bold tracking-wider text-slate-900 uppercase"
-                                    >
-                                        3. DAFTAR BARANG BUKTI
-                                    </h2>
-                                    <p class="text-[11px] text-slate-500">
-                                        Total:
-                                        {{ formCase.barangBuktiList.length }}
-                                        Barang Bukti
-                                    </p>
-                                </div>
-                            </div>
+                <!-- 2. HEADER BAR DAFTAR BARANG BUKTI (FULL WIDTH DI TENGAH) -->
+                <div class="flex items-center justify-between rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs">
+                    <div class="flex items-center gap-3">
+                        <div class="rounded-lg bg-slate-100 p-2 text-slate-800">
+                            <Package class="h-5 w-5" />
+                        </div>
+                        <div>
+                            <h2 class="text-xs font-bold tracking-wider text-slate-900 uppercase">
+                                DAFTAR BARANG BUKTI
+                            </h2>
+                            <p class="text-[11px] text-slate-500">
+                                Total: {{ formCase.barangBuktiList.length }} Barang Bukti
+                            </p>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#0E1B2E] px-3.5 py-2 text-xs font-bold text-white shadow-xs transition-colors hover:bg-slate-800"
+                        @click="addBarangBukti"
+                    >
+                        <Plus class="h-4 w-4" />
+                        <span>Tambah Barang Bukti</span>
+                    </button>
+                </div>
+
+                <!-- 3. REPEATER KARTU BARANG BUKTI (GRID 2 KOLOM) -->
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <!-- KARTU ITEM BARANG BUKTI -->
+                    <div
+                        v-for="(bb, index) in formCase.barangBuktiList"
+                        :key="index"
+                        class="relative space-y-4 rounded-xl border border-slate-200/80 bg-white p-6 shadow-xs transition-all"
+                    >
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <span class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold tracking-wider text-slate-800 uppercase">
+                                Barang Bukti #{{ index + 1 }}
+                            </span>
 
                             <button
+                                v-if="formCase.barangBuktiList.length > 1"
                                 type="button"
-                                class="flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#0E1B2E] px-3.5 py-2 text-xs font-bold text-white shadow-xs transition-colors hover:bg-slate-800"
-                                @click="addBarangBukti"
+                                class="flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
+                                @click="removeBarangBukti(index)"
+                                title="Hapus Barang Bukti Ini"
                             >
-                                <Plus class="h-4 w-4" />
-                                <span>Tambah Barang Bukti</span>
+                                <Trash2 class="h-4 w-4" />
+                                <span>Hapus</span>
                             </button>
                         </div>
 
-                        <div
-                            v-for="(bb, index) in formCase.barangBuktiList"
-                            :key="index"
-                            class="relative space-y-4 rounded-xl border border-slate-200/80 bg-white p-6 shadow-xs transition-all"
-                        >
-                            <div
-                                class="flex items-center justify-between border-b border-slate-100 pb-3"
-                            >
-                                <span
-                                    class="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold tracking-wider text-slate-800 uppercase"
-                                >
-                                    Barang Bukti #{{ index + 1 }}
-                                </span>
-
-                                <button
-                                    v-if="formCase.barangBuktiList.length > 1"
-                                    type="button"
-                                    class="flex cursor-pointer items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-red-500 transition-colors hover:bg-red-50 hover:text-red-700"
-                                    @click="removeBarangBukti(index)"
-                                    title="Hapus Barang Bukti Ini"
-                                >
-                                    <Trash2 class="h-4 w-4" />
-                                    <span>Hapus</span>
-                                </button>
+                        <!-- JUMLAH & URAIAN BARANG BUKTI -->
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
+                            <div class="sm:col-span-4">
+                                <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
+                                    JUMLAH SATUAN <span class="text-red-500">*</span>
+                                </label>
+                                <input
+                                    v-model="bb.jumlahSatuan"
+                                    type="number"
+                                    step="any"
+                                    min="1"
+                                    required
+                                    placeholder="1"
+                                    class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs font-semibold text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                />
                             </div>
-
-                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
-                                <div class="sm:col-span-4">
-                                    <label
-                                        class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                    >
-                                        JUMLAH SATUAN <span class="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        v-model="bb.jumlahSatuan"
-                                        type="number"
-                                        step="any"
-                                        min="1"
-                                        required
-                                        placeholder="1"
-                                        class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs font-semibold text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                                    />
-                                </div>
-                                <div class="sm:col-span-8">
-                                    <label
-                                        class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                    >
-                                        URAIAN / KETERANGAN BARANG BUKTI <span class="text-red-500">*</span>
-                                    </label>
-                                    <textarea
-                                        v-model="bb.uraianBarangBukti"
-                                        rows="1"
-                                        required
-                                        placeholder="Deskripsi / spesifikasi rinci barang bukti..."
-                                        @paste="(e) => handlePaste(e, bb, 'uraianBarangBukti')"
-                                        @input="
-                                            (e) => {
-                                                const el = e.target as HTMLTextAreaElement;
-                                                el.style.height = 'auto';
-                                                el.style.height = el.scrollHeight + 'px';
-                                            }
-                                        "
-                                        class="w-full resize-none overflow-hidden rounded-lg border border-transparent bg-[#F4F6F8] p-3 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                                    ></textarea>
-                                </div>
+                            <div class="sm:col-span-8">
+                                <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
+                                    URAIAN / KETERANGAN BARANG BUKTI <span class="text-red-500">*</span>
+                                </label>
+                                <textarea
+                                    v-model="bb.uraianBarangBukti"
+                                    rows="1"
+                                    required
+                                    placeholder="Deskripsi / spesifikasi rinci barang bukti..."
+                                    @paste="(e) => handlePaste(e, bb, 'uraianBarangBukti')"
+                                    @input="
+                                        (e) => {
+                                            const el = e.target as HTMLTextAreaElement;
+                                            el.style.height = 'auto';
+                                            el.style.height = el.scrollHeight + 'px';
+                                        }
+                                    "
+                                    class="w-full resize-none overflow-hidden rounded-lg border border-transparent bg-[#F4F6F8] p-3 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                ></textarea>
                             </div>
+                        </div>
 
-                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
-                                <div class="sm:col-span-4">
-                                    <label
-                                        class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                    >
-                                        JENIS SATUAN <span class="text-red-500">*</span>
-                                    </label>
-                                    <select
-                                        v-model="bb.jenisSatuan"
-                                        required
-                                        class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                                    >
-                                        <option value="" disabled>
-                                            Pilih Satuan...
-                                        </option>
-                                        <option
-                                            v-for="s in satuanOptions"
-                                            :key="s"
-                                            :value="s"
-                                        >
-                                            {{ s }}
-                                        </option>
-                                    </select>
-                                </div>
-                                <div class="sm:col-span-8">
-                                    <label
-                                        class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                    >
-                                        MACAM JENIS KADAR BARANG BUKTI <span class="text-red-500">*</span>
-                                    </label>
-                                    <textarea
-                                        v-model="bb.macamJenisKadar"
-                                        rows="1"
-                                        required
-                                        placeholder="Spesifikasi rinci, kadar kemurnian, nomor mesin..."
-                                        @paste="(e) => handlePaste(e, bb, 'macamJenisKadar')"
-                                        @input="
-                                            (e) => {
-                                                const el = e.target as HTMLTextAreaElement;
-                                                el.style.height = 'auto';
-                                                el.style.height = el.scrollHeight + 'px';
-                                            }
-                                        "
-                                        class="w-full resize-none overflow-hidden rounded-lg border border-transparent bg-[#F4F6F8] p-3 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                                    ></textarea>
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
-                                <div class="sm:col-span-4">
-                                    <label
-                                        class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                    >
-                                        AMAR PUTUSAN <span class="text-red-500">*</span>
-                                    </label>
-                                    <select
-                                        v-model="bb.amarPutusan"
-                                        required
-                                        class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                                    >
-                                        <option value="" disabled>
-                                            Pilih Amar Putusan...
-                                        </option>
-                                        <option
-                                            v-for="opt in amarPutusanOptions"
-                                            :key="opt"
-                                            :value="opt"
-                                        >
-                                            {{ opt }}
-                                        </option>
-                                    </select>
-                                </div>
-                                <div class="sm:col-span-8">
-                                    <label
-                                        class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                    >
-                                        URAIAN / KETERANGAN AMAR PUTUSAN
-                                    </label>
-                                    <textarea
-                                        v-model="bb.uraianPutusan"
-                                        rows="1"
-                                        placeholder="Rincian / uraian amar putusan hakim..."
-                                        @paste="(e) => handlePaste(e, bb,'uraianPutusan')"
-                                        @input="
-                                            (e) => {
-                                                const el = e.target as HTMLTextAreaElement;
-                                                el.style.height = 'auto';
-                                                el.style.height = el.scrollHeight + 'px';
-                                            }
-                                        "
-                                        class="w-full resize-none overflow-hidden rounded-lg border border-transparent bg-[#F4F6F8] p-3 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
-                                    ></textarea>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label
-                                    class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase"
-                                >
-                                    TEMPAT PENYIMPANAN <span class="text-red-500">*</span>
+                        <!-- JENIS SATUAN & MACAM JENIS KADAR -->
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
+                            <div class="sm:col-span-4">
+                                <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
+                                    JENIS SATUAN <span class="text-red-500">*</span>
                                 </label>
                                 <select
-                                    v-model="bb.tempatPenyimpanan"
+                                    v-model="bb.jenisSatuan"
                                     required
                                     class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                                 >
-                                    <option value="" disabled>
-                                        Pilih Tempat Penyimpanan...
+                                    <option value="" disabled>Pilih Satuan...</option>
+                                    <option v-for="s in satuanOptions" :key="s" :value="s">
+                                        {{ s }}
                                     </option>
-                                    <option
-                                        v-for="opt in tempatPenyimpananOptions"
-                                        :key="opt"
-                                        :value="opt"
-                                    >
+                                </select>
+                            </div>
+                            <div class="sm:col-span-8">
+                                <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
+                                    MACAM JENIS KADAR BARANG BUKTI <span class="text-red-500">*</span>
+                                </label>
+                                <textarea
+                                    v-model="bb.macamJenisKadar"
+                                    rows="1"
+                                    required
+                                    placeholder="Spesifikasi rinci, kadar kemurnian, nomor mesin..."
+                                    @paste="(e) => handlePaste(e, bb, 'macamJenisKadar')"
+                                    @input="
+                                        (e) => {
+                                            const el = e.target as HTMLTextAreaElement;
+                                            el.style.height = 'auto';
+                                            el.style.height = el.scrollHeight + 'px';
+                                        }
+                                    "
+                                    class="w-full resize-none overflow-hidden rounded-lg border border-transparent bg-[#F4F6F8] p-3 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                ></textarea>
+                            </div>
+                        </div>
+
+                        <!-- AMAR PUTUSAN & URAIAN AMAR PUTUSAN -->
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
+                            <div class="sm:col-span-4">
+                                <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
+                                    AMAR PUTUSAN <span class="text-red-500">*</span>
+                                </label>
+                                <select
+                                    v-model="bb.amarPutusan"
+                                    required
+                                    class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                >
+                                    <option value="" disabled>Pilih Amar Putusan...</option>
+                                    <option v-for="opt in amarPutusanOptions" :key="opt" :value="opt">
                                         {{ opt }}
                                     </option>
                                 </select>
                             </div>
+                            <div class="sm:col-span-8">
+                                <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
+                                    URAIAN / KETERANGAN AMAR PUTUSAN
+                                </label>
+                                <textarea
+                                    v-model="bb.uraianPutusan"
+                                    rows="1"
+                                    placeholder="Rincian / uraian amar putusan hakim..."
+                                    @paste="(e) => handlePaste(e, bb, 'uraianPutusan')"
+                                    @input="
+                                        (e) => {
+                                            const el = e.target as HTMLTextAreaElement;
+                                            el.style.height = 'auto';
+                                            el.style.height = el.scrollHeight + 'px';
+                                        }
+                                    "
+                                    class="w-full resize-none overflow-hidden rounded-lg border border-transparent bg-[#F4F6F8] p-3 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                                ></textarea>
+                            </div>
                         </div>
+
+                        <!-- TEMPAT PENYIMPANAN -->
+                        <div>
+                            <label class="mb-1.5 block text-[11px] font-bold tracking-wider text-slate-600 uppercase">
+                                TEMPAT PENYIMPANAN <span class="text-red-500">*</span>
+                            </label>
+                            <select
+                                v-model="bb.tempatPenyimpanan"
+                                required
+                                class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3.5 py-2.5 text-xs text-slate-800 transition-all outline-none focus:border-slate-300 focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
+                            >
+                                <option value="" disabled>Pilih Tempat Penyimpanan...</option>
+                                <option v-for="opt in tempatPenyimpananOptions" :key="opt" :value="opt">
+                                    {{ opt }}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- KARTU TAMBAH BARANG BUKTI BARU (SESUAI SKETSA DENGAN IKON PLUS BESAR) -->
+                    <div
+                        @click="addBarangBukti"
+                        class="group flex min-h-[220px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-6 transition-all hover:border-slate-400 hover:bg-slate-100/80"
+                    >
+                        <div class="rounded-full bg-white p-4 shadow-xs transition-transform group-hover:scale-110">
+                            <Plus class="h-8 w-8 text-slate-600" />
+                        </div>
+                        <span class="mt-3 text-xs font-bold tracking-wider text-slate-700 uppercase">
+                            Tambah Barang Bukti
+                        </span>
                     </div>
                 </div>
 
-                <div
-                    class="flex items-center justify-between border-t border-slate-200 pt-4"
-                >
+                <!-- FOOTER AKSI TOMBOL -->
+                <div class="flex items-center justify-between border-t border-slate-200 pt-4">
                     <div>
                         <button
                             v-if="isNewForm"
