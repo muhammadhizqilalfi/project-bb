@@ -82,7 +82,7 @@
         .text-left { text-align: left; }
         .tp { text-align: center; font-weight: bold; margin-bottom: 1rem; font-size: 14pt; }
         .satker { font-weight: bold; }
-        .header-container { width: 100%; border-collapse: collapse; margin-bottom: 20px; margin-top: -1.5rem; }
+        .header-container { width: 100%; border-collapse: collapse; margin-bottom: 20px; margfin-top: -1.5rem; }
         .header-container td { border: none !important; padding: 0 !important; vertical-align: top; }
         .header1 { width: 50%;}
         .header2 { font-weight: bold; font-size: 12pt; text-align: right; width: 50%; }

@@ -3,25 +3,39 @@
 namespace App\Http\Controllers;
 
 use App\Models\DropdownOption;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class DropdownOptionController extends Controller
 {
 
-    public function index()
-    {
-        $optionsData = DropdownOption::orderBy('id', 'asc')
-            ->get()
-            ->map(fn ($item) => [
+    public function index(){
+        $options = DropdownOption::orderBy('category')
+            ->orderBy('label')
+            ->get();
+
+        $optionsData = $options->map(function ($item) {
+            return [
                 'id' => $item->id,
                 'category' => $item->category,
                 'label' => $item->label,
                 'formTarget' => $item->form_target,
-            ]);
+            ];
+        });
+
+        $officerSetting = Setting::where('key', 'pejabat_kasi')->first();
+
+        $officerData = $officerSetting?->value ?? [
+            'jabatan_kasi' => '',
+            'nama_kasi' => '',
+            'nip_kasi' => '',
+            'pangkat_kasi' => '',
+        ];
 
         return Inertia::render('Tabs/PengaturanForm', [
             'optionsData' => $optionsData,
+            'officerData' => $officerData,
         ]);
     }
 

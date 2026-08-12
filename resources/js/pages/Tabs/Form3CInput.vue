@@ -208,6 +208,59 @@ const resetCaseForm = () => {
         barangBuktiList: [createEmptyBarangBukti()],
     };
 };
+
+const handlePaste = (
+    event: ClipboardEvent,
+    targetObjOrFieldName: Record<string, any> | string,
+    fieldName?: string
+) => {
+    event.preventDefault();
+
+    const pastedText = event.clipboardData?.getData('text');
+    if (!pastedText) return;
+
+    // Pembersihan Enter dan spasi berlebih dari PDF/Word
+    const cleanedText = pastedText
+        .replace(/[\r\n]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const target = event.target as HTMLTextAreaElement | HTMLInputElement | null;
+    if (!target) return;
+
+    // Deteksi apakah dipanggil dengan 2 argumen atau 3 argumen
+    let targetObj: Record<string, any>;
+    let key: string;
+
+    if (typeof targetObjOrFieldName === 'string') {
+        // Jika dipanggil 2 argumen: handlePaste(e, 'identitasTersangka')
+        targetObj = formCase.value;
+        key = targetObjOrFieldName;
+    } else {
+        // Jika dipanggil 3 argumen: handlePaste(e, bb, 'uraianBarangBukti')
+        targetObj = targetObjOrFieldName;
+        key = fieldName || '';
+    }
+
+    if (!key || !targetObj) return;
+
+    const start = target.selectionStart ?? 0;
+    const end = target.selectionEnd ?? 0;
+    const currentValue = (targetObj[key] as string) || '';
+
+    // Update nilai properti targetObj
+    targetObj[key] = currentValue.substring(0, start) + cleanedText + currentValue.substring(end);
+
+    setTimeout(() => {
+        if (target.selectionStart !== null && target.selectionEnd !== null) {
+            target.selectionStart = target.selectionEnd = start + cleanedText.length;
+        }
+        if (target instanceof HTMLTextAreaElement) {
+            target.style.height = 'auto';
+            target.style.height = target.scrollHeight + 'px';
+        }
+    }, 0);
+};
 </script>
 
 <template>
@@ -519,9 +572,10 @@ const resetCaseForm = () => {
                             </label>
                             <textarea
                                 v-model="formCase.pasalDidakwakan"
-                                rows="1"
+                                rows="2"
                                 required
                                 placeholder="Cth. Pasal 112 ayat (1) jo Pasal 114..."
+                                @paste="(e) => handlePaste(e, 'pasalDidakwakan')"
                                 @input="
                                     (e) => {
                                         const el = e.target as HTMLTextAreaElement;
@@ -545,6 +599,7 @@ const resetCaseForm = () => {
                                     rows="1"
                                     required
                                     placeholder="Cth. RB-27/Bna/Eoh.2/06/..."
+                                    @paste="(e) => handlePaste(e, 'noRegBendaSitaan')"
                                     @input="
                                         (e) => {
                                             const el = e.target as HTMLTextAreaElement;
@@ -603,6 +658,7 @@ const resetCaseForm = () => {
                                         v-model="formCase.tglKepPengadilan"
                                         type="date"
                                         required
+                                        @paste="(e) => handlePaste(e, 'tglKepPengadilan')"
                                         class="w-full rounded-lg border border-transparent bg-[#F4F6F8] px-3 py-2 text-xs text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-[#FFD000]"
                                     />
                                 </div>
@@ -712,6 +768,7 @@ const resetCaseForm = () => {
                                         rows="1"
                                         required
                                         placeholder="Deskripsi / spesifikasi rinci barang bukti..."
+                                        @paste="(e) => handlePaste(e, bb, 'uraianBarangBukti')"
                                         @input="
                                             (e) => {
                                                 const el = e.target as HTMLTextAreaElement;
@@ -759,6 +816,7 @@ const resetCaseForm = () => {
                                         rows="1"
                                         required
                                         placeholder="Spesifikasi rinci, kadar kemurnian, nomor mesin..."
+                                        @paste="(e) => handlePaste(e, bb, 'macamJenisKadar')"
                                         @input="
                                             (e) => {
                                                 const el = e.target as HTMLTextAreaElement;
@@ -805,6 +863,7 @@ const resetCaseForm = () => {
                                         v-model="bb.uraianPutusan"
                                         rows="1"
                                         placeholder="Rincian / uraian amar putusan hakim..."
+                                        @paste="(e) => handlePaste(e, bb,'uraianPutusan')"
                                         @input="
                                             (e) => {
                                                 const el = e.target as HTMLTextAreaElement;

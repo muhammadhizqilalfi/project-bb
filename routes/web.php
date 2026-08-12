@@ -9,6 +9,7 @@ use App\Http\Controllers\FormTemplateController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\DropdownOptionController;
 use App\Http\Controllers\Form3BController;
+use App\Http\Controllers\SettingController;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -58,6 +59,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings', [DropdownOptionController::class, 'store'])->name('dropdowns.store');
     Route::put('/settings/{id}', [DropdownOptionController::class, 'update'])->name('dropdowns.update');
     Route::delete('/settings/{id}', [DropdownOptionController::class, 'destroy'])->name('dropdowns.destroy');
+
+    Route::post('/settings/officer', [SettingController::class, 'saveOfficer'])
+    ->name('settings.officer.save');
+
+    Route::get('/settings/officer', [SettingController::class, 'officer'])
+    ->name('settings.officer');
 
     // Logout
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');

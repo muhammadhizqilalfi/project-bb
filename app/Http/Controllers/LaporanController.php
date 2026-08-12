@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\FormTemplate;
+use App\Services\LaporanDocxService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -16,13 +17,11 @@ class LaporanController extends Controller
         $year = (int) $request->input('year', now()->year);
         $kategori = $request->input('kategori', 'ALL');
 
-        // Fetch Form Template berdasarkan Tipe, Bulan, dan Tahun
         $formsQuery = FormTemplate::where('form_type', $formType)
             ->where('month', $month)
             ->where('year', $year)
             ->get();
 
-        // Hitung total akumulasi SELURUH case di setiap form untuk badge tab
         $count3A = 0;
         foreach (FormTemplate::where('form_type', '3A')->where('month', $month)->where('year', $year)->get() as $f) {
             $count3A += count($f->cases ?? ($f->latest_case_summary ? [$f->latest_case_summary] : []));
@@ -45,27 +44,23 @@ class LaporanController extends Controller
         ];
 
         $cases = [];
-        
-        // Akumulator Massa Narkotika
+
         $sabuGram = 0;
         $ganjaGram = 0;
         $ekstasiPcs = 0;
 
         foreach ($formsQuery as $form) {
-            // PERBAIKAN: Ambil SELURUH array cases, bukan hanya latest_case_summary
             $allCases = $form->cases ?? ($form->latest_case_summary ? [$form->latest_case_summary] : []);
 
             foreach ($allCases as $caseIndex => $summary) {
                 $kategoriCase = $summary['kategoriTindakPidana'] ?? '';
 
-                // Filter berdasarkan Kategori Tindak Pidana jika tidak memilih 'ALL'
                 if ($kategori !== 'ALL' && strtoupper($kategoriCase) !== strtoupper($kategori)) {
                     continue;
                 }
 
                 $rawBbList = $summary['barangBuktiList'] ?? [];
 
-                // Memastikan daftar barang bukti memuat jumlah unit asli yang diisi saat input
                 $formattedBbList = array_map(function ($bb) {
                     return [
                         'jenisBarangBukti' => $bb['jenisBarangBukti'] ?? $bb['uraianBarangBukti'] ?? '-',
@@ -82,15 +77,14 @@ class LaporanController extends Controller
                     ];
                 }, $rawBbList);
 
-                // Hitung akumulasi ringkasan narkotika berdasarkan nilai jumlah & satuan hasil input
                 foreach ($formattedBbList as $bb) {
                     $jenisNarkotika = strtolower($bb['jenisNarkotika'] ?? $bb['uraianBarangBukti'] ?? '');
-                    
+
                     $jumlahVal = $bb['jumlahNarkotika'] !== null ? $bb['jumlahNarkotika'] : $bb['jumlah'];
                     $satuanVal = strtolower($bb['satuanNarkotika'] ?? $bb['satuan'] ?? '');
 
-                    $massaGram = ($satuanVal === 'kilogram (kg)' || $satuanVal === 'kg') 
-                        ? $jumlahVal * 1000 
+                    $massaGram = ($satuanVal === 'kilogram (kg)' || $satuanVal === 'kg')
+                        ? $jumlahVal * 1000
                         : $jumlahVal;
 
                     if (str_contains($jenisNarkotika, 'sabu') || str_contains($jenisNarkotika, 'meth')) {
@@ -115,7 +109,6 @@ class LaporanController extends Controller
                     'tglPelaksanaanPutusan' => $summary['tglPelaksanaanPutusan'] ?? '-',
                     'keterangan' => $summary['keterangan'] ?? '-',
                     'barangBuktiList' => $formattedBbList,
-
                     'sisaBulanLalu' => $summary['sisaBulanLalu'] ?? 0,
                     'masukBulanLaporan' => $summary['masukBulanLaporan'] ?? 0,
                     'jumlahBulanLaporan' => $summary['jumlahBulanLaporan'] ?? 0,
@@ -154,37 +147,55 @@ class LaporanController extends Controller
 
     public function exportPdf(Request $request)
     {
-
         if ($request->input('kategori', 'ALL') === 'ALL') {
             return back()->with('error', 'Silakan pilih kategori Tindak Pidana spesifik terlebih dahulu.');
         }
 
         $data = $this->getLaporanData($request);
 
-        $pdf = Pdf::loadView('exports-laporan', $data)
-            ->setPaper('a4', 'landscape');
+        // 13 x 8.5 inch dalam PDF points.
+        // 1 inch = 72 points.
+        $paper = [0, 0, 13 * 72, 8.5 * 72];
+
+        $pdf = Pdf::loadView('exports-laporan-pdf', $data)
+            ->setPaper($paper);
 
         $fileName = "Laporan_Form_{$data['filters']['formType']}_{$data['filters']['month']}_{$data['filters']['year']}.pdf";
 
         return $pdf->stream($fileName);
     }
 
-    public function exportDocx(Request $request)
+    public function exportDocx(Request $request, LaporanDocxService $docxService)
     {
-
         if ($request->input('kategori', 'ALL') === 'ALL') {
-            return back()->with('error', 'Silakan pilih kategori Tindak Pidana spesifik terlebih dahulu.');
+            return back()->with(
+                'error',
+                'Silakan pilih kategori Tindak Pidana spesifik terlebih dahulu.'
+            );
         }
 
-        $data = $this->getLaporanData($request);
+        try {
+            $data = $this->getLaporanData($request);
 
-        $htmlView = view('exports-laporan', $data)
-            ->render();
+            $fileName = "Laporan_Form_{$data['filters']['formType']}_{$data['filters']['month']}_{$data['filters']['year']}.docx";
 
-        $fileName = "Laporan_Form_{$data['filters']['formType']}_{$data['filters']['month']}_{$data['filters']['year']}.doc";
+            return $docxService->download($data, $fileName);
 
-        return response($htmlView)
-            ->header('Content-Type', 'application/msword')
-            ->header('Content-Disposition', "attachment; filename=\"{$fileName}\"");
+        } catch (\Throwable $e) {
+
+            \Log::error('Gagal export DOCX laporan', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ], 500);
+        }
     }
 }
