@@ -23,6 +23,47 @@ class FormTemplateController extends Controller
         ]);
     }
 
+    public function index3B(Request $request)
+    {
+        $month = (int) $request->input('month', now()->month);
+        $year = (int) $request->input('year', now()->year);
+        $kategori = $request->input('kategori', 'KAMNEGTIBUM DAN TPUL');
+
+        $sisaBulanLalu = $this->calculateSisaBulanLalu($month, $year, $kategori);
+
+        $masukBulanLaporan = $this->countCasesFromForm('3A', $month, $year, $kategori);
+
+        $jumlahBulanLaporan = $sisaBulanLalu + $masukBulanLaporan;
+
+        $perkaraSelesai = $this->countCasesFromForm('3C', $month, $year, $kategori);
+
+        $sisaBulanLaporan = max(0, $jumlahBulanLaporan - $perkaraSelesai);
+
+        $monthNames = [
+            1 => 'JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI',
+            'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'
+        ];
+
+        return Inertia::render('Tabs/Form3B', [
+            'filters' => [
+                'month' => $month,
+                'year' => $year,
+                'kategori' => $kategori,
+                'selectedPeriod' => ($monthNames[$month] ?? 'AGUSTUS') . ' ' . $year,
+            ],
+            'calculatedData' => [
+                'kejaksaan' => 'Kejari Banda Aceh',
+                'sisaBulanLalu' => $sisaBulanLalu,
+                'masukBulanLaporan' => $masukBulanLaporan,
+                'jumlahBulanLaporan' => $jumlahBulanLaporan,
+                'perkaraSelesai' => $perkaraSelesai,
+                'sisaBulanLaporan' => $sisaBulanLaporan,
+            ]
+        ]);
+    }
+
+    // 3A
+
     public function create3AWizard()
     {
         return Inertia::render('Tabs/Form3AInput', [
@@ -241,6 +282,8 @@ class FormTemplateController extends Controller
         return redirect()->back()->with('success', 'Data perkara berhasil dihapus');
     }
 
+    // 3C
+
     public function store3CWizard(Request $request)
     {
         $validated = $request->validate([
@@ -417,7 +460,7 @@ class FormTemplateController extends Controller
 
     private function getDropdownOptionsForForm(string $formType): array
     {
-        return DropdownOption::whereIn('form_target', [$formType, 'Both'])
+        return DropdownOption::whereIn('form_target', [$formType, 'Keduanya'])
             ->get()
             ->groupBy('category')
             ->map(fn ($items) => $items->pluck('label')->values()->all())
@@ -507,5 +550,80 @@ class FormTemplateController extends Controller
     private function normalizeFormType(string $type): string
     {
         return strtoupper($type);
+    }
+
+    private function calculateSisaBulanLalu(int $month, int $year, string $kategori): int
+    {
+        $total3ABefore = 0;
+        $forms3A = FormTemplate::where('form_type', '3A')
+            ->where(function ($q) use ($year, $month) {
+                $q->where('year', '<', $year)
+                  ->orWhere(function ($q2) use ($year, $month) {
+                      $q2->where('year', $year)->where('month', '<', $month);
+                  });
+            })->get();
+
+        foreach ($forms3A as $form) {
+            $cases = $form->cases ?? ($form->latest_case_summary ? [$form->latest_case_summary] : []);
+            foreach ($cases as $c) {
+                if ($this->matchCategory($c['kategoriTindakPidana'] ?? '', $kategori)) {
+                    $total3ABefore++;
+                }
+            }
+        }
+
+        $total3CBefore = 0;
+        $forms3C = FormTemplate::where('form_type', '3C')
+            ->where(function ($q) use ($year, $month) {
+                $q->where('year', '<', $year)
+                  ->orWhere(function ($q2) use ($year, $month) {
+                      $q2->where('year', $year)->where('month', '<', $month);
+                  });
+            })->get();
+
+        foreach ($forms3C as $form) {
+            $cases = $form->cases ?? ($form->latest_case_summary ? [$form->latest_case_summary] : []);
+            foreach ($cases as $c) {
+                if ($this->matchCategory($c['kategoriTindakPidana'] ?? '', $kategori)) {
+                    $total3CBefore++;
+                }
+            }
+        }
+
+        return max(0, $total3ABefore - $total3CBefore);
+    }
+
+    private function countCasesFromForm(string $formType, int $month, int $year, string $kategori): int
+    {
+        $forms = FormTemplate::where('form_type', $formType)
+            ->where('month', $month)
+            ->where('year', $year)
+            ->get();
+
+        $count = 0;
+        foreach ($forms as $form) {
+            $cases = $form->cases ?? ($form->latest_case_summary ? [$form->latest_case_summary] : []);
+            foreach ($cases as $c) {
+                if ($this->matchCategory($c['kategoriTindakPidana'] ?? '', $kategori)) {
+                    $count++;
+                }
+            }
+        }
+
+        return $count;
+    }
+
+    private function matchCategory(string $raw, string $target): bool
+    {
+        $cleanRaw = strtoupper(trim($raw));
+        $cleanTarget = strtoupper(trim($target));
+
+        if (str_contains($cleanRaw, 'NARKOTIKA') && str_contains($cleanTarget, 'NARKOTIKA')) return true;
+        if (str_contains($cleanRaw, 'KAMNEGTIBUM') && str_contains($cleanTarget, 'KAMNEGTIBUM')) return true;
+        if (str_contains($cleanRaw, 'OHARDA') && str_contains($cleanTarget, 'OHARDA')) return true;
+        if (str_contains($cleanRaw, 'TERORIS') && str_contains($cleanTarget, 'TERORIS')) return true;
+        if (str_contains($cleanRaw, 'KORUPSI') && str_contains($cleanTarget, 'KORUPSI')) return true;
+
+        return $cleanRaw === $cleanTarget;
     }
 }

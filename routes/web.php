@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Inertia\Inertia;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FormTemplateController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\DropdownOptionController;
@@ -19,13 +20,9 @@ Route::get('/', function () {
 Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('guest');
 
 Route::middleware('auth')->group(function () {
-    
-    Route::get('/dashboard', function () {
-        $user = Auth::user();
-        return inertia()->render('Dashboard/Dashboard', [
-            'user' => $user,
-        ]);
-    })->name('dashboard');
+
+    // Dashboard route
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Form 3A routes
     Route::get('/form3a', [FormTemplateController::class, 'index3A'])->name('form3a');
@@ -38,9 +35,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/form3a/{id}/cases', [FormTemplateController::class, 'store3ACase']);
 
     // Form 3B routes
-    Route::get('/form3b', function () {
-        return Inertia::render('Tabs/Form3B');
-    })->name('form3b');
+    Route::get('/form3b', [FormTemplateController::class, 'index3B'])->name('form3b');
 
     // Form 3C routes
     Route::get('/form3c', [FormTemplateController::class, 'index3C'])->name('form3c');
@@ -55,6 +50,7 @@ Route::middleware('auth')->group(function () {
     // Laporan routes
     Route::get('/laporan', [LaporanController::class, 'Laporan'])->name('laporan');
     Route::get('/laporan/export-pdf', [LaporanController::class, 'exportPdf'])->name('laporan.exportPdf');
+    Route::get('/laporan/export-docx', [LaporanController::class, 'exportDocx'])->name('laporan.exportDocx');
 
     // Route Pengaturan Form Master Dropdown
     Route::get('/settings', [DropdownOptionController::class, 'index'])->name('pengaturan.index');

@@ -5,10 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\FormTemplate;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class LaporanController extends Controller
 {
-    public function Laporan(Request $request)
+    public function getLaporanData(Request $request)
     {
         $formType = strtoupper($request->input('formType', '3A'));
         $month = (int) $request->input('month', now()->month);
@@ -128,7 +129,7 @@ class LaporanController extends Controller
             }
         }
 
-        return Inertia::render('Tabs/Laporan', [
+        return [
             'filters' => [
                 'formType' => $formType,
                 'month' => $month,
@@ -142,23 +143,48 @@ class LaporanController extends Controller
                 'ekstasiPcs' => $ekstasiPcs,
             ],
             'cases' => $cases,
-        ]);
+        ];
+    }
+
+    public function Laporan(Request $request)
+    {
+        $data = $this->getLaporanData($request);
+        return Inertia::render('Tabs/Laporan', $data);
     }
 
     public function exportPdf(Request $request)
     {
-        $formType = $request->input('formType', '3A');
-        $month = (int) $request->input('month', now()->month);
-        $year = (int) $request->input('year', now()->year);
 
-        $forms = FormTemplate::where('form_type', $formType)
-            ->where('month', $month)
-            ->where('year', $year)
-            ->get();
+        if ($request->input('kategori', 'ALL') === 'ALL') {
+            return back()->with('error', 'Silakan pilih kategori Tindak Pidana spesifik terlebih dahulu.');
+        }
 
-        return view('pdf.laporan-template', [
-            'formType' => $formType,
-            'forms' => $forms,
-        ]);
+        $data = $this->getLaporanData($request);
+
+        $pdf = Pdf::loadView('exports-laporan', $data)
+            ->setPaper('folio', 'landscape');
+
+        $fileName = "Laporan_Form_{$data['filters']['formType']}_{$data['filters']['month']}_{$data['filters']['year']}.pdf";
+
+        return $pdf->stream($fileName);
+    }
+
+    public function exportDocx(Request $request)
+    {
+
+        if ($request->input('kategori', 'ALL') === 'ALL') {
+            return back()->with('error', 'Silakan pilih kategori Tindak Pidana spesifik terlebih dahulu.');
+        }
+
+        $data = $this->getLaporanData($request);
+
+        $htmlView = view('exports-laporan', $data)
+            ->render();
+
+        $fileName = "Laporan_Form_{$data['filters']['formType']}_{$data['filters']['month']}_{$data['filters']['year']}.doc";
+
+        return response($htmlView)
+            ->header('Content-Type', 'application/msword')
+            ->header('Content-Disposition', "attachment; filename=\"{$fileName}\"");
     }
 }
