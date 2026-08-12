@@ -53,6 +53,12 @@ return [
             'lock_path' => storage_path('framework/cache/data'),
         ],
 
+        'mongodb' => [
+            'driver' => 'mongodb',
+            'connection' => 'mongodb',
+            'table' => 'cache'
+        ],
+
         'storage' => [
             'driver' => 'storage',
             'disk' => env('CACHE_STORAGE_DISK'),
