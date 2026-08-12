@@ -7,7 +7,6 @@ use Inertia\Inertia;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FormTemplateController;
 use App\Http\Controllers\LaporanController;
-use App\Http\Controllers\Form3BController;
 use App\Http\Controllers\SettingController;
 
 Route::get('/', function () {

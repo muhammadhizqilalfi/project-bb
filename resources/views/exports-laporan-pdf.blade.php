@@ -239,7 +239,7 @@
                             <!-- Detail Barang Bukti -->
                             <td class="text-left">
                                 @if($bb)
-                                    {{ $bb['jumlah'] }} {{ $bb['satuan'] }} {{ $bb['uraianBarangBukti'] ?? $bb['jenisBarangBukti'] }}
+                                    {{ formatJumlah($bb['jumlah']) }} {{ $bb['satuan'] }} {{ $bb['uraianBarangBukti'] ?? $bb['jenisBarangBukti'] }}
                                 @else
                                     -
                                 @endif
@@ -386,14 +386,11 @@
                 <td width="40%">
                     Banda Aceh, {{ \Carbon\Carbon::now()->locale('id')->translatedFormat('d F Y') }}<br>
                     <b>Pth. {{ $jabatanKasi }}</b>
-                    <!-- <b>Pth. KEPALA SEKSI PEMULIHAN ASET<br>
-                    DAN PENGELOLAAN BARANG BUKTI,</b> -->
 
                     <div class="ttd-space"></div>
 
                     <b><u>{{ $namaKasi }}</u></b><br>
                     <b>{{ $pangkatKasi ? $pangkatKasi . ' / ' : '' }}NIP. {{ $nipKasi }}</b>
-                    <!-- <b>LOREMO IPSUMO / NIP. 123456 7890 1231 1</b> -->
                 </td>
             </tr>
         </table>
