@@ -162,7 +162,7 @@ class LaporanController extends Controller
         $data = $this->getLaporanData($request);
 
         $pdf = Pdf::loadView('exports-laporan', $data)
-            ->setPaper('a4', 'landscape');
+            ->setPaper('folio', 'landscape');
 
         $fileName = "Laporan_Form_{$data['filters']['formType']}_{$data['filters']['month']}_{$data['filters']['year']}.pdf";
 
