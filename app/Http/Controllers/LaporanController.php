@@ -153,12 +153,17 @@ class LaporanController extends Controller
 
         $data = $this->getLaporanData($request);
 
+<<<<<<< HEAD
         // 13 x 8.5 inch dalam PDF points.
         // 1 inch = 72 points.
         $paper = [0, 0, 13 * 72, 8.5 * 72];
 
         $pdf = Pdf::loadView('exports-laporan-pdf', $data)
             ->setPaper($paper);
+=======
+        $pdf = Pdf::loadView('exports-laporan', $data)
+            ->setPaper('folio', 'landscape');
+>>>>>>> 903a8e082760d0c9c26320d6c9f7399c5e6f3eb7
 
         $fileName = "Laporan_Form_{$data['filters']['formType']}_{$data['filters']['month']}_{$data['filters']['year']}.pdf";
 
