@@ -7,12 +7,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FormTemplateController;
 use App\Http\Controllers\LaporanController;
-use App\Http\Controllers\DropdownOptionController;
-<<<<<<< HEAD
-use App\Http\Controllers\Form3BController;
 use App\Http\Controllers\SettingController;
-=======
->>>>>>> 903a8e082760d0c9c26320d6c9f7399c5e6f3eb7
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -58,10 +53,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/laporan/export-docx', [LaporanController::class, 'exportDocx'])->name('laporan.exportDocx');
 
     // Route Pengaturan Form Master Dropdown
-    Route::get('/settings', [DropdownOptionController::class, 'index'])->name('pengaturan.index');
-    Route::post('/settings', [DropdownOptionController::class, 'store'])->name('dropdowns.store');
-    Route::put('/settings/{id}', [DropdownOptionController::class, 'update'])->name('dropdowns.update');
-    Route::delete('/settings/{id}', [DropdownOptionController::class, 'destroy'])->name('dropdowns.destroy');
+    Route::get('/settings', [SettingController::class, 'index'])->name('pengaturan.index');
+    Route::post('/settings', [SettingController::class, 'store'])->name('dropdowns.store');
+    Route::put('/settings/{id}', [SettingController::class, 'update'])->name('dropdowns.update');
+    Route::delete('/settings/{id}', [SettingController::class, 'destroy'])->name('dropdowns.destroy');
 
     Route::post('/settings/officer', [SettingController::class, 'saveOfficer'])
     ->name('settings.officer.save');
