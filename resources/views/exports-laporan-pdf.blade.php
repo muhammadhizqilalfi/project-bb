@@ -16,10 +16,11 @@
         $pejabatData = [];
     }
 
-    $jabatanKasi = $pejabatData['jabatan_kasi'];
-    $namaKasi = $pejabatData['nama_kasi'];
-    $nipKasi = $pejabatData['nip_kasi'];
-    $pangkatKasi = $pejabatData['pangkat_kasi'];
+    // Menggunakan null-coalescing operator agar safe di PHP 8+
+    $jabatanKasi = $pejabatData['jabatan_kasi'] ?? '-';
+    $namaKasi    = $pejabatData['nama_kasi'] ?? '-';
+    $nipKasi     = $pejabatData['nip_kasi'] ?? '-';
+    $pangkatKasi = $pejabatData['pangkat_kasi'] ?? '';
 
     if (!function_exists('terbilang')) {
         function terbilang($angka) {
@@ -46,13 +47,11 @@
         function formatJumlah($val) {
             if (empty($val) || $val === '-') return '-';
             
-            // Jika nilai angka murni (cth: 1, 10, "5")
             if (is_numeric($val)) {
                 $teks = trim(preg_replace('/\s+/', ' ', terbilang($val)));
                 return $teks ? "{$val} ({$teks})" : $val;
             }
             
-            // Jika sudah berupa teks / campuran (cth: "1 unit")
             return $val;
         }
     }
@@ -77,26 +76,31 @@
             page: Section1;
         }
 
-        div.WordHeader {
-            mso-element: header;
-            id: h1;
-        }
-
-        p.MsoHeader, li.MsoHeader, div.MsoHeader {
-            margin: 0pt;
-            margin-bottom: .0001pt;
-            mso-pagination: widow-orphan;
-        }
-
         body { font-family: Arial, sans-serif; font-size: 12pt; }
         .title { text-align: center; font-weight: bold; font-size: 14pt; margin-bottom: 15px; text-transform: uppercase; }
-        table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-        th, td { border: 1px solid #000000; padding: 5px; text-align: center; font-size: 9pt; }
-        th { font-weight: bold;}
+        
+        /* Layout tabel diperketat untuk Dompdf */
+        table { border-collapse: collapse; table-layout: fixed; width: 100%; margin-top: 10px; }
+        th, td { 
+            border: 1px solid #000000; 
+            padding: 5px; 
+            text-align: center; 
+            font-size: 9pt; 
+            white-space: normal !important; 
+            word-wrap: break-word !important; 
+            overflow-wrap: break-word; 
+            vertical-align: top;
+        }
+        th { font-weight: bold; }
+        tr { page-break-inside: avoid !important; }
+        
+        .text-top { vertical-align: top; }
         .text-left { text-align: left; }
         .tp { text-align: center; font-weight: bold; margin-bottom: 1rem; font-size: 14pt; }
         .satker { font-weight: bold; }
-        .header-container { width: 100%; border-collapse: collapse; margin-bottom: 20px; margfin-top: -1.5rem; }
+        
+        /* Fix CSS typo: margin-top */
+        .header-container { width: 100%; border-collapse: collapse; margin-bottom: 20px; margin-top: -1.5rem; }
         .header-container td { border: none !important; padding: 0 !important; vertical-align: top; }
         .header1 { width: 50%;}
         .header2 { font-weight: bold; font-size: 12pt; text-align: right; width: 50%; }
@@ -105,6 +109,7 @@
         .kop-text { font-weight: bold; font-size: 12pt; text-align: center; white-space: nowrap; }
         .line-header { border: none; border-top: 1px solid #000; margin-top: 4px; margin-bottom: 0; width: 40%;}
         .noth * { font-weight: normal; font-size: 9pt; padding: 0 4px 0 0; }
+        
         .ttd-container {
             width: 100%;
             border-collapse: collapse;
@@ -120,9 +125,8 @@
             font-size: 13pt;
         }
 
-        .ttd-space {
-            height: 65px; 
-        }
+        .ttd-space { height: 65px; }
+        
         .nihil { 
             font-size: 40pt; 
             font-weight: 900;
@@ -131,9 +135,7 @@
             text-align: center;
             letter-spacing: 12px;
             padding: 15px 0;
-            
             -webkit-text-stroke: 1.8px black; 
-
             text-shadow: 
                 -1.5px -1.5px 0 #000,
                 1.5px -1.5px 0 #000,
@@ -144,7 +146,7 @@
 </head>
 <body>
     <div class="Section1">
-            <table class="header-container">
+        <table class="header-container">
             <tr>
                 <td class="header1">
                     <table class="kop-kiri">
@@ -188,22 +190,23 @@
 
         @if(($filters['formType']) === '3A')
             <table>
-                <thead>
+                <tbody>
+                    {{-- HEADER TABEL (Tanpa tag <thead> agar TIDAK diulang Dompdf di Halaman 2 dst) --}}
                     <tr>
                         <th width="3%">No. Urut</th>
-                        <th>Satuan Kerja</th>
-                        <th>Register Benda Sitaan Barang Bukti</th>
-                        <th>Register Tahap Penyidikan</th>
-                        <th>Uraian Benda Sitaan Jumlah / Satuan/ Jenis / Barang / Ukuran</th>
-                        <th>Tempat Penyimpanan</th>
-                        <th>Identitas Tersangka / Terdakwa</th>
-                        <th>Pasal yang disangkakan / didakwakan</th>
-                        <th>Diselesaikan</th>
-                        <th>Tanggal Pelaksanaan Putusan Hakim & Ijin Jaksa Agung</th>
-                        <th>Keterangan</th>
+                        <th width="8%">Satuan Kerja</th>
+                        <th width="10%">Register Benda Sitaan Barang Bukti</th>
+                        <th width="10%">Register Tahap Penyidikan</th>
+                        <th width="15%">Uraian Benda Sitaan Jumlah / Satuan/ Jenis / Barang / Ukuran</th>
+                        <th width="8%">Tempat Penyimpanan</th>
+                        <th width="11%">Identitas Tersangka / Terdakwa</th>
+                        <th width="20%">Pasal yang disangkakan / didakwakan</th>
+                        <th width="6%">Diselesaikan</th>
+                        <th width="6%">Tanggal Pelaksanaan Putusan Hakim & Ijin Jaksa Agung</th>
+                        <th width="10%">Keterangan</th>
                     </tr>
                     <tr class="noth">
-                        <th width="3%">1</th>
+                        <th>1</th>
                         <th>2</th>
                         <th>3</th>
                         <th>4</th>
@@ -215,46 +218,98 @@
                         <th>10</th>
                         <th>11</th>
                     </tr>
-                </thead>
-                <tbody>
+
                     @forelse($cases as $idx => $case)
                         @php 
-                            $bbList = (isset($case['barangBuktiList']) && count($case['barangBuktiList']) > 0) ? $case['barangBuktiList'] : [null]; 
-                            $rowSpan = count($bbList);
+                            $bbRaw = $case['barangBuktiList'] ?? [];
+                            $bbList = (is_array($bbRaw) && count($bbRaw) > 0) ? array_values($bbRaw) : []; 
+
+                            // 1. Cek semua tempat penyimpanan unik di perkara ini
+                            $tpList = array_values(array_filter(array_map(function($item) {
+                                return trim($item['tempatPenyimpanan'] ?? $item['tempat_penyimpanan'] ?? '');
+                            }, $bbList)));
+
+                            $uniqueTp = array_values(array_unique($tpList));
+                            $isSingleTp = count($uniqueTp) <= 1;
+                            $singleTpText = count($uniqueTp) === 1 ? $uniqueTp[0] : '-';
+
+                            // 2. Grouping tempat penyimpanan berurutan jika ada beberapa tempat berbeda
+                            $tpGroups = [];
+                            foreach ($bbList as $bIdx => $bb) {
+                                $tpName = trim($bb['tempatPenyimpanan'] ?? $bb['tempat_penyimpanan'] ?? '') ?: '-';
+                                if (empty($tpGroups) || $tpGroups[count($tpGroups) - 1]['name'] !== $tpName) {
+                                    $tpGroups[] = [
+                                        'name' => $tpName,
+                                        'count' => 1,
+                                    ];
+                                } else {
+                                    $tpGroups[count($tpGroups) - 1]['count']++;
+                                }
+                            }
                         @endphp
 
-                        @foreach($bbList as $bIdx => $bb)
-                        <tr>
-                            @if($bIdx === 0)
-                                <td rowspan="{{ $rowSpan }}">{{ $idx + 1 }}</td>
-                                <td rowspan="{{ $rowSpan }}" class="satker">{{ $case['satuanKerja'] }}</td>
-                                <td rowspan="{{ $rowSpan }}">{{ $case['noRegBendaSitaan'] }}<br><small>
-                                    {{ !empty($case['tglPenerimaan']) && $case['tglPenerimaan'] !== '-' ? \Carbon\Carbon::parse($case['tglPenerimaan'])->locale('id')->translatedFormat('d F Y') : '-' }}
-                                </small></td>
-                                <td rowspan="{{ $rowSpan }}">{{ $case['noRegPenyidikan'] ?? '-' }}<br><small>
-                                    {{ !empty($case['tglRegPenyidikan']) && $case['tglRegPenyidikan'] !== '-' ? \Carbon\Carbon::parse($case['tglRegPenyidikan'])->locale('id')->translatedFormat('d F Y') : '-' }}
-                                </small></td>
-                            @endif
+                        <tr style="page-break-inside: avoid !important;">
+                            {{-- 1. No Urut --}}
+                            <td class="text-center">{{ $idx + 1 }}</td>
 
-                            <!-- Detail Barang Bukti -->
-                            <td class="text-left">
-                                @if($bb)
-                                    {{ formatJumlah($bb['jumlah']) }} {{ $bb['satuan'] }} {{ $bb['uraianBarangBukti'] ?? $bb['jenisBarangBukti'] }}
-                                @else
+                            {{-- 2. Satker --}}
+                            <td class="satker wrap-text">{{ $case['satuanKerja'] ?? '-' }}</td>
+
+                            {{-- 3. Register Benda Sitaan --}}
+                            <td class="wrap-text">
+                                {{ $case['noRegBendaSitaan'] ?? '-' }}<br>
+                                <small>
+                                    {{ !empty($case['tglPenerimaan']) && $case['tglPenerimaan'] !== '-' ? \Carbon\Carbon::parse($case['tglPenerimaan'])->locale('id')->translatedFormat('d F Y') : '-' }}
+                                </small>
+                            </td>
+
+                            {{-- 4. Register Penyidikan --}}
+                            <td class="wrap-text">
+                                {{ $case['noRegPenyidikan'] ?? '-' }}<br>
+                                <small>
+                                    {{ !empty($case['tglRegPenyidikan']) && $case['tglRegPenyidikan'] !== '-' ? \Carbon\Carbon::parse($case['tglRegPenyidikan'])->locale('id')->translatedFormat('d F Y') : '-' }}
+                                </small>
+                            </td>
+
+                            {{-- 5. Uraian Barang Bukti --}}
+                            <td class="text-left wrap-text">
+                                @forelse($bbList as $bIdx => $bb)
+                                    <div style="{{ !$loop->last ? 'margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed #ccc;' : '' }}">
+                                        - {{ formatJumlah($bb['jumlah'] ?? null) }} {{ $bb['uraianBarangBukti'] ?? $bb['jenisBarangBukti'] ?? '' }}
+                                    </div>
+                                @empty
                                     -
+                                @endforelse
+                            </td>
+
+                            {{-- 6. Tempat Penyimpanan (Hanya muncul 1x jika tempatnya sama) --}}
+                            <td class="wrap-text text-center">
+                                @if($isSingleTp)
+                                    {{ $singleTpText }}
+                                @else
+                                    @foreach($tpGroups as $gIdx => $group)
+                                        <div style="{{ !$loop->last ? 'margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px dashed #aaa;' : '' }} padding-top: 2px;">
+                                            {{ $group['name'] }}
+                                        </div>
+                                    @endforeach
                                 @endif
                             </td>
-                            <td>{{ $bb['tempatPenyimpanan'] }}</td>
 
-                            @if($bIdx === 0)
-                                <td rowspan="{{ $rowSpan }}" class="text-left">{{ $case['identitasTersangka'] }}</td>
-                                <td rowspan="{{ $rowSpan }}">{{ $case['pasalDisangkakan'] }}</td>
-                                <td rowspan="{{ $rowSpan }}">{{ $case['statusDiselesaikan'] }}</td>
-                                <td rowspan="{{ $rowSpan }}">{{ $case['tglPelaksanaanPutusan'] }}</td>
-                                <td rowspan="{{ $rowSpan }}">{{ $case['keterangan'] }}</td>
-                            @endif
+                            {{-- 7. Tersangka --}}
+                            <td class="text-left wrap-text">- {{ $case['identitasTersangka'] ?? '-' }}</td>
+
+                            {{-- 8. Pasal --}}
+                            <td class="text-left wrap-text">{{ $case['pasalDisangkakan'] ?? '-' }}</td>
+
+                            {{-- 9. Diselesaikan --}}
+                            <td class="text-center">{{ $case['statusDiselesaikan'] ?? '-' }}</td>
+
+                            {{-- 10. Tgl Putusan --}}
+                            <td class="text-center">{{ $case['tglPelaksanaanPutusan'] ?? '-' }}</td>
+
+                            {{-- 11. Keterangan --}}
+                            <td class="wrap-text">{{ $case['keterangan'] ?? '-' }}</td>
                         </tr>
-                        @endforeach
                     @empty
                         <tr>
                             <td colspan="11" class="nihil">NIHIL</td>
@@ -264,7 +319,8 @@
             </table>
         @elseif(($filters['formType']) === '3C')
             <table>
-                <thead>
+                <tbody>
+                    {{-- HEADER TABEL FORM 3C --}}
                     <tr>
                         <th width="3%">No. Urut</th>
                         <th>Kejaksaan</th>
@@ -280,7 +336,7 @@
                         <th>Tanggal Pelaksanaan Putusan Hakim</th>
                     </tr>
                     <tr class="noth">
-                        <th width="3%">1</th>
+                        <th>1</th>
                         <th>2</th>
                         <th>3</th>
                         <th>4</th>
@@ -293,55 +349,116 @@
                         <th>11</th>
                         <th>12</th>
                     </tr>
-                </thead>
-                <tbody>
+
                     @forelse($cases as $idx => $case)
                         @php 
-                            $bbList = (isset($case['barangBuktiList']) && count($case['barangBuktiList']) > 0) ? $case['barangBuktiList'] : [null]; 
-                            $rowSpan = count($bbList);
+                            $bbRaw = $case['barangBuktiList'] ?? [];
+                            $bbList = (is_array($bbRaw) && count($bbRaw) > 0) ? array_values($bbRaw) : []; 
+
+                            $tpList = array_values(array_filter(array_map(function($item) {
+                                return trim($item['tempatPenyimpanan'] ?? $item['tempat_penyimpanan'] ?? '');
+                            }, $bbList)));
+
+                            $uniqueTp = array_values(array_unique($tpList));
+                            $isSingleTp = count($uniqueTp) <= 1;
+                            $singleTpText = count($uniqueTp) === 1 ? $uniqueTp[0] : '-';
+
+                            $tpGroups = [];
+                            foreach ($bbList as $bIdx => $bb) {
+                                $tpName = trim($bb['tempatPenyimpanan'] ?? $bb['tempat_penyimpanan'] ?? '') ?: '-';
+                                if (empty($tpGroups) || $tpGroups[count($tpGroups) - 1]['name'] !== $tpName) {
+                                    $tpGroups[] = [
+                                        'name' => $tpName,
+                                        'count' => 1,
+                                    ];
+                                } else {
+                                    $tpGroups[count($tpGroups) - 1]['count']++;
+                                }
+                            }
                         @endphp
 
-                        @foreach($bbList as $bIdx => $bb)
-                        <tr>
-                            @if($bIdx === 0)
-                                <td rowspan="{{ $rowSpan }}">{{ $idx + 1 }}</td>
-                                <td rowspan="{{ $rowSpan }}" class="satker">{{ $case['satuanKerja'] }}</td>
-                            @endif
+                        <tr style="page-break-inside: avoid !important;">
+                            {{-- 1. No. Urut --}}
+                            <td class="text-center">{{ $idx + 1 }}</td>
 
-                            <!-- Detail Barang Bukti -->
-                            <td class="text-left">
-                                @if($bb)
-                                    - {{ formatJumlah($bb['jumlah']) }} {{ $bb['jenisBarangBukti'] }} {{ $bb['uraianBarangBukti'] }}
-                                @else
+                            {{-- 2. Kejaksaan --}}
+                            <td class="satker">{{ $case['satuanKerja'] ?? '-' }}</td>
+
+                            {{-- 3. Jenis Barang Bukti --}}
+                            <td class="text-left text-top">
+                                @forelse($bbList as $bIdx => $bb)
+                                    <div style="{{ !$loop->last ? 'margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed #ccc;' : '' }}">
+                                        - {{ formatJumlah($bb['jumlah'] ?? null) }} {{ $bb['jenisBarangBukti'] ?? '' }} {{ $bb['uraianBarangBukti'] ?? '' }}
+                                    </div>
+                                @empty
                                     -
+                                @endforelse
+                            </td>
+
+                            {{-- 4. Pasal --}}
+                            <td class="text-center">{{ $case['pasalDidakwakan'] ?? '-' }}</td>
+
+                            {{-- 5. Reg Sitaan --}}
+                            <td>
+                                {{ $case['noRegBendaSitaan'] ?? '-' }}<br>
+                                {{ !empty($case['tglPenerimaan']) && $case['tglPenerimaan'] !== '-' ? \Carbon\Carbon::parse($case['tglPenerimaan'])->locale('id')->translatedFormat('d F Y') : '' }}
+                            </td>
+
+                            {{-- 6. Macam Jenis Kadar --}}
+                            <td>
+                                @forelse($bbList as $bIdx => $bb)
+                                    <div style="{{ !$loop->last ? 'margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed #ccc;' : '' }}">
+                                        - {{ $bb['macamJenisKadar'] ?? '-' }}
+                                    </div>
+                                @empty
+                                    -
+                                @endforelse
+                            </td>
+
+                            {{-- 7. Jumlah Satuan --}}
+                            <td>
+                                @forelse($bbList as $bIdx => $bb)
+                                    <div style="{{ !$loop->last ? 'margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed #ccc;' : '' }}">
+                                        - {{ formatJumlah($bb['jumlah'] ?? null) }}
+                                    </div>
+                                @empty
+                                    -
+                                @endforelse
+                            </td>
+
+                            {{-- 8. Jenis Satuan --}}
+                            <td>
+                                @forelse($bbList as $bIdx => $bb)
+                                    <div style="{{ !$loop->last ? 'margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed #ccc;' : '' }}">
+                                        - {{ $bb['satuan'] ?? '-' }}
+                                    </div>
+                                @empty
+                                    -
+                                @endforelse
+                            </td>
+
+                            {{-- 9. Tempat Penyimpanan --}}
+                            <td class="wrap-text text-center">
+                                @if($isSingleTp)
+                                    {{ $singleTpText }}
+                                @else
+                                    @foreach($tpGroups as $gIdx => $group)
+                                        <div style="{{ !$loop->last ? 'margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px dashed #aaa;' : '' }} padding-top: 2px;">
+                                            {{ $group['name'] }}
+                                        </div>
+                                    @endforeach
                                 @endif
                             </td>
-                            
-                            @if($bIdx === 0)
-                                <td rowspan="{{ $rowSpan }}" class="text-center">
-                                    {{ $case['pasalDidakwakan'] }}
-                                </td>
-                                <td rowspan="{{ $rowSpan }}">
-                                    {{ $case['noRegBendaSitaan'] }}<br>
-                                    {{ !empty($case['tglPenerimaan']) && $case['tglPenerimaan'] !== '-' ? \Carbon\Carbon::parse($case['tglPenerimaan'])->locale('id')->translatedFormat('d F Y') : '' }}
-                                </td>
-                            @endif
 
-                            <td>- {{ $bb['macamJenisKadar'] }}</td>
-                            <td>- {{ formatJumlah($bb['jumlah']) }}</td>
-                            <td>- {{ $bb['satuan'] }}</td>
+                            {{-- 10. No KEP --}}
+                            <td>
+                                {{ $case['noKepPengadilan'] ?? '-' }}<br>
+                                {{ !empty($case['tglKepPengadilan']) && $case['tglKepPengadilan'] !== '-' ? \Carbon\Carbon::parse($case['tglKepPengadilan'])->locale('id')->translatedFormat('d F Y') : '' }}
+                            </td>
 
-                            <td>{{ $bb['tempatPenyimpanan'] }}</td>
-
-                            @if($bIdx === 0)
-                                <td rowspan="{{ $rowSpan }}">
-                                    {{ $case['noKepPengadilan'] }}<br>
-                                    {{ !empty($case['tglKepPengadilan']) && $case['tglKepPengadilan'] !== '-' ? \Carbon\Carbon::parse($case['tglKepPengadilan'])->locale('id')->translatedFormat('d F Y') : '' }}
-                                </td>
-                            @endif
-
+                            {{-- 11. Amar Putusan --}}
                             <td class="text-left">
-                                @if($bb)
+                                @forelse($bbList as $bIdx => $bb)
                                     @php
                                         $isSdaAmar = false;
                                         if ($bIdx > 0 && isset($bbList[$bIdx - 1])) {
@@ -352,24 +469,23 @@
                                             }
                                         }
                                     @endphp
-
-                                    @if($isSdaAmar)
-                                        - Sda
-                                    @else
-                                        - {{ $bb['amarPutusan'] }} {{ $bb['uraianPutusan'] }}
-                                    @endif
-                                @else
+                                    <div style="{{ !$loop->last ? 'margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed #ccc;' : '' }}">
+                                        @if($isSdaAmar)
+                                            - Sda
+                                        @else
+                                            - {{ $bb['amarPutusan'] ?? '' }} {{ $bb['uraianPutusan'] ?? '' }}
+                                        @endif
+                                    </div>
+                                @empty
                                     -
-                                @endif
+                                @endforelse
                             </td>
 
-                            @if($bIdx === 0)
-                                <td rowspan="{{ $rowSpan }}">
-                                    {{ !empty($case['tglPelaksanaanPutusan']) && $case['tglPelaksanaanPutusan'] !== '-' ? \Carbon\Carbon::parse($case['tglPelaksanaanPutusan'])->locale('id')->translatedFormat('d F Y') : ($case['tglPelaksanaanPutusan'] ?? '-') }}
-                                </td>
-                            @endif
+                            {{-- 12. Tgl Pelaksanaan --}}
+                            <td>
+                                {{ !empty($case['tglPelaksanaanPutusan']) && $case['tglPelaksanaanPutusan'] !== '-' ? \Carbon\Carbon::parse($case['tglPelaksanaanPutusan'])->locale('id')->translatedFormat('d F Y') : ($case['tglPelaksanaanPutusan'] ?? '-') }}
+                            </td>
                         </tr>
-                        @endforeach
                     @empty
                         <tr>
                             <td colspan="12" class="nihil">NIHIL</td>
@@ -382,7 +498,6 @@
         <table class="ttd-container">
             <tr>
                 <td width="60%"></td>
-
                 <td width="40%">
                     Banda Aceh, {{ \Carbon\Carbon::now()->locale('id')->translatedFormat('d F Y') }}<br>
                     <b>Pth. {{ $jabatanKasi }}</b>
