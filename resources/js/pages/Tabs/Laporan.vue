@@ -688,11 +688,11 @@ const exportFormDocx = () => {
                   <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
                     class="p-3 text-center align-top">
                     <div class="flex items-center justify-center gap-1">
-                      <button type="button" @click="editCase(item.id)"
+                      <button type="button" @click="editCase(item.id, (item as any).case_index)"
                         class="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded cursor-pointer">
                         <Edit3 class="w-4 h-4" />
                       </button>
-                      <button type="button" @click="deleteCase(item.id)"
+                      <button type="button" @click="deleteCase(item.id, (item as any).case_index)"
                         class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer">
                         <Trash2 class="w-4 h-4" />
                       </button>
