@@ -1,49 +1,18 @@
 <?php
+    $monthTranslation = [
+        1 => 'JANUARI',   2 => 'FEBRUARI', 3 => 'MARET',     4 => 'APRIL',
+        5 => 'MEI',       6 => 'JUNI',     7 => 'JULI',      8 => 'AGUSTUS',
+        9 => 'SEPTEMBER', 10 => 'OKTOBER', 11 => 'NOVEMBER', 12 => 'DESEMBER'
+    ];
 
-/*
-|--------------------------------------------------------------------------
-| DATA DASAR & TRANSLASI
-|--------------------------------------------------------------------------
-*/
+    $monthName = $monthTranslation[(int)($filters['month'] ?? 1)] ?? '';
 
-$monthTranslation = [
-    1  => 'JANUARI',
-    2  => 'FEBRUARI',
-    3  => 'MARET',
-    4  => 'APRIL',
-    5  => 'MEI',
-    6  => 'JUNI',
-    7  => 'JULI',
-    8  => 'AGUSTUS',
-    9  => 'SEPTEMBER',
-    10 => 'OKTOBER',
-    11 => 'NOVEMBER',
-    12 => 'DESEMBER',
-];
-
-$formType = strtoupper($filters['formType'] ?? '3A');
-$month = (int) ($filters['month'] ?? 1);
-$year = (int) ($filters['year'] ?? now()->year);
-$kategori = $filters['kategori'] ?? 'ALL';
-
-$monthName = $monthTranslation[$month] ?? '';
-
-/*
-|--------------------------------------------------------------------------
-| DATA PEJABAT / TANDA TANGAN
-|--------------------------------------------------------------------------
-*/
-
-try {
-    $pejabatSetting = \Illuminate\Support\Facades\DB::table('settings')
-        ->where('key', 'pejabat_kasi')
-        ->first();
-
-    $pejabatData = $pejabatSetting
-        ? json_decode($pejabatSetting->value, true)
-        : [];
-
-    if (!is_array($pejabatData)) {
+    try {
+        $pejabatSetting = \Illuminate\Support\Facades\DB::table('settings')
+            ->where('key', 'pejabat_kasi')
+            ->first();
+        $pejabatData = $pejabatSetting ? json_decode($pejabatSetting->value, true) : [];
+    } catch (\Throwable $e) {
         $pejabatData = [];
     }
 
@@ -53,43 +22,26 @@ try {
     $nipKasi     = $pejabatData['nip_kasi'] ?? '-';
     $pangkatKasi = $pejabatData['pangkat_kasi'] ?? '';
 
-if (!function_exists('terbilang')) {
-    function terbilang($angka)
-    {
-        $angka = (int) $angka;
-
-        if ($angka <= 0) {
-            return '';
+    if (!function_exists('terbilang')) {
+        function terbilang($angka) {
+            $angka = (int)$angka;
+            if ($angka <= 0) return '';
+            $baca = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
+            
+            if ($angka < 12) {
+                return $baca[$angka];
+            } elseif ($angka < 20) {
+                return terbilang($angka - 10) . ' belas';
+            } elseif ($angka < 100) {
+                return terbilang(floor($angka / 10)) . ' puluh ' . terbilang($angka % 10);
+            } elseif ($angka < 200) {
+                return 'seratus ' . terbilang($angka - 100);
+            } elseif ($angka < 1000) {
+                return terbilang(floor($angka / 100)) . ' ratus ' . terbilang($angka % 100);
+            }
+            return (string)$angka;
         }
-
-        $baca = [
-            '', 'satu', 'dua', 'tiga', 'empat', 'lima',
-            'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'
-        ];
-
-        if ($angka < 12) {
-            return $baca[$angka];
-        }
-
-        if ($angka < 20) {
-            return terbilang($angka - 10) . ' belas';
-        }
-
-        if ($angka < 100) {
-            return terbilang(floor($angka / 10)) . ' puluh ' . terbilang($angka % 10);
-        }
-
-        if ($angka < 200) {
-            return 'seratus ' . terbilang($angka - 100);
-        }
-
-        if ($angka < 1000) {
-            return terbilang(floor($angka / 100)) . ' ratus ' . terbilang($angka % 100);
-        }
-
-        return (string) $angka;
     }
-}
 
     if (!function_exists('formatJumlah')) {
         function formatJumlah($val) {
@@ -106,22 +58,18 @@ if (!function_exists('terbilang')) {
 ?>
 
 <!DOCTYPE html>
-<html lang="id">
-
+<html xmlns:o='urn:schemas-microsoft-com:office:office'
+      xmlns:w='urn:schemas-microsoft-com:office:word'
+>
 <head>
-    <meta charset="UTF-8">
-    <title>Laporan Form {{ $formType }}</title>
-
+    <meta charset="utf-8">
+    <title>Laporan Form {{ $filters['formType'] }}</title>
     <style>
-        /* PAGE SETUP: F4 Landscape dengan Margin 1 cm */
-        @page {
-            size: 13in 8.5in;
-            margin: 0; /* Reset margin kertas bawaan DomPDF */
-        }
-
-        html {
-            margin: 0;
-            padding: 0;
+        @page Section1 {
+            size: 841.9pt 595.3pt;
+            mso-page-orientation: landscape;
+            margin: 1.2in 0.5in 0.5in 0.5in;
+            mso-header: h1;
         }
         
         div.Section1 {
@@ -165,8 +113,7 @@ if (!function_exists('terbilang')) {
         .ttd-container {
             width: 100%;
             border-collapse: collapse;
-            table-layout: fixed;
-            margin-top: 15px;
+            margin-top: 30px;
             page-break-inside: avoid;
         }
 
@@ -174,15 +121,8 @@ if (!function_exists('terbilang')) {
             border: none !important;
             padding: 0 !important;
             vertical-align: top;
-        }
-
-        .ttd-left {
-            width: 60%;
-        }
-
-        .ttd-right {
-            width: 40%;
             text-align: center;
+            font-size: 13pt;
         }
 
         .ttd-space { height: 65px; }
@@ -204,7 +144,6 @@ if (!function_exists('terbilang')) {
         }
     </style>
 </head>
-
 <body>
     <div class="Section1">
         <table class="header-container">
@@ -230,23 +169,24 @@ if (!function_exists('terbilang')) {
             </tr>
         </table>
 
-    <!-- JUDUL LAPORAN -->
-    <div class="title">
-        @if($formType === '3A' && strtoupper($kategori) === 'KORUPSI')
-            LAPORAN BENDA SITAAN DAN BARANG BUKTI PERKARA TINDAK PIDANA KHUSUS<br>
-        @elseif($formType === '3A')
-            LAPORAN BENDA SITAAN DAN BARANG BUKTI PERKARA TINDAK PIDANA UMUM<br>
-        @elseif($formType === '3C' && strtoupper($kategori) === 'KORUPSI')
-            LAPORAN BARANG BUKTI PERKARA TINDAK PIDANA KHUSUS YANG SUDAH MEMPEROLEH<br>KEKUATAN HUKUM TETAP DARI PENGADILAN<br>
-        @elseif($formType === '3C')
-            LAPORAN BARANG BUKTI PERKARA TINDAK PIDANA UMUM YANG SUDAH MEMPEROLEH<br>KEKUATAN HUKUM TETAP DARI PENGADILAN<br>
-        @endif
-        BULAN {{ $monthName }} {{ $year }}
-    </div>
+        <div class="title">
+            @if((($filters['formType']) === '3A') && ($filters['kategori']) === 'KORUPSI')
+                LAPORAN BENDA SITAAN DAN BARANG BUKTI PERKARA TINDAK PIDANA KHUSUS<br>
+            @elseif(($filters['formType']) === '3A')
+                LAPORAN BENDA SITAAN DAN BARANG BUKTI PERKARA TINDAK PIDANA UMUM<br>
+            @elseif((($filters['formType']) === '3C') && ($filters['kategori']) === 'KORUPSI')
+                LAPORAN BARANG BUKTI PERKARA TINDAK PIDANA KHUSUS YANG SUDAH MEMPEROLEH<br>
+                KEKUATAN HUKUM TETAP DARI PENGADILAN<br>
+            @elseif(($filters['formType']) === '3C')
+                LAPORAN BARANG BUKTI PERKARA TINDAK PIDANA UMUM YANG SUDAH MEMPEROLEH<br>
+                KEKUATAN HUKUM TETAP DARI PENGADILAN<br>
+            @endif
+            BULAN {{ $monthName }} {{ $filters['year'] }}
+        </div>
 
-    <div class="tp">
-        : T.P. {{ $kategori }}
-    </div>
+        <div class="tp">
+            : T.P. {{ $filters['kategori'] }} 
+        </div>
 
         @if(($filters['formType']) === '3A')
             <table>
@@ -560,18 +500,15 @@ if (!function_exists('terbilang')) {
                 <td width="60%"></td>
                 <td width="40%">
                     Banda Aceh, {{ \Carbon\Carbon::now()->locale('id')->translatedFormat('d F Y') }}<br>
-                    <span class="ttd-position">
-                        Pth. {!! str_replace(' DAN ', '<br>DAN ', e($jabatanKasi)) !!}
-                    </span>
-                    <div class="ttd-sign-space">&nbsp;</div>
-                    <span class="ttd-name">{{ $namaKasi }}</span><br>
-                    <span class="ttd-position">
-                        {{ $pangkatKasi ? $pangkatKasi . ' / ' : '' }}NIP. {{ $nipKasi }}
-                    </span>
-                </div>
-            </td>
-        </tr>
-    </table>
+                    <b>Pth. {{ $jabatanKasi }}</b>
 
+                    <div class="ttd-space"></div>
+
+                    <b><u>{{ $namaKasi }}</u></b><br>
+                    <b>{{ $pangkatKasi ? $pangkatKasi . ' / ' : '' }}NIP. {{ $nipKasi }}</b>
+                </td>
+            </tr>
+        </table>
+    </div>
 </body>
 </html>
