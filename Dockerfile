@@ -45,7 +45,7 @@ FROM php:8.4-fpm-alpine
 
 # 1. Install dependensi sistem & SQLite3
 RUN apk add --no-cache \
-    libreoffice \
+    libreoffice-writer \
     font-dejavu \
     ttf-liberation \
     fontconfig \
