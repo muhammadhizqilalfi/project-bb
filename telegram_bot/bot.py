@@ -1,5 +1,3 @@
-## TELEGRAM BOT PYTHON
-
 import os
 import subprocess
 import json
@@ -45,7 +43,7 @@ async def newacc_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     
     cmd = [
-        "docker", "exec", "sirekab-app",
+        "docker", "exec", "slbb-app",
         "php", "artisan", "tinker",
         f"--execute={tinker_code}"
     ]
@@ -79,7 +77,7 @@ async def listuser_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tinker_code = "echo json_encode(\\App\\Models\\User::select('id', 'name', 'nip')->get());"
 
     cmd = [
-        "docker", "exec", "sirekab-app",
+        "docker", "exec", "slbb-app",
         "php", "artisan", "tinker",
         f"--execute={tinker_code}"
     ]
@@ -154,7 +152,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if action == "restart_webserver":
         await query.edit_message_text("⏳ Sedang merestart Nginx Webserver...")
-        res = subprocess.run(["docker", "restart", "sirekab-webserver"], capture_output=True, text=True)
+        res = subprocess.run(["docker", "restart", "slbb-webserver"], capture_output=True, text=True)
         if res.returncode == 0:
             await query.edit_message_text("✅ **Nginx Webserver berhasil direstart!**", parse_mode="Markdown")
         else:
@@ -162,7 +160,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif action == "restart_app":
         await query.edit_message_text("⏳ Sedang merestart Aplikasi Laravel...")
-        res = subprocess.run(["docker", "restart", "sirekab-app"], capture_output=True, text=True)
+        res = subprocess.run(["docker", "restart", "slbb-app"], capture_output=True, text=True)
         if res.returncode == 0:
             await query.edit_message_text("✅ **Aplikasi Laravel berhasil direstart!**", parse_mode="Markdown")
         else:
@@ -170,7 +168,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif action == "restart_all":
         await query.edit_message_text("⏳ Sedang merestart SEMUA container...")
-        res = subprocess.run(["docker", "restart", "sirekab-webserver", "sirekab-app"], capture_output=True, text=True)
+        res = subprocess.run(["docker", "restart", "slbb-webserver", "slbb-app"], capture_output=True, text=True)
         if res.returncode == 0:
             await query.edit_message_text("✅ **Seluruh Service Berhasil Direstart!**", parse_mode="Markdown")
         else:

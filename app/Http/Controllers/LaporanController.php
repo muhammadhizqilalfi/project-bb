@@ -204,32 +204,6 @@ class LaporanController extends Controller
     public function exportDocx(Request $request, LaporanDocxService $docxService)
     {
         if ($request->input('kategori', 'ALL') === 'ALL') {
-            return back()->with('error', 'Silakan pilih kategori Tindak Pidana spesifik terlebih dahulu.');
-        }
-
-        $data = $this->getLaporanData($request);
-
-        $paper = [0, 0, 13 * 72, 8.5 * 72];
-
-        $pdf = PDF::loadView('exports-laporan-pdf', $data, [], [
-            'mode'                 => 'utf-8',
-            'format'               => 'A4-L',
-            'margin_left'          => 12,
-            'margin_right'         => 12,
-            'margin_top'           => 12,
-            'margin_bottom'        => 12,
-            'default_font'         => 'arial',
-            'shrink_tables_to_fit' => 1,
-        ]);
-
-        $fileName = "Laporan_Form_{$data['filters']['formType']}_{$data['filters']['month']}_{$data['filters']['year']}.pdf";
-
-        return $pdf->stream($fileName);
-    }
-
-    public function exportDocx(Request $request, LaporanDocxService $docxService)
-    {
-        if ($request->input('kategori', 'ALL') === 'ALL') {
             return back()->with(
                 'error',
                 'Silakan pilih kategori Tindak Pidana spesifik terlebih dahulu.'
@@ -269,9 +243,9 @@ class LaporanController extends Controller
             $phpWord = $docxService->build($data);
             $tempId = 'pdf_conv_' . uniqid();
             
-            $storageAppPath = storage_path('app');
-            $tempDocxPath = str_replace('/', DIRECTORY_SEPARATOR, "{$storageAppPath}\\{$tempId}.docx");
-            $outputDir = str_replace('/', DIRECTORY_SEPARATOR, $storageAppPath);
+            $tempDocxPath = storage_path("app/{$tempId}.docx");
+            $tempPdfPath  = storage_path("app/{$tempId}.pdf");
+            $outputDir    = storage_path('app');
 
             $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
             $writer->save($tempDocxPath);
@@ -316,7 +290,6 @@ class LaporanController extends Controller
             // Jalankan proses
             $process->run();
 
-            $tempPdfPath = str_replace('/', DIRECTORY_SEPARATOR, "{$storageAppPath}\\{$tempId}.pdf");
 
             // 3. Pembersihan (Cleanup) file DOCX
             if (file_exists($tempDocxPath)) {
@@ -336,7 +309,7 @@ class LaporanController extends Controller
 
             $fileName = "Laporan_Form_{$data['filters']['formType']}_{$data['filters']['month']}_{$data['filters']['year']}.pdf";
 
-            return response()->download($tempPdfPath, $fileName, [
+            return response()->file($tempPdfPath, [
                 'Content-Type'        => 'application/pdf',
                 'Content-Disposition' => 'inline; filename="' . $fileName . '"',
             ])->deleteFileAfterSend(true);

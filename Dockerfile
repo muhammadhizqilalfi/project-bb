@@ -42,27 +42,30 @@ RUN npm run build
 FROM php:8.4-fpm-alpine
 
 # 1. Install dependensi sistem & SQLite3
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    zip \
-    unzip \
+RUN apk add --no-cache \
+    libreoffice \
+    font-dejavu \
+    ttf-liberation \
+    fontconfig \
+    sqlite \
+    libzip \
+    oniguruma \
+    && apk add --no-cache --virtual .build-deps \
     libzip-dev \
-    libsqlite3-dev \
-    libonig-dev \
-    sqlite3 \
-    && docker-php-ext-install pdo_sqlite mbstring zip bcmath \
-    && apt-get purge -y --auto-remove libzip-dev libsqlite3-dev libonig-dev \
-    && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# 2. Install ekstensi PHP untuk SQLite & Laravel
-RUN docker-php-ext-install pdo_sqlite mbstring zip bcmath opcache
+    sqlite-dev \
+    oniguruma-dev \
+    && docker-php-ext-install pdo_sqlite mbstring zip bcmath opcache \
+    && apk del .build-deps
 
 # 3. Set Working Directory
 WORKDIR /var/www
 
 # 4. Copy source code aplikasi
 COPY . /var/www
+
+COPY docker/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+
+COPY docker/custom-php.ini /usr/local/etc/php/conf.d/custom-php.ini
 
 # 5. Copy folder 'vendor' dan 'public/build' dari STAGE 1
 COPY --from=frontend-builder /app/vendor /var/www/vendor

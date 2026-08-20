@@ -3,6 +3,7 @@
 .idea
 .vscode
 node_modules
+tests/*
 vendor
 public/build
 storage/*.key

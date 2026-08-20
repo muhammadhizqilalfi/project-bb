@@ -5,8 +5,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: sirekab
-    container_name: sirekab-app
+    image: slbb
+    container_name: slbb-app
     restart: always
     working_dir: /var/www
     volumes:
@@ -17,10 +17,10 @@ services:
 
   webserver:
     image: nginx:alpine
-    container_name: sirekab-webserver
+    container_name: slbb-webserver
     restart: always
     ports:
-      - "80:80"
+      - "8800:80"
     volumes:
       - .:/var/www
       - ./docker/nginx/app.conf:/etc/nginx/conf.d/default.conf
@@ -48,14 +48,15 @@ services:
     build:
       context: ./telegram_bot
       dockerfile: Dockerfile
-    image: sirekab-bot
-    container_name: sirekab-bot-control
+    image: slbb-bot
+    container_name: slbb-bot-control
     restart: always
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./telegram_bot:/app
     networks:
       - app-net
     depends_on:
