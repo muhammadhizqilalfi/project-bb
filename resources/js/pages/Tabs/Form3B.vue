@@ -5,25 +5,29 @@ import AuthenticatedLayout from '@/Layouts/Layout.vue';
 import {
   Calendar,
   Filter,
-  Building2,
   Layers
 } from 'lucide-vue-next';
+
+interface Form3BItem {
+  id?: string;
+  satuanKerja?: string;
+  kategoriTindakPidana?: string;
+  sisaBulanLalu?: number;
+  masukBulanLaporan?: number;
+  jumlahBulanLaporan?: number;
+  perkaraSelesai?: number;
+  sisaBulanLaporan?: number;
+  keterangan?: string;
+}
 
 interface Props {
   filters?: {
     month: number;
     year: number;
     kategori: string;
-    selectedPeriod: string;
   };
-  calculatedData?: {
-    kejaksaan: string;
-    sisaBulanLalu: number;
-    masukBulanLaporan: number;
-    jumlahBulanLaporan: number;
-    perkaraSelesai: number;
-    sisaBulanLaporan: number;
-  };
+  cases?: Form3BItem[];
+  calculatedData?: Form3BItem;
 }
 
 const props = defineProps<Props>();
@@ -45,8 +49,9 @@ const kategoriPidanaOptions = [
   { value: 'KORUPSI', label: 'KORUPSI' },
 ];
 
+// Opsi Bulan yang Sudah Diperbaiki
 const monthOptions = [
-  { value: 1, label: 'Agustus' }, { value: 2, label: 'Februari' },
+  { value: 1, label: 'Januari' }, { value: 2, label: 'Februari' },
   { value: 3, label: 'Maret' }, { value: 4, label: 'April' },
   { value: 5, label: 'Mei' }, { value: 6, label: 'Juni' },
   { value: 7, label: 'Juli' }, { value: 8, label: 'Agustus' },
@@ -59,15 +64,26 @@ const yearOptions = computed(() => {
   return Array.from({ length: 10 }, (_, index) => currentYear - index);
 });
 
-// Data Fallback jika backend belum terhubung
-const data = computed(() => ({
-  kejaksaan: props.calculatedData?.kejaksaan || 'Kejari Banda Aceh',
-  sisaBulanLalu: props.calculatedData?.sisaBulanLalu ?? 19,
-  masukBulanLaporan: props.calculatedData?.masukBulanLaporan ?? 22,
-  jumlahBulanLaporan: props.calculatedData?.jumlahBulanLaporan ?? 41,
-  perkaraSelesai: props.calculatedData?.perkaraSelesai ?? 5,
-  sisaBulanLaporan: props.calculatedData?.sisaBulanLaporan ?? 36,
-}));
+// Menangkap Data dari Props cases (Array) atau fallback ke calculatedData
+const casesList = computed<Form3BItem[]>(() => {
+  if (props.cases && props.cases.length > 0) {
+    return props.cases;
+  }
+  if (props.calculatedData) {
+    return [props.calculatedData];
+  }
+  return [
+    {
+      satuanKerja: 'Kejari Banda Aceh',
+      sisaBulanLalu: 0,
+      masukBulanLaporan: 0,
+      jumlahBulanLaporan: 0,
+      perkaraSelesai: 0,
+      sisaBulanLaporan: 0,
+      keterangan: '-'
+    }
+  ];
+});
 
 // Trigger Filter Otomatis
 const applyFilter = () => {
@@ -88,10 +104,8 @@ const applyFilter = () => {
   <AuthenticatedLayout userRole="karyawan" v-model:active-menu="activeMenu">
     <div class="p-8 w-full mx-auto space-y-6 bg-[#F4F6F9] min-h-screen">
       
-      <!-- FILTER BAR (SESUAI DESAIN GAMBAR ACUAN) -->
+      <!-- FILTER BAR -->
       <div class="bg-white rounded-2xl p-4 shadow-xs border border-slate-200/80 flex flex-wrap items-center gap-4">
-        
-        <!-- FILTER TINDAK PIDANA -->
         <div class="flex items-center gap-2.5">
           <Filter class="w-4 h-4 text-slate-500 shrink-0" />
           <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">TINDAK PIDANA:</span>
@@ -109,7 +123,6 @@ const applyFilter = () => {
 
         <div class="h-5 w-px bg-slate-200 hidden sm:block"></div>
 
-        <!-- FILTER PERIODE (BULAN & TAHUN) -->
         <div class="flex items-center gap-2.5">
           <Calendar class="w-4 h-4 text-slate-500 shrink-0" />
           <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">PERIODE:</span>
@@ -135,13 +148,11 @@ const applyFilter = () => {
             </option>
           </select>
         </div>
-
       </div>
 
       <!-- MAIN TABLE CARD -->
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden space-y-4m px-6 py-4">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden space-y-4 px-6 py-4">
         
-        <!-- Table Header Info -->
         <div class="p-6 border-b border-slate-100 flex items-center justify-between">
           <div class="flex items-center gap-2.5">
             <div class="p-2 bg-slate-100 text-slate-800 rounded-lg">
@@ -158,7 +169,6 @@ const applyFilter = () => {
           </div>
         </div>
 
-        <!-- Main Data Table -->
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse text-xs">
             <thead class="bg-slate-50 text-slate-900 font-bold border-b border-slate-300 text-[11px] uppercase tracking-wider text-center">
@@ -173,39 +183,34 @@ const applyFilter = () => {
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-200 text-slate-800">
-              <tr class="hover:bg-slate-50 transition-colors divide-x divide-slate-200 text-center">
-                <!-- No Urut -->
-                <td class="p-4 font-bold text-slate-500">1.</td>
-                
-                <!-- Kejaksaan -->
-                <td class="p-4 font-extrabold text-slate-900 flex gap-2">
-                  <span>{{ data.kejaksaan }}</span>
+              <!-- PERULANGAN DINAMIS DARI CASES LIST -->
+              <tr 
+                v-for="(item, idx) in casesList" 
+                :key="item.id || idx" 
+                class="hover:bg-slate-50 transition-colors divide-x divide-slate-200 text-center"
+              >
+                <td class="p-4 font-bold text-slate-500">{{ idx + 1 }}.</td>
+                <td class="p-4 font-extrabold text-slate-900 text-left">
+                  {{ item.satuanKerja || 'Kejari Banda Aceh' }}
+                  <span v-if="item.kategoriTindakPidana" class="block text-[10px] font-normal text-slate-500">
+                    {{ item.kategoriTindakPidana }}
+                  </span>
                 </td>
-
-                <!-- Sisa Bulan Lalu -->
                 <td class="p-4 font-extrabold text-slate-700 bg-slate-50/30">
-                  {{ data.sisaBulanLalu }}
+                  {{ item.sisaBulanLalu ?? 0 }}
                 </td>
-
-                <!-- Masuk Bulan Laporan -->
                 <td class="p-4 font-black text-blue-700 bg-blue-50/20">
-                  {{ data.masukBulanLaporan }}
+                  {{ item.masukBulanLaporan ?? 0 }}
                 </td>
-
-                <!-- Jumlah Bulan Laporan -->
                 <td class="p-4 font-black text-slate-900 bg-slate-100/30">
-                  {{ data.jumlahBulanLaporan }}
+                  {{ item.jumlahBulanLaporan ?? 0 }}
                 </td>
-
-                <!-- Perkara Selesai -->
                 <td class="p-4 font-black text-emerald-700 bg-emerald-50/20">
-                  {{ data.perkaraSelesai }}
+                  {{ item.perkaraSelesai ?? 0 }}
                 </td>
-
-                <!-- Sisa Bulan Laporan -->
                 <td class="p-4 font-black text-amber-800 bg-amber-50/30">
                   <span class="px-3 py-1 rounded-full bg-amber-100 border border-amber-300">
-                    {{ data.sisaBulanLaporan }}
+                    {{ item.sisaBulanLaporan ?? 0 }}
                   </span>
                 </td>
               </tr>
@@ -214,7 +219,7 @@ const applyFilter = () => {
         </div>
 
         <div class="p-4 bg-slate-50/60 border-t border-slate-200/80 text-[11px] text-slate-500 flex justify-between items-center">
-          <span>Menampilkan rekapitulasi data perkara untuk satuan kerja Kejari Banda Aceh.</span>
+          <span>Menampilkan {{ casesList.length }} baris rekapitulasi data perkara Form 3B.</span>
           <span class="font-semibold text-slate-700">Terintegrasi otomatis dengan Form 3A & Form 3C</span>
         </div>
 

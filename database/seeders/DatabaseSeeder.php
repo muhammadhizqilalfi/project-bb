@@ -22,6 +22,9 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('admin123'),
         ]);
 
-        $this->call(DropdownOptionSeeder::class);
+        $this->call([
+            DropdownOptionSeeder::class,
+            Form3BJuli2026Seeder::class, // Ditambahkan di sini
+        ]);
     }
 }
