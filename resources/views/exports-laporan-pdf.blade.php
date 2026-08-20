@@ -27,7 +27,7 @@
             $angka = (int)$angka;
             if ($angka <= 0) return '';
             $baca = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
-            
+
             if ($angka < 12) {
                 return $baca[$angka];
             } elseif ($angka < 20) {
@@ -46,12 +46,12 @@
     if (!function_exists('formatJumlah')) {
         function formatJumlah($val) {
             if (empty($val) || $val === '-') return '-';
-            
+
             if (is_numeric($val)) {
                 $teks = trim(preg_replace('/\s+/', ' ', terbilang($val)));
                 return $teks ? "{$val} ({$teks})" : $val;
             }
-            
+
             return $val;
         }
     }
@@ -66,19 +66,17 @@
     <title>Laporan Form {{ $filters['formType'] }}</title>
     <style>
         @page Section1 {
-            size: 841.9pt 595.3pt;
             mso-page-orientation: landscape;
-            margin: 1.2in 0.5in 0.5in 0.5in;
             mso-header: h1;
         }
-        
+
         div.Section1 {
             page: Section1;
         }
 
         body { font-family: Arial, sans-serif; font-size: 12pt; }
         .title { text-align: center; font-weight: bold; font-size: 14pt; margin-bottom: 15px; text-transform: uppercase; }
-        
+
         /* Layout tabel diperketat untuk Dompdf */
         table { border-collapse: collapse; table-layout: fixed; width: 100%; margin-top: 10px; }
         th, td { 
@@ -93,12 +91,12 @@
         }
         th { font-weight: bold; }
         tr { page-break-inside: avoid !important; }
-        
+
         .text-top { vertical-align: top; }
         .text-left { text-align: left; }
         .tp { text-align: center; font-weight: bold; margin-bottom: 1rem; font-size: 14pt; }
         .satker { font-weight: bold; }
-        
+
         /* Fix CSS typo: margin-top */
         .header-container { width: 100%; border-collapse: collapse; margin-bottom: 20px; margin-top: -1.5rem; }
         .header-container td { border: none !important; padding: 0 !important; vertical-align: top; }
@@ -109,7 +107,7 @@
         .kop-text { font-weight: bold; font-size: 12pt; text-align: center; white-space: nowrap; }
         .line-header { border: none; border-top: 1px solid #000; margin-top: 4px; margin-bottom: 0; width: 40%;}
         .noth * { font-weight: normal; font-size: 9pt; padding: 0 4px 0 0; }
-        
+
         .ttd-container {
             width: 100%;
             border-collapse: collapse;
@@ -126,7 +124,7 @@
         }
 
         .ttd-space { height: 65px; }
-        
+
         .nihil { 
             font-size: 40pt; 
             font-weight: 900;
@@ -253,7 +251,7 @@
                             <td class="text-center">{{ $idx + 1 }}</td>
 
                             {{-- 2. Satker --}}
-                            <td class="satker wrap-text">{{ $case['satuanKerja'] ?? '-' }}</td>
+                            <td class="satker wrap-text" style="vertical-align: middle;">{{ $case['satuanKerja'] ?? '-' }}</td>
 
                             {{-- 3. Register Benda Sitaan --}}
                             <td class="wrap-text">
@@ -274,7 +272,7 @@
                             {{-- 5. Uraian Barang Bukti --}}
                             <td class="text-left wrap-text">
                                 @forelse($bbList as $bIdx => $bb)
-                                    <div style="{{ !$loop->last ? 'margin-bottom: 4px; padding-bottom: 4px; border-bottom: 1px dashed #ccc;' : '' }}">
+                                    <div style="{{ !$loop->last ? 'margin-bottom: 100px; padding-bottom: 100px;' : '' }}">
                                         - {{ formatJumlah($bb['jumlah'] ?? null) }} {{ $bb['uraianBarangBukti'] ?? $bb['jenisBarangBukti'] ?? '' }}
                                     </div>
                                 @empty
@@ -282,8 +280,8 @@
                                 @endforelse
                             </td>
 
-                            {{-- 6. Tempat Penyimpanan (Hanya muncul 1x jika tempatnya sama) --}}
-                            <td class="wrap-text text-center">
+                            {{-- 6. Tempat Penyimpanan --}}
+                            <td class="wrap-text text-center" style="vertical-align: middle;" >
                                 @if($isSingleTp)
                                     {{ $singleTpText }}
                                 @else

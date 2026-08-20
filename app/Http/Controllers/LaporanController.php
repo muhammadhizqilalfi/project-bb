@@ -6,7 +6,7 @@ use App\Models\FormTemplate;
 use App\Services\LaporanDocxService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Barryvdh\DomPDF\Facade\Pdf;
+use PDF;
 
 class LaporanController extends Controller
 {
@@ -155,8 +155,16 @@ class LaporanController extends Controller
 
         $paper = [0, 0, 13 * 72, 8.5 * 72];
 
-        $pdf = Pdf::loadView('exports-laporan-pdf', $data)
-            ->setPaper($paper);
+        $pdf = PDF::loadView('exports-laporan-pdf', $data, [], [
+            'mode'                 => 'utf-8',
+            'format'               => 'A4-L',
+            'margin_left'          => 12,
+            'margin_right'         => 12,
+            'margin_top'           => 12,
+            'margin_bottom'        => 12,
+            'default_font'         => 'arial',
+            'shrink_tables_to_fit' => 1,
+        ]);
 
         $fileName = "Laporan_Form_{$data['filters']['formType']}_{$data['filters']['month']}_{$data['filters']['year']}.pdf";
 

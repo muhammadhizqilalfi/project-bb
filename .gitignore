@@ -11,6 +11,7 @@
 /storage/*.key
 /storage/pail
 /vendor
+.git
 .env
 .env.backup
 .env.production
