@@ -2,7 +2,7 @@
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import AuthenticatedLayout from '@/Layouts/Layout.vue';
-import { FileText, Calendar, Filter, Edit3, Trash2, FileDown, Package, ChevronDown, FileCode } from 'lucide-vue-next';
+import { FileText, Calendar, Filter, Edit3, Trash2, FileDown, ChevronDown, FileCode } from 'lucide-vue-next';
 
 interface BarangBuktiItem {
   jenisBarangBukti?: string;
@@ -61,11 +61,6 @@ interface Props {
     form3b: number;
     form3c: number;
   };
-  summaryNarkotika: {
-    sabuGram: number;
-    ganjaGram: number;
-    ekstasiPcs: number;
-  };
   cases: CaseItem[];
 }
 
@@ -78,6 +73,8 @@ const selectedForm = ref<'3A' | '3B' | '3C'>(props.filters.formType || '3A');
 const selectedMonth = ref<number>(props.filters.month || new Date().getMonth() + 1);
 const selectedYear = ref<number>(props.filters.year || new Date().getFullYear());
 const selectedKategori = ref<string>(props.filters.kategori || 'ALL');
+
+const isExportOpen = ref(false);
 
 const monthOptions = [
   { value: 1, label: 'Januari' }, { value: 2, label: 'Februari' },
@@ -128,7 +125,6 @@ const formatJumlahTerbilang = (val: any): string => {
   return `${num}`;
 };
 
-// Helper Type-Safe untuk memastikan array bertipe BarangBuktiItem[]
 const getBbList = (list?: BarangBuktiItem[]): BarangBuktiItem[] => {
   if (!list || list.length === 0) {
     return [{} as BarangBuktiItem];
@@ -136,7 +132,6 @@ const getBbList = (list?: BarangBuktiItem[]): BarangBuktiItem[] => {
   return list;
 };
 
-// Helper Type-Safe logika 'Sda' (Sama dengan atas) untuk Amar Putusan
 const isSdaAmarPutusan = (list: BarangBuktiItem[] | undefined, index: number): boolean => {
   if (!list || index <= 0) return false;
   const current = list[index];
@@ -149,7 +144,6 @@ const isSdaAmarPutusan = (list: BarangBuktiItem[] | undefined, index: number): b
   );
 };
 
-// Logika Rowspan Tempat Penyimpanan (Gudang yang sama digabung, gudang beda dipisah baris/garis)
 const shouldRenderTempatPenyimpanan = (list: BarangBuktiItem[] | undefined, index: number): boolean => {
   if (!list || list.length === 0) return true;
   if (index === 0) return true;
@@ -169,7 +163,6 @@ const getTempatPenyimpananRowspan = (list: BarangBuktiItem[] | undefined, index:
   return count;
 };
 
-// Trigger Reload saat Filter Berubah
 const applyFilters = () => {
   router.get('/laporan', {
     formType: selectedForm.value,
@@ -205,13 +198,6 @@ const deleteCase = (id: string, index?: number) => {
   }
 };
 
-const formatKg = (gram: number) => {
-  if (!gram) return '0.0';
-  return (gram / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
-};
-
-const isExportOpen = ref(false)
-
 const exportFormPdf = () => {
   if (selectedKategori.value === 'ALL') {
     alert('Silahkan pilih salah satu kategori Tindak Pidana terlebih dahulu sebelum mengekspor laporan.');
@@ -225,7 +211,7 @@ const exportFormPdf = () => {
 };
 
 const exportFormDocx = () => {
-  if (selectedKategori.value === 'ÁLL') {
+  if (selectedKategori.value === 'ALL') {
     alert('Silahkan pilih salah satu kategori Tindak Pidana terlebih dahulu sebelum mengekspor laporan.');
     return;
   }
@@ -238,7 +224,6 @@ const exportFormDocx = () => {
 </script>
 
 <template>
-
   <Head title="Manajemen Laporan & Ekspor" />
 
   <AuthenticatedLayout userRole="karyawan" v-model:active-menu="activeMenu">
@@ -282,56 +267,7 @@ const exportFormDocx = () => {
         </div>
       </div>
 
-      <!-- SUMMARY CARDS -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div class="bg-white rounded-xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
-          <div class="flex items-center gap-4">
-            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100">
-              <Package class="w-6 h-6" />
-            </div>
-            <div>
-              <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">TOTAL MASSA SABU</p>
-              <div class="flex items-baseline gap-1.5 mt-0.5">
-                <span class="text-2xl font-extrabold text-slate-900">{{ formatKg(summaryNarkotika.sabuGram) }}</span>
-                <span class="text-xs font-semibold text-slate-500">Kilogram</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white rounded-xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
-          <div class="flex items-center gap-4">
-            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100">
-              <Package class="w-6 h-6" />
-            </div>
-            <div>
-              <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">TOTAL MASSA GANJA</p>
-              <div class="flex items-baseline gap-1.5 mt-0.5">
-                <span class="text-2xl font-extrabold text-slate-900">{{ formatKg(summaryNarkotika.ganjaGram) }}</span>
-                <span class="text-xs font-semibold text-slate-500">Kilogram</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="bg-white rounded-xl p-5 border border-slate-200/80 shadow-xs flex items-center justify-between">
-          <div class="flex items-center gap-4">
-            <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-100">
-              <Package class="w-6 h-6" />
-            </div>
-            <div>
-              <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">TOTAL EKSTASI / PIL</p>
-              <div class="flex items-baseline gap-1.5 mt-0.5">
-                <span class="text-2xl font-extrabold text-slate-900">{{
-                  summaryNarkotika.ekstasiPcs.toLocaleString('id-ID') }}</span>
-                <span class="text-xs font-semibold text-slate-500">Pcs / Butir</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- TABS FORM & BARIS TOMBOL EKSPOR -->
+      <!-- TABS FORM & DROPDOWN EKSPOR (PDF & DOCX) -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div class="flex items-center gap-2 bg-slate-200/60 p-1 rounded-xl w-fit">
           <button type="button" @click="changeFormTab('3A')" :class="[
@@ -339,8 +275,7 @@ const exportFormDocx = () => {
             selectedForm === '3A' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
           ]">
             <span>Laporan Form 3A</span>
-            <span
-              class="bg-slate-100 text-slate-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-slate-200">
+            <span class="bg-slate-100 text-slate-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-slate-200">
               {{ String(counts.form3a).padStart(2, '0') }}
             </span>
           </button>
@@ -350,8 +285,7 @@ const exportFormDocx = () => {
             selectedForm === '3B' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
           ]">
             <span>Laporan Form 3B</span>
-            <span
-              class="bg-slate-100 text-slate-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-slate-200">
+            <span class="bg-slate-100 text-slate-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-slate-200">
               {{ String(counts.form3b).padStart(2, '0') }}
             </span>
           </button>
@@ -361,15 +295,13 @@ const exportFormDocx = () => {
             selectedForm === '3C' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
           ]">
             <span>Laporan Form 3C</span>
-            <span
-              class="bg-slate-100 text-slate-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-slate-200">
+            <span class="bg-slate-100 text-slate-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-slate-200">
               {{ String(counts.form3c).padStart(2, '0') }}
             </span>
           </button>
         </div>
 
         <div class="relative w-fit">
-          <!-- Tombol Utama (Trigger Dropdown) -->
           <button type="button" @click="isExportOpen = !isExportOpen" :disabled="selectedKategori === 'ALL'" :class="[
             'text-xs font-extrabold px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all cursor-pointer shadow-xs border w-fit',
             selectedKategori === 'ALL'
@@ -378,23 +310,18 @@ const exportFormDocx = () => {
           ]" :title="selectedKategori === 'ALL' ? 'Pilih kategori Tindak Pidana terlebih dahulu untuk mengekspor' : ''">
             <FileDown class="w-4 h-4 stroke-[2.5]" />
             <span>Ekspor Laporan Form {{ selectedForm }}</span>
-
-            <!-- Ikon Panah Kecil (Indikator Dropdown) -->
             <ChevronDown class="w-3.5 h-3.5 stroke-[2.5] transition-transform duration-200"
               :class="{ 'rotate-180': isExportOpen }" />
           </button>
 
-          <!-- Menu Pilihan PDF & DOCX -->
           <div v-if="isExportOpen && selectedKategori !== 'ALL'" @click.outside="isExportOpen = false"
             class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50">
-            <!-- Pilihan PDF -->
             <button type="button" @click="exportFormPdf(); isExportOpen = false"
               class="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-900 flex items-center gap-2.5 transition-colors">
               <FileText class="w-4 h-4 text-red-500" />
               <span>Ekspor ke PDF</span>
             </button>
 
-            <!-- Pilihan DOCX -->
             <button type="button" @click="exportFormDocx(); isExportOpen = false"
               class="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-900 flex items-center gap-2.5 transition-colors border-t border-slate-100">
               <FileCode class="w-4 h-4 text-blue-600" />
@@ -410,8 +337,7 @@ const exportFormDocx = () => {
 
           <!-- TEMPLATE PREVIEW FORM 3A -->
           <table v-if="selectedForm === '3A'" class="w-full text-left border-collapse text-xs">
-            <thead
-              class="bg-slate-50 text-slate-900 border-b border-slate-300 font-bold text-[11px] uppercase tracking-wider text-center">
+            <thead class="bg-slate-50 text-slate-900 border-b border-slate-300 font-bold text-[11px] uppercase tracking-wider text-center">
               <tr class="divide-x divide-slate-300 border-b border-slate-300">
                 <th class="p-3 w-12">No. Urut</th>
                 <th class="p-3">Satuan Kerja</th>
@@ -426,20 +352,10 @@ const exportFormDocx = () => {
                 <th class="p-3">Keterangan</th>
                 <th class="p-3 w-20">Aksi</th>
               </tr>
-              <tr
-                class="bg-slate-100 divide-x divide-slate-300 text-[10px] text-slate-500 font-semibold border-b border-slate-300">
-                <td class="p-1">1</td>
-                <td class="p-1">2</td>
-                <td class="p-1">3</td>
-                <td class="p-1">4</td>
-                <td class="p-1">5</td>
-                <td class="p-1">6</td>
-                <td class="p-1">7</td>
-                <td class="p-1">8</td>
-                <td class="p-1">9</td>
-                <td class="p-1">10</td>
-                <td class="p-1">11</td>
-                <td class="p-1">-</td>
+              <tr class="bg-slate-100 divide-x divide-slate-300 text-[10px] text-slate-500 font-semibold border-b border-slate-300">
+                <td class="p-1">1</td><td class="p-1">2</td><td class="p-1">3</td><td class="p-1">4</td>
+                <td class="p-1">5</td><td class="p-1">6</td><td class="p-1">7</td><td class="p-1">8</td>
+                <td class="p-1">9</td><td class="p-1">10</td><td class="p-1">11</td><td class="p-1">-</td>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-200 text-slate-800">
@@ -447,79 +363,39 @@ const exportFormDocx = () => {
                 <tr v-for="(bb, bIdx) in getBbList(item.barangBuktiList)" :key="bIdx"
                   class="hover:bg-slate-50 transition-colors divide-x divide-slate-200"
                   :class="{ 'border-b-2 border-slate-300': bIdx === getBbList(item.barangBuktiList).length - 1 }">
-                  <!-- 1 & 2. Identitas Perkara (Rowspan) -->
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
-                    class="p-3 font-bold text-center align-top">{{ idx + 1 }}</td>
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
-                    class="p-3 font-bold text-center align-top">{{ item.satuanKerja || '-' }}</td>
-
-                  <!-- 3. Reg Sitaan (Rowspan) -->
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
-                    class="p-3 align-top text-center">
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 font-bold text-center align-top">{{ idx + 1 }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 font-bold text-center align-top">{{ item.satuanKerja || '-' }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top text-center">
                     <div class="flex flex-col items-center text-xs text-slate-800">
                       <div>{{ item.noRegBendaSitaan || '-' }}</div>
-                      <div v-if="item.tglPenerimaan && item.tglPenerimaan !== '-'"
-                        class="mt-1 text-[11px] text-slate-500">
-                        {{ item.tglPenerimaan }}
-                      </div>
+                      <div v-if="item.tglPenerimaan && item.tglPenerimaan !== '-'" class="mt-1 text-[11px] text-slate-500">{{ item.tglPenerimaan }}</div>
                     </div>
                   </td>
-
-                  <!-- 4. Reg Penyidikan (Rowspan) -->
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
-                    class="p-3 align-top text-center">
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top text-center">
                     <div class="flex flex-col items-center text-xs text-slate-800">
                       <div>{{ item.noRegPenyidikan || '-' }}</div>
-                      <div v-if="item.tglRegPenyidikan && item.tglRegPenyidikan !== '-'"
-                        class="mt-1 text-[11px] text-slate-500">
-                        {{ item.tglRegPenyidikan }}
-                      </div>
+                      <div v-if="item.tglRegPenyidikan && item.tglRegPenyidikan !== '-'" class="mt-1 text-[11px] text-slate-500">{{ item.tglRegPenyidikan }}</div>
                     </div>
                   </td>
-
-                  <!-- 5. Uraian Benda Sitaan (Per Barang Bukti Sejajar) -->
                   <td class="p-3 align-top">
                     <div class="text-[11px] text-slate-900 whitespace-normal break-words">
-                      - {{ formatJumlahTerbilang(bb.jumlah || bb.jumlahNarkotika || bb.jumlahSatuan || 1) }} {{
-                        bb.uraianBarangBukti || bb.namaBarangBukti || bb.jenisBarangBukti || 'BB' }}
+                      - {{ formatJumlahTerbilang(bb.jumlah || bb.jumlahNarkotika || bb.jumlahSatuan || 1) }} {{ bb.uraianBarangBukti || bb.namaBarangBukti || bb.jenisBarangBukti || 'BB' }}
                     </div>
                   </td>
-
-                  <!-- 6. Tempat Penyimpanan (Rowspan Dinamis) -->
-                  <td v-if="shouldRenderTempatPenyimpanan(item.barangBuktiList, bIdx)"
-                    :rowspan="getTempatPenyimpananRowspan(item.barangBuktiList, bIdx)"
-                    class="p-3 text-center align-middle">
+                  <td v-if="shouldRenderTempatPenyimpanan(item.barangBuktiList, bIdx)" :rowspan="getTempatPenyimpananRowspan(item.barangBuktiList, bIdx)" class="p-3 text-center align-middle">
                     <div class="text-[11px] font-medium text-slate-800">{{ bb.tempatPenyimpanan || '-' }}</div>
                   </td>
-
-                  <!-- 7 - 11. Informasi Perkara (Rowspan) -->
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top">- {{
-                    item.identitasTersangka || '-' }}</td>
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top">{{
-                    item.pasalDisangkakan || item.pasalDidakwakan || '-' }}</td>
-
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
-                    class="p-3 text-center align-top">
-                    <span v-if="item.statusDiselesaikan && item.statusDiselesaikan !== '-'" class="inline-block">
-                      {{ item.statusDiselesaikan }}
-                    </span>
-                    <span v-else class="text-slate-400 font-bold">-</span>
-                  </td>
-
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
-                    class="p-3 text-center align-top">{{ item.tglPelaksanaanPutusan || '-' }}</td>
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
-                    class="p-3 text-slate-700 align-top text-center">{{ item.keterangan || '-' }}</td>
-
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
-                    class="p-3 text-center align-top">
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top">- {{ item.identitasTersangka || '-' }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top">{{ item.pasalDisangkakan || item.pasalDidakwakan || '-' }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 text-center align-top">{{ item.statusDiselesaikan || '-' }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 text-center align-top">{{ item.tglPelaksanaanPutusan || '-' }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 text-slate-700 align-top text-center">{{ item.keterangan || '-' }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 text-center align-top">
                     <div class="flex items-center justify-center gap-2">
-                      <button class="p-2 rounded-md hover:bg-blue-200 hover:text-blue-700" type="button"
-                        @click="editCase(item.id, (item as any).case_index)">
+                      <button class="p-2 rounded-md hover:bg-blue-200 hover:text-blue-700" type="button" @click="editCase(item.id, (item as any).case_index)">
                         <Edit3 class="w-4 h-4 hover:text-blue-500" />
                       </button>
-                      <button class="p-2 rounded-md hover:bg-red-200 hover:text-red-700" type="button"
-                        @click="deleteCase(item.id, (item as any).case_index)">
+                      <button class="p-2 rounded-md hover:bg-red-200 hover:text-red-700" type="button" @click="deleteCase(item.id, (item as any).case_index)">
                         <Trash2 class="w-4 h-4" />
                       </button>
                     </div>
@@ -531,20 +407,21 @@ const exportFormDocx = () => {
 
           <!-- TEMPLATE PREVIEW FORM 3B -->
           <table v-if="selectedForm === '3B'" class="w-full text-left border-collapse text-xs">
-            <thead
-              class="bg-slate-50 text-slate-900 border-b border-slate-300 font-bold text-[11px] uppercase tracking-wider text-center">
+            <thead class="bg-slate-50 text-slate-900 border-b border-slate-300 font-bold text-[11px] uppercase tracking-wider text-center">
               <tr class="divide-x divide-slate-300 border-b border-slate-300">
-                <th class="p-3 w-12">No. Urut</th>
-                <th class="p-3">Kejaksaan</th>
+                <th rowspan="2" class="p-3 w-12 align-middle">No. Urut</th>
+                <th rowspan="2" class="p-3 align-middle">Kejaksaan</th>
+                <th colspan="3" class="p-2 border-b border-slate-300"></th>
+                <th rowspan="2" class="p-3 align-middle">Sisa Bulan Laporan</th>
+                <th rowspan="2" class="p-3 align-middle">Keterangan</th>
+                <th rowspan="2" class="p-3 w-20 align-middle">Aksi</th>
+              </tr>
+              <tr class="divide-x divide-slate-300 border-b border-slate-300">
                 <th class="p-3">Sisa Bulan Lalu</th>
                 <th class="p-3">Masuk Bulan Laporan</th>
                 <th class="p-3">Jumlah Bulan Laporan</th>
-                <th class="p-3">Sisa Bulan Laporan</th>
-                <th class="p-3">Keterangan</th>
-                <th class="p-3 w-20">Aksi</th>
               </tr>
-              <tr
-                class="bg-slate-100 divide-x divide-slate-300 text-[10px] text-slate-500 font-semibold border-b border-slate-300">
+              <tr class="bg-slate-100 divide-x divide-slate-300 text-[10px] text-slate-500 font-semibold border-b border-slate-300">
                 <td class="p-1">1</td>
                 <td class="p-1">2</td>
                 <td class="p-1">3</td>
@@ -556,10 +433,9 @@ const exportFormDocx = () => {
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-200 text-slate-800">
-              <tr v-for="(item, idx) in cases" :key="item.id"
-                class="hover:bg-slate-50 transition-colors divide-x divide-slate-200 text-center">
-                <td class="p-3 font-bold">{{ idx + 1 }}</td>
-                <td class="p-3 font-semibold text-left">{{ item.satuanKerja || '-' }}</td>
+              <tr v-for="(item, idx) in cases" :key="item.id" class="hover:bg-slate-50 transition-colors divide-x divide-slate-200 text-center">
+                <td class="p-3 font-bold">{{ idx + 1 }}.</td>
+                <td class="p-3 font-semibold text-left">{{ item.satuanKerja || 'Kejari Banda Aceh' }}</td>
                 <td class="p-3 font-medium">{{ item.sisaBulanLalu || '0' }}</td>
                 <td class="p-3 font-medium">{{ item.masukBulanLaporan || '0' }}</td>
                 <td class="p-3 font-bold text-blue-700">{{ item.jumlahBulanLaporan || '0' }}</td>
@@ -567,12 +443,10 @@ const exportFormDocx = () => {
                 <td class="p-3 text-slate-600 italic text-left">{{ item.keterangan || '-' }}</td>
                 <td class="p-3">
                   <div class="flex items-center justify-center gap-1">
-                    <button type="button" @click="editCase(item.id)"
-                      class="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded cursor-pointer">
+                    <button type="button" @click="editCase(item.id)" class="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded cursor-pointer">
                       <Edit3 class="w-4 h-4" />
                     </button>
-                    <button type="button" @click="deleteCase(item.id)"
-                      class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer">
+                    <button type="button" @click="deleteCase(item.id)" class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer">
                       <Trash2 class="w-4 h-4" />
                     </button>
                   </div>
@@ -583,8 +457,7 @@ const exportFormDocx = () => {
 
           <!-- TEMPLATE PREVIEW FORM 3C -->
           <table v-if="selectedForm === '3C'" class="w-full text-left border-collapse text-xs">
-            <thead
-              class="bg-slate-50 text-slate-900 border-b border-slate-300 font-bold text-[11px] uppercase tracking-wider text-center">
+            <thead class="bg-slate-50 text-slate-900 border-b border-slate-300 font-bold text-[11px] uppercase tracking-wider text-center">
               <tr class="divide-x divide-slate-300 border-b border-slate-300">
                 <th class="p-3 w-12">No. Urut</th>
                 <th class="p-3">Kejaksaan</th>
@@ -600,21 +473,10 @@ const exportFormDocx = () => {
                 <th class="p-3">Tanggal Pelaksanaan Putusan Hakim</th>
                 <th class="p-3 w-20">Aksi</th>
               </tr>
-
-              <tr
-                class="bg-slate-100 divide-x divide-slate-300 text-[10px] text-slate-500 font-semibold border-b border-slate-300">
-                <td class="p-1">1</td>
-                <td class="p-1">2</td>
-                <td class="p-1">3</td>
-                <td class="p-1">4</td>
-                <td class="p-1">5</td>
-                <td class="p-1">6</td>
-                <td class="p-1">7</td>
-                <td class="p-1">8</td>
-                <td class="p-1">9</td>
-                <td class="p-1">10</td>
-                <td class="p-1">11</td>
-                <td class="p-1">12</td>
+              <tr class="bg-slate-100 divide-x divide-slate-300 text-[10px] text-slate-500 font-semibold border-b border-slate-300">
+                <td class="p-1">1</td><td class="p-1">2</td><td class="p-1">3</td><td class="p-1">4</td>
+                <td class="p-1">5</td><td class="p-1">6</td><td class="p-1">7</td><td class="p-1">8</td>
+                <td class="p-1">9</td><td class="p-1">10</td><td class="p-1">11</td><td class="p-1">12</td>
                 <td class="p-1">-</td>
               </tr>
             </thead>
@@ -623,94 +485,45 @@ const exportFormDocx = () => {
                 <tr v-for="(bb, bIdx) in getBbList(item.barangBuktiList)" :key="bIdx"
                   class="hover:bg-slate-50 transition-colors divide-x divide-slate-200"
                   :class="{ 'border-b-2 border-slate-300': bIdx === getBbList(item.barangBuktiList).length - 1 }">
-                  <!-- 1 & 2. Identitas Perkara (Rowspan) -->
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
-                    class="p-3 text-center font-bold align-top">{{ idx + 1 }}</td>
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
-                    class="p-3 font-bold text-center align-top">{{ item.satuanKerja || '-' }}</td>
-
-                  <!-- 3. Jenis Barang Bukti (Per-baris Sejajar) -->
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 text-center font-bold align-top">{{ idx + 1 }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 font-bold text-center align-top">{{ item.satuanKerja || '-' }}</td>
                   <td class="p-3 align-top">
                     <div class="text-[11px] text-slate-800 whitespace-normal break-words">
                       - {{ formatJumlahTerbilang(bb.jumlah) }} {{ bb.jenisBarangBukti || '-' }}
                     </div>
                   </td>
-
-                  <!-- 4 & 5. Pasal & Reg Sitaan (Rowspan) -->
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
-                    class="p-3 align-top text-xs text-slate-800">{{ item.pasalDidakwakan || item.pasalDisangkakan || '-'
-                    }}</td>
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
-                    class="p-3 align-top text-center">
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top text-xs text-slate-800">{{ item.pasalDidakwakan || item.pasalDisangkakan || '-' }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top text-center">
                     <div class="flex flex-col items-center text-xs text-slate-800">
                       <div>{{ item.noRegBendaSitaan || '-' }}</div>
-                      <div v-if="item.tglPenerimaan && item.tglPenerimaan !== '-'"
-                        class="mt-1 text-[11px] text-slate-500">
-                        {{ item.tglPenerimaan }}
-                      </div>
+                      <div v-if="item.tglPenerimaan && item.tglPenerimaan !== '-'" class="mt-1 text-[11px] text-slate-500">{{ item.tglPenerimaan }}</div>
                     </div>
                   </td>
-
-                  <!-- 6, 7, 8. Rincian Barang Bukti (Per-baris Sejajar) -->
-                  <td class="p-3 align-top">
-                    <div class="text-[11px] text-slate-800 whitespace-normal break-words">- {{ bb.macamJenisKadar || '-'
-                    }}</div>
-                  </td>
-                  <td class="p-3 align-top">
-                    <div class="text-[11px] text-slate-800 whitespace-normal break-words">- {{
-                      formatJumlahTerbilang(bb.jumlah) }}</div>
-                  </td>
-                  <td class="p-3 align-top">
-                    <div class="text-[11px] text-slate-800 whitespace-normal break-words">- {{ bb.satuan || '-' }}</div>
-                  </td>
-
-                  <!-- 9. Tempat Penyimpanan (Rowspan Dinamis) -->
-                  <td v-if="shouldRenderTempatPenyimpanan(item.barangBuktiList, bIdx)"
-                    :rowspan="getTempatPenyimpananRowspan(item.barangBuktiList, bIdx)"
-                    class="p-3 text-center align-middle">
+                  <td class="p-3 align-top"><div class="text-[11px] text-slate-800 whitespace-normal break-words">- {{ bb.macamJenisKadar || '-' }}</div></td>
+                  <td class="p-3 align-top"><div class="text-[11px] text-slate-800 whitespace-normal break-words">- {{ formatJumlahTerbilang(bb.jumlah) }}</div></td>
+                  <td class="p-3 align-top"><div class="text-[11px] text-slate-800 whitespace-normal break-words">- {{ bb.satuan || '-' }}</div></td>
+                  <td v-if="shouldRenderTempatPenyimpanan(item.barangBuktiList, bIdx)" :rowspan="getTempatPenyimpananRowspan(item.barangBuktiList, bIdx)" class="p-3 text-center align-middle">
                     <div class="text-[11px] font-medium text-slate-800">{{ bb.tempatPenyimpanan || '-' }}</div>
                   </td>
-
-                  <!-- 10. Keputusan Pengadilan (Rowspan) -->
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
-                    class="p-3 align-top text-center">
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top text-center">
                     <div class="flex flex-col items-center text-xs text-slate-800">
                       <div>{{ item.noKepPengadilan || '-' }}</div>
-                      <div v-if="item.tglKepPengadilan && item.tglKepPengadilan !== '-'"
-                        class="mt-1 text-[11px] text-slate-500">
-                        {{ item.tglKepPengadilan }}
-                      </div>
+                      <div v-if="item.tglKepPengadilan && item.tglKepPengadilan !== '-'" class="mt-1 text-[11px] text-slate-500">{{ item.tglKepPengadilan }}</div>
                     </div>
                   </td>
-
-                  <!-- 11. Amar Putusan dengan Logika "Sda" -->
                   <td class="p-3 align-top">
                     <div class="text-[11px] text-slate-800 whitespace-normal break-words">
-                      <!-- Jika data sama persis dengan baris di atasnya, tampilkan '- Sda' saja -->
-                      <template v-if="isSdaAmarPutusan(item.barangBuktiList, bIdx)">
-                        - Sda
-                      </template>
-
-                      <!-- Jika baris pertama / nilainya berbeda, tampilkan lengkap -->
-                      <template v-else>
-                        - {{ bb.amarPutusan || '-' }} {{ bb.uraianPutusan ? bb.uraianPutusan : '' }}
-                      </template>
+                      <template v-if="isSdaAmarPutusan(item.barangBuktiList, bIdx)">- Sda</template>
+                      <template v-else>- {{ bb.amarPutusan || '-' }} {{ bb.uraianPutusan ? bb.uraianPutusan : '' }}</template>
                     </div>
                   </td>
-
-                  <!-- 12 & Aksi (Rowspan) -->
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
-                    class="p-3 text-center align-top">{{
-                      item.tglPelaksanaanPutusan || '-' }}</td>
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
-                    class="p-3 text-center align-top">
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 text-center align-top">{{ item.tglPelaksanaanPutusan || '-' }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 text-center align-top">
                     <div class="flex items-center justify-center gap-1">
-                      <button type="button" @click="editCase(item.id, (item as any).case_index)"
-                        class="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded cursor-pointer">
+                      <button type="button" @click="editCase(item.id, (item as any).case_index)" class="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded cursor-pointer">
                         <Edit3 class="w-4 h-4" />
                       </button>
-                      <button type="button" @click="deleteCase(item.id, (item as any).case_index)"
-                        class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer">
+                      <button type="button" @click="deleteCase(item.id, (item as any).case_index)" class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer">
                         <Trash2 class="w-4 h-4" />
                       </button>
                     </div>
@@ -723,11 +536,8 @@ const exportFormDocx = () => {
           <!-- EMPTY STATE -->
           <div v-if="cases.length === 0" class="p-12 text-center text-slate-400">
             <FileText class="w-10 h-10 mx-auto stroke-1 text-slate-300 mb-2" />
-            <p class="text-xs font-bold text-slate-600">Tidak ada laporan data perkara ditemukan pada periode/kategori
-              ini.</p>
-            <p class="text-[11px] text-slate-400 mt-0.5">Silakan ubah filter tindak pidana, bulan, tahun, atau pilihan
-              form di
-              atas.</p>
+            <p class="text-xs font-bold text-slate-600">Tidak ada laporan data perkara ditemukan pada periode/kategori ini.</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Silakan ubah filter tindak pidana, bulan, tahun, atau pilihan form di atas.</p>
           </div>
 
         </div>
