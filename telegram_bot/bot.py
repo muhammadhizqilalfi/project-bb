@@ -4,33 +4,46 @@ import json
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
-# Mengambil variabel dari .env
+# 1. Mengambil token dan daftar Chat ID dari .env (bisa dipisah koma: "123456,789012,555666")
 TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-ALLOWED_CHAT_ID = int(os.getenv("TELEGRAM_CHAT_ID", "0"))
+RAW_CHAT_IDS = os.getenv("TELEGRAM_CHAT_ID", os.getenv("TELEGRAM_CHAT_ID", ""))
+
+# Mengubah string ID menjadi set integer untuk pencarian cepat
+ALLOWED_CHAT_IDS = set(
+    int(chat_id.strip()) 
+    for chat_id in RAW_CHAT_IDS.split(",") 
+    if chat_id.strip().isdigit()
+)
+
+# Helper function untuk verifikasi izin akses
+def is_authorized(user_id: int) -> bool:
+    return user_id in ALLOWED_CHAT_IDS
+
 
 async def newacc_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id
     
-    # Filter Keamanan: Hanya Chat ID Anda yang bisa membuat akun
-    if user_id != ALLOWED_CHAT_ID:
+    # Filter Keamanan Multi-User
+    if not is_authorized(user_id):
         await update.message.reply_text("⛔ Akses ditolak! Anda tidak memiliki izin.")
         return
 
-    # Validasi input argumen (Membutuhkan 2 parameter: NIP dan Password)
-    if len(context.args) < 2:
+    # Validasi input (Membutuhkan minimal 3 parameter: NIP, Password, dan Nama)
+    if len(context.args) < 3:
         await update.message.reply_text(
             "❌ **Format salah!**\n\n"
-            "Gunakan format spasi:\n"
-            "`/newacc <NAMA> <NIP> <PASSWORD>`\n\n"
+            "Gunakan format berikut:\n"
+            "`/newacc <NIP> <PASSWORD> <NAMA LENGKAP>`\n\n"
             "Contoh:\n"
-            "`/newacc JOHN DOE 199201012020011001 Rahasia123`",
+            "`/newacc 199201012020011001 Rahasia123 JOHN DOE`",
             parse_mode="Markdown"
         )
         return
 
-    name= context.args[0]
-    nip = context.args[1]
-    password = context.args[2]
+    # Parsing parameter (NIP, Password, dan Nama Lengkap multi-kata)
+    nip = context.args[0]
+    password = context.args[1]
+    name = " ".join(context.args[2:])
 
     await update.message.reply_text(f"⏳ Sedang mendaftarkan User `{name}` ke database...", parse_mode="Markdown")
 
@@ -53,7 +66,7 @@ async def newacc_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if "App\\Models\\User" in res.stdout or res.returncode == 0:
             await update.message.reply_text(
                 f"✅ **Akun Berhasil Dibuat!**\n\n"
-                f"👤 **Nama: `{name}`\n"
+                f"👤 **Nama:** `{name}`\n"
                 f"🆔 **NIP:** `{nip}`\n"
                 f"🔑 **Password:** `{password}`\n\n"
                 f"User sekarang sudah bisa login di halaman web.",
@@ -67,13 +80,12 @@ async def newacc_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def listuser_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id
-    if user_id != ALLOWED_CHAT_ID:
+    if not is_authorized(user_id):
         await update.message.reply_text("⛔ Akses ditolak!")
         return
 
     await update.message.reply_text("⏳ Mengambil daftar user dari database...", parse_mode="Markdown")
 
-    # Ambil kolom id, name, dan nip dalam format JSON
     tinker_code = "echo json_encode(\\App\\Models\\User::select('id', 'name', 'nip')->get());"
 
     cmd = [
@@ -86,7 +98,6 @@ async def listuser_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         res = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
         output = res.stdout.strip()
 
-        # Cari posisi JSON string di stdout
         start_idx = output.find("[")
         end_idx = output.rfind("]")
 
@@ -98,7 +109,6 @@ async def listuser_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 await update.message.reply_text("ℹ️ Belum ada user terdaftar di database.")
                 return
 
-            # Format pesan output Telegram
             msg = f"📋 **Daftar User ({len(users)} Akun):**\n\n"
             for idx, user in enumerate(users, start=1):
                 msg += f"{idx}. **Nama:** {user.get('name')}\n"
@@ -115,16 +125,14 @@ async def listuser_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"❌ **Error:** {str(e)}")
 
-# Fungsi saat Anda mengetik /start atau /menu di Telegram
+
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_chat.id
     
-    # Keamanan: Tolak jika bukan ID Anda
-    if user_id != ALLOWED_CHAT_ID:
+    if not is_authorized(user_id):
         await update.message.reply_text("⛔ Akses ditolak! Anda tidak memiliki izin.")
         return
 
-    # Membuat Tombol Pilihan
     keyboard = [
         [
             InlineKeyboardButton("🌐 Restart Webserver", callback_data="restart_webserver"),
@@ -138,13 +146,13 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text("🤖 **Panel Kontrol Docker Server**\nSilakan pilih aksi:", reply_markup=reply_markup, parse_mode="Markdown")
 
-# Fungsi saat Tombol di-klik
+
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
     user_id = query.message.chat.id
-    if user_id != ALLOWED_CHAT_ID:
+    if not is_authorized(user_id):
         await query.edit_message_text("⛔ Akses Ditolak!")
         return
 
@@ -178,9 +186,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         res = subprocess.run(["docker", "ps", "--format", "table {{.Names}}\t{{.Status}}"], capture_output=True, text=True)
         await query.edit_message_text(f"📊 **Status Container Saat Ini:**\n```\n{res.stdout}\n```", parse_mode="Markdown")
 
+
 def main():
-    if not TOKEN or ALLOWED_CHAT_ID == 0:
-        print("Error: TOKEN atau CHAT_ID belum diset di file .env")
+    if not TOKEN or not ALLOWED_CHAT_IDS:
+        print("Error: TOKEN atau TELEGRAM_CHAT_IDS/TELEGRAM_CHAT_ID belum diset di file .env")
         return
 
     app = Application.builder().token(TOKEN).build()
@@ -190,7 +199,7 @@ def main():
     app.add_handler(CommandHandler("listuser", listuser_command))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("Bot Telegram Control Server Berjalan...")
+    print(f"Bot Telegram Control Server Berjalan... ({len(ALLOWED_CHAT_IDS)} akun terdaftar)")
     app.run_polling()
 
 if __name__ == "__main__":
