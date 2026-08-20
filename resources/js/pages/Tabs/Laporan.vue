@@ -302,6 +302,7 @@ const exportFormDocx = () => {
         </div>
 
         <div class="relative w-fit">
+
           <button type="button" @click="isExportOpen = !isExportOpen" :disabled="selectedKategori === 'ALL'" :class="[
             'text-xs font-extrabold px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all cursor-pointer shadow-xs border w-fit',
             selectedKategori === 'ALL'
@@ -310,12 +311,14 @@ const exportFormDocx = () => {
           ]" :title="selectedKategori === 'ALL' ? 'Pilih kategori Tindak Pidana terlebih dahulu untuk mengekspor' : ''">
             <FileDown class="w-4 h-4 stroke-[2.5]" />
             <span>Ekspor Laporan Form {{ selectedForm }}</span>
+
             <ChevronDown class="w-3.5 h-3.5 stroke-[2.5] transition-transform duration-200"
               :class="{ 'rotate-180': isExportOpen }" />
           </button>
 
           <div v-if="isExportOpen && selectedKategori !== 'ALL'" @click.outside="isExportOpen = false"
             class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50">
+
             <button type="button" @click="exportFormPdf(); isExportOpen = false"
               class="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-900 flex items-center gap-2.5 transition-colors">
               <FileText class="w-4 h-4 text-red-500" />
@@ -363,34 +366,61 @@ const exportFormDocx = () => {
                 <tr v-for="(bb, bIdx) in getBbList(item.barangBuktiList)" :key="bIdx"
                   class="hover:bg-slate-50 transition-colors divide-x divide-slate-200"
                   :class="{ 'border-b-2 border-slate-300': bIdx === getBbList(item.barangBuktiList).length - 1 }">
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 font-bold text-center align-top">{{ idx + 1 }}</td>
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 font-bold text-center align-top">{{ item.satuanKerja || '-' }}</td>
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top text-center">
+                  
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
+                    class="p-3 font-bold text-center align-top">{{ idx + 1 }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
+                    class="p-3 font-bold text-center align-top">{{ item.satuanKerja || '-' }}</td>
+
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
+                    class="p-3 align-top text-center">
                     <div class="flex flex-col items-center text-xs text-slate-800">
                       <div>{{ item.noRegBendaSitaan || '-' }}</div>
                       <div v-if="item.tglPenerimaan && item.tglPenerimaan !== '-'" class="mt-1 text-[11px] text-slate-500">{{ item.tglPenerimaan }}</div>
                     </div>
                   </td>
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top text-center">
+
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
+                    class="p-3 align-top text-center">
                     <div class="flex flex-col items-center text-xs text-slate-800">
                       <div>{{ item.noRegPenyidikan || '-' }}</div>
                       <div v-if="item.tglRegPenyidikan && item.tglRegPenyidikan !== '-'" class="mt-1 text-[11px] text-slate-500">{{ item.tglRegPenyidikan }}</div>
                     </div>
                   </td>
+
                   <td class="p-3 align-top">
-                    <div class="text-[11px] text-slate-900 whitespace-normal break-words">
-                      - {{ formatJumlahTerbilang(bb.jumlah || bb.jumlahNarkotika || bb.jumlahSatuan || 1) }} {{ bb.uraianBarangBukti || bb.namaBarangBukti || bb.jenisBarangBukti || 'BB' }}
+                    <div class="text-[11px] text-slate-900 whitespace-normal wrap-break-word">
+                      - {{ formatJumlahTerbilang(bb.jumlah || bb.jumlahNarkotika || bb.jumlahSatuan || 1) }} {{
+                        bb.uraianBarangBukti || bb.namaBarangBukti || bb.jenisBarangBukti || 'BB' }}
                     </div>
                   </td>
-                  <td v-if="shouldRenderTempatPenyimpanan(item.barangBuktiList, bIdx)" :rowspan="getTempatPenyimpananRowspan(item.barangBuktiList, bIdx)" class="p-3 text-center align-middle">
+
+                  <td v-if="shouldRenderTempatPenyimpanan(item.barangBuktiList, bIdx)"
+                    :rowspan="getTempatPenyimpananRowspan(item.barangBuktiList, bIdx)"
+                    class="p-3 text-center align-middle">
                     <div class="text-[11px] font-medium text-slate-800">{{ bb.tempatPenyimpanan || '-' }}</div>
                   </td>
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top">- {{ item.identitasTersangka || '-' }}</td>
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top">{{ item.pasalDisangkakan || item.pasalDidakwakan || '-' }}</td>
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 text-center align-top">{{ item.statusDiselesaikan || '-' }}</td>
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 text-center align-top">{{ item.tglPelaksanaanPutusan || '-' }}</td>
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 text-slate-700 align-top text-center">{{ item.keterangan || '-' }}</td>
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 text-center align-top">
+
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top">- {{
+                    item.identitasTersangka || '-' }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top">{{
+                    item.pasalDisangkakan || item.pasalDidakwakan || '-' }}</td>
+
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
+                    class="p-3 text-center align-top">
+                    <span v-if="item.statusDiselesaikan && item.statusDiselesaikan !== '-'" class="inline-block">
+                      {{ item.statusDiselesaikan }}
+                    </span>
+                    <span v-else class="text-slate-400 font-bold">-</span>
+                  </td>
+
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
+                    class="p-3 text-center align-top">{{ item.tglPelaksanaanPutusan || '-' }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
+                    class="p-3 text-slate-700 align-top text-center">{{ item.keterangan || '-' }}</td>
+
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
+                    class="p-3 text-center align-top">
                     <div class="flex items-center justify-center gap-2">
                       <button class="p-2 rounded-md hover:bg-blue-200 hover:text-blue-700" type="button" @click="editCase(item.id, (item as any).case_index)">
                         <Edit3 class="w-4 h-4 hover:text-blue-500" />
@@ -485,40 +515,72 @@ const exportFormDocx = () => {
                 <tr v-for="(bb, bIdx) in getBbList(item.barangBuktiList)" :key="bIdx"
                   class="hover:bg-slate-50 transition-colors divide-x divide-slate-200"
                   :class="{ 'border-b-2 border-slate-300': bIdx === getBbList(item.barangBuktiList).length - 1 }">
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 text-center font-bold align-top">{{ idx + 1 }}</td>
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 font-bold text-center align-top">{{ item.satuanKerja || '-' }}</td>
+                  
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
+                    class="p-3 text-center font-bold align-top">{{ idx + 1 }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
+                    class="p-3 font-bold text-center align-top">{{ item.satuanKerja || '-' }}</td>
+
                   <td class="p-3 align-top">
-                    <div class="text-[11px] text-slate-800 whitespace-normal break-words">
+                    <div class="text-[11px] text-slate-800 whitespace-normal wrap-break-word">
                       - {{ formatJumlahTerbilang(bb.jumlah) }} {{ bb.jenisBarangBukti || '-' }}
                     </div>
                   </td>
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top text-xs text-slate-800">{{ item.pasalDidakwakan || item.pasalDisangkakan || '-' }}</td>
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top text-center">
+
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
+                    class="p-3 align-top text-xs text-slate-800">{{ item.pasalDidakwakan || item.pasalDisangkakan || '-'
+                    }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
+                    class="p-3 align-top text-center">
                     <div class="flex flex-col items-center text-xs text-slate-800">
                       <div>{{ item.noRegBendaSitaan || '-' }}</div>
                       <div v-if="item.tglPenerimaan && item.tglPenerimaan !== '-'" class="mt-1 text-[11px] text-slate-500">{{ item.tglPenerimaan }}</div>
                     </div>
                   </td>
-                  <td class="p-3 align-top"><div class="text-[11px] text-slate-800 whitespace-normal break-words">- {{ bb.macamJenisKadar || '-' }}</div></td>
-                  <td class="p-3 align-top"><div class="text-[11px] text-slate-800 whitespace-normal break-words">- {{ formatJumlahTerbilang(bb.jumlah) }}</div></td>
-                  <td class="p-3 align-top"><div class="text-[11px] text-slate-800 whitespace-normal break-words">- {{ bb.satuan || '-' }}</div></td>
-                  <td v-if="shouldRenderTempatPenyimpanan(item.barangBuktiList, bIdx)" :rowspan="getTempatPenyimpananRowspan(item.barangBuktiList, bIdx)" class="p-3 text-center align-middle">
+
+                  <td class="p-3 align-top">
+                    <div class="text-[11px] text-slate-800 whitespace-normal wrap-break-word">- {{ bb.macamJenisKadar || '-'
+                    }}</div>
+                  </td>
+                  <td class="p-3 align-top">
+                    <div class="text-[11px] text-slate-800 whitespace-normal wrap-break-word">- {{
+                      formatJumlahTerbilang(bb.jumlah) }}</div>
+                  </td>
+                  <td class="p-3 align-top">
+                    <div class="text-[11px] text-slate-800 whitespace-normal wrap-break-word">- {{ bb.satuan || '-' }}</div>
+                  </td>
+
+                  <td v-if="shouldRenderTempatPenyimpanan(item.barangBuktiList, bIdx)"
+                    :rowspan="getTempatPenyimpananRowspan(item.barangBuktiList, bIdx)"
+                    class="p-3 text-center align-middle">
                     <div class="text-[11px] font-medium text-slate-800">{{ bb.tempatPenyimpanan || '-' }}</div>
                   </td>
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 align-top text-center">
+
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
+                    class="p-3 align-top text-center">
                     <div class="flex flex-col items-center text-xs text-slate-800">
                       <div>{{ item.noKepPengadilan || '-' }}</div>
                       <div v-if="item.tglKepPengadilan && item.tglKepPengadilan !== '-'" class="mt-1 text-[11px] text-slate-500">{{ item.tglKepPengadilan }}</div>
                     </div>
                   </td>
+
                   <td class="p-3 align-top">
-                    <div class="text-[11px] text-slate-800 whitespace-normal break-words">
-                      <template v-if="isSdaAmarPutusan(item.barangBuktiList, bIdx)">- Sda</template>
-                      <template v-else>- {{ bb.amarPutusan || '-' }} {{ bb.uraianPutusan ? bb.uraianPutusan : '' }}</template>
+                    <div class="text-[11px] text-slate-800 whitespace-normal wrap-break-word">
+                      <template v-if="isSdaAmarPutusan(item.barangBuktiList, bIdx)">
+                        - Sda
+                      </template>
+
+                      <template v-else>
+                        - {{ bb.amarPutusan || '-' }} {{ bb.uraianPutusan ? bb.uraianPutusan : '' }}
+                      </template>
                     </div>
                   </td>
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 text-center align-top">{{ item.tglPelaksanaanPutusan || '-' }}</td>
-                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length" class="p-3 text-center align-top">
+
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
+                    class="p-3 text-center align-top">{{
+                      item.tglPelaksanaanPutusan || '-' }}</td>
+                  <td v-if="bIdx === 0" :rowspan="getBbList(item.barangBuktiList).length"
+                    class="p-3 text-center align-top">
                     <div class="flex items-center justify-center gap-1">
                       <button type="button" @click="editCase(item.id, (item as any).case_index)" class="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded cursor-pointer">
                         <Edit3 class="w-4 h-4" />

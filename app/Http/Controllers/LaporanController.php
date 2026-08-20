@@ -6,6 +6,7 @@ use App\Models\FormTemplate;
 use App\Services\LaporanDocxService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use PDF;
 
 class LaporanController extends Controller
 {
@@ -310,7 +311,10 @@ class LaporanController extends Controller
     public function exportDocx(Request $request, LaporanDocxService $docxService)
     {
         if ($request->input('kategori', 'ALL') === 'ALL') {
-            return back()->with('error', 'Silakan pilih kategori Tindak Pidana spesifik terlebih dahulu.');
+            return back()->with(
+                'error',
+                'Silakan pilih kategori Tindak Pidana spesifik terlebih dahulu.'
+            );
         }
 
         try {
@@ -346,9 +350,9 @@ class LaporanController extends Controller
             $phpWord = $docxService->build($data);
             $tempId = 'pdf_conv_' . uniqid();
             
-            $storageAppPath = storage_path('app');
-            $tempDocxPath = str_replace('/', DIRECTORY_SEPARATOR, "{$storageAppPath}\\{$tempId}.docx");
-            $outputDir = str_replace('/', DIRECTORY_SEPARATOR, $storageAppPath);
+            $tempDocxPath = storage_path("app/{$tempId}.docx");
+            $tempPdfPath  = storage_path("app/{$tempId}.pdf");
+            $outputDir    = storage_path('app');
 
             $writer = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
             $writer->save($tempDocxPath);
@@ -387,7 +391,6 @@ class LaporanController extends Controller
             $process->setTimeout(120);
             $process->run();
 
-            $tempPdfPath = str_replace('/', DIRECTORY_SEPARATOR, "{$storageAppPath}\\{$tempId}.pdf");
 
             // 3. Pembersihan (Cleanup) file DOCX[cite: 8]
             if (file_exists($tempDocxPath)) {
@@ -407,7 +410,7 @@ class LaporanController extends Controller
 
             $fileName = "Laporan_Form_{$data['filters']['formType']}_{$data['filters']['month']}_{$data['filters']['year']}.pdf";
 
-            return response()->download($tempPdfPath, $fileName, [
+            return response()->file($tempPdfPath, [
                 'Content-Type'        => 'application/pdf',
                 'Content-Disposition' => 'inline; filename="' . $fileName . '"',
             ])->deleteFileAfterSend(true);
