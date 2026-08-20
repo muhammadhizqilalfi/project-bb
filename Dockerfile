@@ -29,12 +29,14 @@ WORKDIR /app
 COPY . .
 
 # 4. Install Composer dengan mengabaikan kebutuhan ekstensi runtime di STAGE 1
-RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs \
+    && rm -rf ~/.composer/cache 
 
 # 5. Install dependensi NPM & Build Vue/Vite
 RUN npm install
 ENV NODE_OPTIONS="--max-old-space-size=2048"
-RUN npm run build
+RUN npm run build \
+    && rm -rf ~/.npm
 
 # ====================================================
 # STAGE 2: PHP-FPM + SQLite Runtime
@@ -43,7 +45,7 @@ FROM php:8.4-fpm-alpine
 
 # 1. Install dependensi sistem & SQLite3
 RUN apk add --no-cache \
-    libreoffice \
+    libreoffice-writer \
     font-dejavu \
     ttf-liberation \
     fontconfig \
@@ -55,7 +57,8 @@ RUN apk add --no-cache \
     sqlite-dev \
     oniguruma-dev \
     && docker-php-ext-install pdo_sqlite mbstring zip bcmath opcache \
-    && apk del .build-deps
+    && apk del .build-deps \
+    && rm -rf /var/cache/apk/* /tmp/*
 
 # 3. Set Working Directory
 WORKDIR /var/www
