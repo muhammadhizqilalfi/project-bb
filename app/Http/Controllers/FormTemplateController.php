@@ -25,19 +25,80 @@ class FormTemplateController extends Controller
 
     public function index3B(Request $request)
     {
-        $month = (int) $request->input('month', now()->month);
-        $year = (int) $request->input('year', now()->year);
-        $kategori = $request->input('kategori', 'KAMNEGTIBUM DAN TPUL');
+        $month = (int) $request->input('month', 7);
+        $year = (int) $request->input('year', 2026);
+        $kategori = $request->input('kategori', 'ALL');
 
-        $sisaBulanLalu = $this->calculateSisaBulanLalu($month, $year, $kategori);
+        // 1. Cek apakah ada record Form 3B tersimpan di database (hasil Seeder / Input)
+        $form3B = FormTemplate::where('form_type', '3B')
+            ->where('month', $month)
+            ->where('year', $year)
+            ->first();
 
-        $masukBulanLaporan = $this->countCasesFromForm('3A', $month, $year, $kategori);
+        $cases = [];
 
-        $jumlahBulanLaporan = $sisaBulanLalu + $masukBulanLaporan;
+        if ($form3B) {
+            $rawCases = $form3B->cases;
+            if (is_string($rawCases)) {
+                $rawCases = json_decode($rawCases, true);
+            }
 
-        $perkaraSelesai = $this->countCasesFromForm('3C', $month, $year, $kategori);
+            if (is_array($rawCases)) {
+                foreach ($rawCases as $c) {
+                    $katCase = $c['kategoriTindakPidana'] ?? '';
+                    
+                    // Filter kategori secara fleksibel
+                    if ($kategori !== 'ALL' && !$this->matchCategory($katCase, $kategori)) {
+                        continue;
+                    }
 
-        $sisaBulanLaporan = max(0, $jumlahBulanLaporan - $perkaraSelesai);
+                    $jumlah = (int) ($c['jumlahBulanLaporan'] ?? 0);
+                    $sisa = (int) ($c['sisaBulanLaporan'] ?? 0);
+                    $selesai = isset($c['perkaraSelesai']) ? (int) $c['perkaraSelesai'] : max(0, $jumlah - $sisa);
+
+                    $cases[] = [
+                        'satuanKerja'          => $c['satuanKerja'] ?? 'Kejari Banda Aceh',
+                        'kategoriTindakPidana' => $c['kategoriTindakPidana'] ?? '-',
+                        'sisaBulanLalu'        => (int) ($c['sisaBulanLalu'] ?? 0),
+                        'masukBulanLaporan'    => (int) ($c['masukBulanLaporan'] ?? 0),
+                        'jumlahBulanLaporan'   => $jumlah,
+                        'perkaraSelesai'       => $selesai,
+                        'sisaBulanLaporan'     => $sisa,
+                        'keterangan'           => $c['keterangan'] ?? '-',
+                    ];
+                }
+            }
+        }
+
+        // 2. Jika data DB kosong, hitung kalkulasi otomatis dari Form 3A & 3C
+        if (empty($cases)) {
+            $categoriesToProcess = ($kategori === 'ALL') ? [
+                'KAMNEGTIBUM DAN TPUL',
+                'NARKOTIKA DAN ZAT ADIKTIF LAINNYA',
+                'OHARDA',
+                'TERORIS',
+                'KORUPSI'
+            ] : [$kategori];
+
+            foreach ($categoriesToProcess as $cat) {
+                $sisaBulanLalu = $this->calculateSisaBulanLalu($month, $year, $cat);
+                $masukBulanLaporan = $this->countCasesFromForm('3A', $month, $year, $cat);
+                $jumlahBulanLaporan = $sisaBulanLalu + $masukBulanLaporan;
+                $perkaraSelesai = $this->countCasesFromForm('3C', $month, $year, $cat);
+                $sisaBulanLaporan = max(0, $jumlahBulanLaporan - $perkaraSelesai);
+
+                $cases[] = [
+                    'satuanKerja'          => 'Kejari Banda Aceh',
+                    'kategoriTindakPidana' => $cat,
+                    'sisaBulanLalu'        => $sisaBulanLalu,
+                    'masukBulanLaporan'    => $masukBulanLaporan,
+                    'jumlahBulanLaporan'   => $jumlahBulanLaporan,
+                    'perkaraSelesai'       => $perkaraSelesai,
+                    'sisaBulanLaporan'     => $sisaBulanLaporan,
+                    'keterangan'           => '-',
+                ];
+            }
+        }
 
         $monthNames = [
             1 => 'JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI',
@@ -49,16 +110,10 @@ class FormTemplateController extends Controller
                 'month' => $month,
                 'year' => $year,
                 'kategori' => $kategori,
-                'selectedPeriod' => ($monthNames[$month] ?? 'AGUSTUS') . ' ' . $year,
+                'selectedPeriod' => ($monthNames[$month] ?? 'JULI') . ' ' . $year,
             ],
-            'calculatedData' => [
-                'kejaksaan' => 'Kejari Banda Aceh',
-                'sisaBulanLalu' => $sisaBulanLalu,
-                'masukBulanLaporan' => $masukBulanLaporan,
-                'jumlahBulanLaporan' => $jumlahBulanLaporan,
-                'perkaraSelesai' => $perkaraSelesai,
-                'sisaBulanLaporan' => $sisaBulanLaporan,
-            ]
+            'cases' => $cases,
+            'calculatedData' => $cases[0] ?? null
         ]);
     }
 
@@ -649,6 +704,8 @@ class FormTemplateController extends Controller
     {
         $cleanRaw = strtoupper(trim($raw));
         $cleanTarget = strtoupper(trim($target));
+
+        if ($cleanTarget === 'ALL') return true;
 
         if (str_contains($cleanRaw, 'NARKOTIKA') && str_contains($cleanTarget, 'NARKOTIKA')) return true;
         if (str_contains($cleanRaw, 'KAMNEGTIBUM') && str_contains($cleanTarget, 'KAMNEGTIBUM')) return true;

@@ -10,11 +10,11 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // Default ke Bulan dan Tahun Sekarang jika tidak ada filter
+        // Default ke Bulan dan Tahun Sekarang jika tidak ada filter[cite: 5]
         $month = (int) $request->input('month', now()->month);
         $year = (int) $request->input('year', now()->year);
 
-        // Fetch Form Template 3A dan 3C berdasarkan Bulan & Tahun Pilihan
+        // Fetch Form Template 3A dan 3C berdasarkan Bulan & Tahun Pilihan[cite: 5]
         $forms3A = FormTemplate::where('form_type', '3A')
             ->where('month', $month)
             ->where('year', $year)
@@ -25,14 +25,12 @@ class DashboardController extends Controller
             ->where('year', $year)
             ->get();
 
-        // Counter Statistik Ringkasan
+        // Counter Statistik Ringkasan[cite: 5]
         $totalPerkaraMasuk3A = 0;
         $totalPerkaraSelesai3C = 0;
-        $sabuGram = 0;
-        $ganjaGram = 0;
-        $ekstasiPcs = 0;
+        $narkotikaSummary = []; // Array dinamis menampung semua jenis narkotika
 
-        // Peta Pemetaan Kategori Tindak Pidana untuk Tabel Matriks
+        // Peta Pemetaan Kategori Tindak Pidana untuk Tabel Matriks[cite: 5]
         $categoriesMap = [
             'Kamnegtibum dan TPUL' => ['masukCases' => 0, 'masukUnits' => 0, 'sisaBulanLalu' => 0, 'selesaiCases' => 0, 'selesaiUnits' => 0, 'dikembalikan' => [], 'dimusnahkan' => [], 'lelang' => []],
             'Narkotika dan Zat Adiktif' => ['masukCases' => 0, 'masukUnits' => 0, 'sisaBulanLalu' => 0, 'selesaiCases' => 0, 'selesaiUnits' => 0, 'dikembalikan' => [], 'dimusnahkan' => [], 'lelang' => []],
@@ -42,7 +40,7 @@ class DashboardController extends Controller
             'Diantar' => ['masukCases' => 0, 'masukUnits' => 0, 'sisaBulanLalu' => 0, 'selesaiCases' => 0, 'selesaiUnits' => 0, 'dikembalikan' => [], 'dimusnahkan' => [], 'lelang' => []],
         ];
 
-        // Peta Hitung Kategori Chart (Pie Chart)
+        // Peta Hitung Kategori Chart (Pie Chart)[cite: 5]
         $categoryCounts = [
             'NARKOTIKA DAN ZAT ADIKTIF' => 0,
             'OHARDA' => 0,
@@ -53,7 +51,7 @@ class DashboardController extends Controller
 
         $recentCases = [];
 
-        // 1. OLAH DATA FORM 3A (MASUK)
+        // 1. OLAH DATA FORM 3A (MASUK)[cite: 5]
         foreach ($forms3A as $form) {
             $allCases = $form->cases ?? ($form->latest_case_summary ? [$form->latest_case_summary] : []);
 
@@ -64,7 +62,7 @@ class DashboardController extends Controller
                 $katKey = $this->matchCategoryKey($katRaw);
 
                 $bbList = $summary['barangBuktiList'] ?? [];
-                $unitCount = count($bbList) > 0 ? array_sum(array_map(fn($b) => (float)($b['jumlah'] ?? $b['jumlahSatuan'] ?? 1), $bbList)) : 1;
+                $unitCount = count($bbList) > 0 ? count($bbList) : 1;
 
                 if (isset($categoriesMap[$katKey])) {
                     $categoriesMap[$katKey]['masukCases']++;
@@ -76,20 +74,35 @@ class DashboardController extends Controller
                     $categoryCounts[$chartKey]++;
                 }
 
-                // Akumulasi Massa Narkotika
+                // Akumulasi Kuantitas Narkotika secara Dinamis & Otomatis Konversi ke Gram
                 foreach ($bbList as $bb) {
-                    $jenisNarkotika = strtolower($bb['jenisNarkotika'] ?? $bb['uraianBarangBukti'] ?? '');
-                    $jumlahVal = (float)($bb['jumlahNarkotika'] ?? $bb['jumlah'] ?? 0);
-                    $satuanVal = strtolower($bb['satuanNarkotika'] ?? $bb['satuan'] ?? '');
+                    $rawJenis = trim($bb['jenisNarkotika'] ?? '');
 
-                    $massaGram = (in_array($satuanVal, ['kilogram (kg)', 'kg', 'kilogram'])) ? $jumlahVal * 1000 : $jumlahVal;
+                    if (!empty($rawJenis)) {
+                        $jenisKey = strtoupper($rawJenis);
+                        $jumlahVal = (float)($bb['jumlahNarkotika'] ?? $bb['jumlah'] ?? 0);
+                        $satuanVal = strtolower(trim($bb['satuanNarkotika'] ?? $bb['satuan'] ?? ''));
 
-                    if (str_contains($jenisNarkotika, 'sabu') || str_contains($jenisNarkotika, 'meth')) {
-                        $sabuGram += $massaGram;
-                    } elseif (str_contains($jenisNarkotika, 'ganja') || str_contains($jenisNarkotika, 'cannabis')) {
-                        $ganjaGram += $massaGram;
-                    } elseif (str_contains($jenisNarkotika, 'ekstasi') || str_contains($jenisNarkotika, 'inex') || str_contains($jenisNarkotika, 'pil')) {
-                        $ekstasiPcs += $jumlahVal;
+                        // Jika Kilogram / Kg, konversi ke Gram. Selain itu gunakan nilai & satuan aslinya
+                        if (in_array($satuanVal, ['kilogram (kg)', 'kg', 'kilogram'])) {
+                            $valInGram = $jumlahVal * 1000;
+                            $unitLabel = 'Gram';
+                        } elseif (in_array($satuanVal, ['gram (g)', 'g', 'gram'])) {
+                            $valInGram = $jumlahVal;
+                            $unitLabel = 'Gram';
+                        } else {
+                            $valInGram = $jumlahVal;
+                            $unitLabel = !empty($bb['satuanNarkotika']) ? $bb['satuanNarkotika'] : (!empty($bb['satuan']) ? $bb['satuan'] : 'Pcs');
+                        }
+
+                        if (!isset($narkotikaSummary[$jenisKey])) {
+                            $narkotikaSummary[$jenisKey] = [
+                                'nama'   => $jenisKey,
+                                'jumlah' => 0,
+                                'satuan' => $unitLabel,
+                            ];
+                        }
+                        $narkotikaSummary[$jenisKey]['jumlah'] += $valInGram;
                     }
                 }
 
@@ -106,7 +119,7 @@ class DashboardController extends Controller
             }
         }
 
-        // 2. OLAH DATA FORM 3C (SELESAI / PUTUS)
+        // 2. OLAH DATA FORM 3C (SELESAI / PUTUS)[cite: 5]
         foreach ($forms3C as $form) {
             $allCases = $form->cases ?? ($form->latest_case_summary ? [$form->latest_case_summary] : []);
 
@@ -123,18 +136,33 @@ class DashboardController extends Controller
                     $categoriesMap[$katKey]['selesaiCases']++;
                     $categoriesMap[$katKey]['selesaiUnits'] += $unitCount;
 
-                    // Rincian Amar Putusan
+                    // Counter item BB per-perkara[cite: 5]
+                    $dikembalikanCount = 0;
+                    $dimusnahkanCount = 0;
+                    $lelangCount = 0;
+
+                    // Hitung berapa item BB di perkara ini untuk masing-masing status[cite: 5]
                     foreach ($bbList as $bb) {
                         $amar = strtolower($bb['amarPutusan'] ?? '');
-                        $qty = (int)($bb['jumlahSatuan'] ?? $bb['jumlah'] ?? 1);
 
                         if (str_contains($amar, 'kembali')) {
-                            $categoriesMap[$katKey]['dikembalikan'][] = $qty;
+                            $dikembalikanCount++;
                         } elseif (str_contains($amar, 'musnah')) {
-                            $categoriesMap[$katKey]['dimusnahkan'][] = $qty;
+                            $dimusnahkanCount++;
                         } elseif (str_contains($amar, 'lelang') || str_contains($amar, 'rampas')) {
-                            $categoriesMap[$katKey]['lelang'][] = $qty;
+                            $lelangCount++;
                         }
+                    }
+
+                    // Push hasil total item per-perkara ke array kategori jika ada (> 0)[cite: 5]
+                    if ($dikembalikanCount > 0) {
+                        $categoriesMap[$katKey]['dikembalikan'][] = $dikembalikanCount;
+                    }
+                    if ($dimusnahkanCount > 0) {
+                        $categoriesMap[$katKey]['dimusnahkan'][] = $dimusnahkanCount;
+                    }
+                    if ($lelangCount > 0) {
+                        $categoriesMap[$katKey]['lelang'][] = $lelangCount;
                     }
                 }
 
@@ -156,7 +184,7 @@ class DashboardController extends Controller
             }
         }
 
-        // Format Ulang Array Matriks Rekapitulasi
+        // Format Ulang Array Matriks Rekapitulasi[cite: 5]
         $rekapitulasiMatriks = [];
         foreach ($categoriesMap as $kategoriLabel => $val) {
             $rekapitulasiMatriks[] = [
@@ -183,9 +211,7 @@ class DashboardController extends Controller
             'stats' => [
                 'totalPerkaraMasuk3A' => $totalPerkaraMasuk3A,
                 'totalPerkaraSelesai3C' => $totalPerkaraSelesai3C,
-                'sabuGram' => $sabuGram,
-                'ganjaGram' => $ganjaGram,
-                'ekstasiPcs' => $ekstasiPcs,
+                'narkotikaSummary' => array_values($narkotikaSummary),
             ],
             'categoryChartData' => [
                 'labels' => array_keys($categoryCounts),

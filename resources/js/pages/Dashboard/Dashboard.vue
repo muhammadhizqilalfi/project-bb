@@ -15,7 +15,7 @@ import {
   Filter
 } from 'lucide-vue-next';
 
-// Chart.js Imports
+// Chart.js Imports[cite: 4]
 import {
   Chart,
   DoughnutController,
@@ -33,6 +33,12 @@ Chart.register(
   Title
 );
 
+interface NarkotikaItem {
+  nama: string;
+  jumlah: number;
+  satuan: string;
+}
+
 interface Props {
   filters?: {
     month: number;
@@ -41,9 +47,7 @@ interface Props {
   stats?: {
     totalPerkaraMasuk3A: number;
     totalPerkaraSelesai3C: number;
-    sabuGram: number;
-    ganjaGram: number;
-    ekstasiPcs: number;
+    narkotikaSummary?: NarkotikaItem[];
   };
   categoryChartData?: {
     labels: string[];
@@ -77,7 +81,7 @@ const activeMenu = ref('BERANDA');
 const page = usePage();
 const currentUser = computed(() => page.props.auth?.user || { name: 'Muadz Fauzi', role: 'Pengelola Barang Bukti' });
 
-// State Filter Bulan & Tahun
+// State Filter Bulan & Tahun[cite: 4]
 const selectedMonth = ref<number>(props.filters?.month || new Date().getMonth() + 1);
 const selectedYear = ref<number>(props.filters?.year || new Date().getFullYear());
 
@@ -95,7 +99,7 @@ const yearOptions = computed(() => {
   return Array.from({ length: 10 }, (_, index) => currentYear - index);
 });
 
-// Trigger Reload saat Filter Bulan/Tahun Berubah
+// Trigger Reload saat Filter Bulan/Tahun Berubah[cite: 4]
 const applyFilters = () => {
   router.get('/dashboard', {
     month: selectedMonth.value,
@@ -106,21 +110,21 @@ const applyFilters = () => {
   });
 };
 
-// Stat Data
+// Stat Data[cite: 4]
 const statsData = computed(() => ({
   totalPerkaraMasuk3A: props.stats?.totalPerkaraMasuk3A ?? 0,
   totalPerkaraSelesai3C: props.stats?.totalPerkaraSelesai3C ?? 0,
-  sabuGram: props.stats?.sabuGram ?? 0,
-  ganjaGram: props.stats?.ganjaGram ?? 0,
-  ekstasiPcs: props.stats?.ekstasiPcs ?? 0,
 }));
 
-// Mengecek apakah ada perkara narkotika yang masuk pada periode ini
+// Ambil daftar narkotika dinamis[cite: 2]
+const narkotikaList = computed(() => props.stats?.narkotikaSummary || []);
+
+// Mengecek apakah ada perkara narkotika yang masuk pada periode ini[cite: 2, 4]
 const hasNarkotikaThisMonth = computed(() => {
-  return statsData.value.sabuGram > 0 || statsData.value.ganjaGram > 0 || statsData.value.ekstasiPcs > 0;
+  return narkotikaList.value.length > 0;
 });
 
-// Canvas Ref untuk Donut Chart
+// Canvas Ref untuk Donut Chart[cite: 4]
 const categoryChartRef = ref<HTMLCanvasElement | null>(null);
 let categoryChartInstance: Chart | null = null;
 
@@ -149,11 +153,11 @@ const renderChart = () => {
         {
           data: chartValues,
           backgroundColor: [
-            '#10B981', // Emerald
-            '#3B82F6', // Blue
-            '#F59E0B', // Amber
-            '#EF4444', // Red
-            '#8B5CF6'  // Purple
+            '#10B981', // Emerald[cite: 4]
+            '#3B82F6', // Blue[cite: 4]
+            '#F59E0B', // Amber[cite: 4]
+            '#EF4444', // Red[cite: 4]
+            '#8B5CF6'  // Purple[cite: 4]
           ],
           borderWidth: 2,
           borderColor: '#ffffff'
@@ -185,11 +189,6 @@ onMounted(() => {
 watch(() => props.categoryChartData, () => {
   renderChart();
 }, { deep: true });
-
-const formatKg = (gram: number) => {
-  if (!gram) return '0.0';
-  return (gram / 1000).toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
-};
 
 const navigateTo = (path: string) => {
   router.get(path);
@@ -309,7 +308,7 @@ const editCase = (formType: string, id: string, index?: number) => {
 
       </div>
 
-      <!-- WIDGET RINGKASAN NARKOTIKA (HANYA TAMPIL JIKA ADA PERKARA NARKOTIKA PERIODE INI) -->
+      <!-- WIDGET RINGKASAN NARKOTIKA DINAMIS -->
       <div 
         v-if="hasNarkotikaThisMonth" 
         class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-4"
@@ -324,28 +323,22 @@ const editCase = (formType: string, id: string, index?: number) => {
           <span class="text-[11px] text-slate-400 font-medium">Periode: {{ currentMonthName || 'Agustus' }} {{ currentYear || 2026 }}</span>
         </div>
 
+        <!-- GRID RENDER OTOMATIS BERDASARKAN SELURUH JENIS NARKOTIKA -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="bg-[#F8FAFC] rounded-xl p-4 border border-slate-200/60 flex items-center gap-4">
-            <div class="p-3 bg-emerald-100 text-emerald-700 rounded-xl font-black text-xs">SABU</div>
-            <div>
-              <p class="text-[10px] font-bold text-slate-400 uppercase">Massa Sabu</p>
-              <p class="text-xl font-black text-slate-900">{{ formatKg(statsData.sabuGram) }} <span class="text-xs font-normal text-slate-500">Kg</span></p>
+          <div 
+            v-for="(item, idx) in narkotikaList" 
+            :key="idx" 
+            class="bg-[#F8FAFC] rounded-xl p-4 border border-slate-200/60 flex items-center gap-4"
+          >
+            <div class="p-3 bg-emerald-100 text-emerald-700 rounded-xl font-black text-xs uppercase shrink-0">
+              {{ item.nama }}
             </div>
-          </div>
-
-          <div class="bg-[#F8FAFC] rounded-xl p-4 border border-slate-200/60 flex items-center gap-4">
-            <div class="p-3 bg-emerald-100 text-emerald-700 rounded-xl font-black text-xs">GANJA</div>
             <div>
-              <p class="text-[10px] font-bold text-slate-400 uppercase">Massa Ganja</p>
-              <p class="text-xl font-black text-slate-900">{{ formatKg(statsData.ganjaGram) }} <span class="text-xs font-normal text-slate-500">Kg</span></p>
-            </div>
-          </div>
-
-          <div class="bg-[#F8FAFC] rounded-xl p-4 border border-slate-200/60 flex items-center gap-4">
-            <div class="p-3 bg-emerald-100 text-emerald-700 rounded-xl font-black text-xs">PIL</div>
-            <div>
-              <p class="text-[10px] font-bold text-slate-400 uppercase">Ekstasi / Inex</p>
-              <p class="text-xl font-black text-slate-900">{{ statsData.ekstasiPcs.toLocaleString('id-ID') }} <span class="text-xs font-normal text-slate-500">Pcs</span></p>
+              <p class="text-[10px] font-bold text-slate-400 uppercase">Total {{ item.nama }}</p>
+              <p class="text-xl font-black text-slate-900">
+                {{ item.jumlah.toLocaleString('id-ID') }} 
+                <span class="text-xs font-normal text-slate-500">{{ item.satuan }}</span>
+              </p>
             </div>
           </div>
         </div>
@@ -406,8 +399,10 @@ const editCase = (formType: string, id: string, index?: number) => {
                   <td class="p-3 text-center">
                     <span 
                       :class="[
-                        'px-2.5 py-0.5 rounded-md text-[10px] font-extrabold uppercase border',
-                        c.formType === '3A' ? 'bg-blue-50 text-blue-700 border-blue-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        'inline-flex items-center justify-center whitespace-nowrap px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider border transition-all',
+                        c.formType === '3A' 
+                          ? 'bg-blue-50 text-blue-700 border-blue-200 ring-1 ring-blue-400/20 shadow-2xs' 
+                          : 'bg-emerald-50 text-emerald-700 border-emerald-200 ring-1 ring-emerald-400/20 shadow-2xs'
                       ]"
                     >
                       Form {{ c.formType }}

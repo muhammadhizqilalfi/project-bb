@@ -140,7 +140,7 @@ const kategoriPidanaOptions = computed(() => {
 const amarPutusanOptions = computed(() => {
     return props.dropdownOptions?.amar_putusan?.length
         ? props.dropdownOptions.amar_putusan
-        : ['Digunakan dalam Perkara', 'Dirampas untuk Negara', 'Dirampas untuk Baitul Mal', 'Dikembalikan', 'Dimusnahkan', 'Sda'];
+        : ['Digunakan dalam Perkara', 'Dirampas untuk Negara', 'Dirampas untuk Baitul Mal', 'Dikembalikan', 'Dimusnahkan'];
 });
 
 const satuanOptions = computed(() => {
