@@ -225,55 +225,77 @@ class LaporanController extends Controller
 
     private function getSisaBulanLalu(int $targetMonth, int $targetYear, string $kategori): int
     {
-        // 1. Cek apakah ada record Form 3B bulan sebelumnya di database untuk dijadikan acuan awal[cite: 8]
-        $prevMonth = $targetMonth - 1;
-        $prevYear = $targetYear;
-        if ($prevMonth < 1) {
-            $prevMonth = 12;
-            $prevYear--;
-        }
-
-        $prev3B = FormTemplate::where('form_type', '3B')
-            ->where('month', $prevMonth)
-            ->where('year', $prevYear)
+        $latest3B = FormTemplate::where('form_type', '3B')
+            ->where(function ($q) use ($targetYear, $targetMonth) {
+                $q->where('year', '<', $targetYear)
+                  ->orWhere(function ($q2) use ($targetYear, $targetMonth) {
+                      $q2->where('year', $targetYear)->where('month', '<', $targetMonth);
+                  });
+            })
+            ->orderBy('year', 'desc')
+            ->orderBy('month', 'desc')
             ->first();
 
-        if ($prev3B) {
-            $allCases = $prev3B->cases ?? [];
-            if (is_string($allCases)) {
-                $allCases = json_decode($allCases, true);
-            }
+        $runningSisa = 0;
 
-            if (is_array($allCases)) {
-                $totalSisa = 0;
-                foreach ($allCases as $c) {
+        if ($latest3B) {
+            $curY = (int) $latest3B->year;
+            $curM = (int) $latest3B->month;
+
+            $cases = $latest3B->cases ?? [];
+            if (is_string($cases)) {
+                $cases = json_decode($cases, true);
+            }
+            if (is_array($cases)) {
+                foreach ($cases as $c) {
                     $kat = $c['kategoriTindakPidana'] ?? '';
-                    if ($kategori !== 'ALL' && !$this->matchCategory($kat, $kategori)) {
-                        continue;
+                    if ($this->matchCategory($kat, $kategori)) {
+                        $runningSisa += (int) ($c['sisaBulanLaporan'] ?? 0);
                     }
-                    $totalSisa += (int) ($c['sisaBulanLaporan'] ?? 0);
                 }
-                return $totalSisa;
             }
+
+            $curM++;
+            if ($curM > 12) {
+                $curM = 1;
+                $curY++;
+            }
+        } else {
+            $earliestForm = FormTemplate::orderBy('year', 'asc')->orderBy('month', 'asc')->first();
+            if (!$earliestForm) {
+                return 0;
+            }
+            $curY = (int) $earliestForm->year;
+            $curM = (int) $earliestForm->month;
         }
-
-        // 2. Jika tidak ada 3B bulan lalu di DB, hitung akumulasi dari Form 3A & 3C[cite: 8]
-        $earliestForm = FormTemplate::orderBy('year', 'asc')->orderBy('month', 'asc')->first();
-        if (!$earliestForm) {
-            return 0;
-        }
-
-        $curY = (int) $earliestForm->year;
-        $curM = (int) $earliestForm->month;
-
-        $runningSisaBulanLaporan = 0;
 
         while ($curY < $targetYear || ($curY === $targetYear && $curM < $targetMonth)) {
-            $masuk = $this->countCasesByPeriod('3A', $curM, $curY, $kategori);
-            $selesai = $this->countCasesByPeriod('3C', $curM, $curY, $kategori);
+            $current3B = FormTemplate::where('form_type', '3B')
+                ->where('month', $curM)
+                ->where('year', $curY)
+                ->first();
 
-            $jumlah = $runningSisaBulanLaporan + $masuk;
-            $runningSisaBulanLaporan = max(0, $jumlah - $selesai);
+            if ($current3B) {
+                $cases = $current3B->cases ?? [];
+                if (is_string($cases)) {
+                    $cases = json_decode($cases, true);
+                }
+                $runningSisa = 0;
+                if (is_array($cases)) {
+                    foreach ($cases as $c) {
+                        $kat = $c['kategoriTindakPidana'] ?? '';
+                        if ($this->matchCategory($kat, $kategori)) {
+                            $runningSisa += (int) ($c['sisaBulanLaporan'] ?? 0);
+                        }
+                    }
+                }
+            } else {
+                $masuk = $this->countCasesByPeriod('3A', $curM, $curY, $kategori);
+                $selesai = $this->countCasesByPeriod('3C', $curM, $curY, $kategori);
+
+                $jumlah = $runningSisa + $masuk;
+                $runningSisa = max(0, $jumlah - $selesai);
+            }
 
             $curM++;
             if ($curM > 12) {
@@ -282,7 +304,7 @@ class LaporanController extends Controller
             }
         }
 
-        return $runningSisaBulanLaporan;
+        return $runningSisa;
     }
 
     // Helper pencocokan fleksibel nama kategori tindak pidana

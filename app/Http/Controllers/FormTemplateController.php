@@ -639,45 +639,92 @@ class FormTemplateController extends Controller
         return strtoupper($type);
     }
 
-    private function calculateSisaBulanLalu(int $month, int $year, string $kategori): int
+    private function calculateSisaBulanLalu(int $targetMonth, int $targetYear, string $kategori): int
     {
-        $total3ABefore = 0;
-        $forms3A = FormTemplate::where('form_type', '3A')
-            ->where(function ($q) use ($year, $month) {
-                $q->where('year', '<', $year)
-                  ->orWhere(function ($q2) use ($year, $month) {
-                      $q2->where('year', $year)->where('month', '<', $month);
+        // 1. Cari Form 3B paling akhir di DB yang tersimpan SEBELUM periode target
+        $latest3B = FormTemplate::where('form_type', '3B')
+            ->where(function ($q) use ($targetYear, $targetMonth) {
+                $q->where('year', '<', $targetYear)
+                  ->orWhere(function ($q2) use ($targetYear, $targetMonth) {
+                      $q2->where('year', $targetYear)->where('month', '<', $targetMonth);
                   });
-            })->get();
+            })
+            ->orderBy('year', 'desc')
+            ->orderBy('month', 'desc')
+            ->first();
 
-        foreach ($forms3A as $form) {
-            $cases = $form->cases ?? ($form->latest_case_summary ? [$form->latest_case_summary] : []);
-            foreach ($cases as $c) {
-                if ($this->matchCategory($c['kategoriTindakPidana'] ?? '', $kategori)) {
-                    $total3ABefore++;
+        $runningSisa = 0;
+
+        if ($latest3B) {
+            $curY = (int) $latest3B->year;
+            $curM = (int) $latest3B->month;
+
+            $cases = $latest3B->cases ?? [];
+            if (is_string($cases)) {
+                $cases = json_decode($cases, true);
+            }
+            if (is_array($cases)) {
+                foreach ($cases as $c) {
+                    $kat = $c['kategoriTindakPidana'] ?? '';
+                    if ($this->matchCategory($kat, $kategori)) {
+                        $runningSisa += (int) ($c['sisaBulanLaporan'] ?? 0);
+                    }
                 }
+            }
+
+            // Maju 1 bulan setelah Form 3B terakhir ditemukan
+            $curM++;
+            if ($curM > 12) {
+                $curM = 1;
+                $curY++;
+            }
+        } else {
+            // Jika tidak ada Form 3B sama sekali sebelum target, mulai dari form paling awal di DB
+            $earliestForm = FormTemplate::orderBy('year', 'asc')->orderBy('month', 'asc')->first();
+            if (!$earliestForm) {
+                return 0;
+            }
+            $curY = (int) $earliestForm->year;
+            $curM = (int) $earliestForm->month;
+        }
+
+        // 2. Loop simulasi saldo berjalan dari (curY, curM) sampai bulan sebelum target
+        while ($curY < $targetYear || ($curY === $targetYear && $curM < $targetMonth)) {
+            $current3B = FormTemplate::where('form_type', '3B')
+                ->where('month', $curM)
+                ->where('year', $curY)
+                ->first();
+
+            if ($current3B) {
+                $cases = $current3B->cases ?? [];
+                if (is_string($cases)) {
+                    $cases = json_decode($cases, true);
+                }
+                $runningSisa = 0;
+                if (is_array($cases)) {
+                    foreach ($cases as $c) {
+                        $kat = $c['kategoriTindakPidana'] ?? '';
+                        if ($this->matchCategory($kat, $kategori)) {
+                            $runningSisa += (int) ($c['sisaBulanLaporan'] ?? 0);
+                        }
+                    }
+                }
+            } else {
+                $masuk = $this->countCasesFromForm('3A', $curM, $curY, $kategori);
+                $selesai = $this->countCasesFromForm('3C', $curM, $curY, $kategori);
+
+                $jumlah = $runningSisa + $masuk;
+                $runningSisa = max(0, $jumlah - $selesai);
+            }
+
+            $curM++;
+            if ($curM > 12) {
+                $curM = 1;
+                $curY++;
             }
         }
 
-        $total3CBefore = 0;
-        $forms3C = FormTemplate::where('form_type', '3C')
-            ->where(function ($q) use ($year, $month) {
-                $q->where('year', '<', $year)
-                  ->orWhere(function ($q2) use ($year, $month) {
-                      $q2->where('year', $year)->where('month', '<', $month);
-                  });
-            })->get();
-
-        foreach ($forms3C as $form) {
-            $cases = $form->cases ?? ($form->latest_case_summary ? [$form->latest_case_summary] : []);
-            foreach ($cases as $c) {
-                if ($this->matchCategory($c['kategoriTindakPidana'] ?? '', $kategori)) {
-                    $total3CBefore++;
-                }
-            }
-        }
-
-        return max(0, $total3ABefore - $total3CBefore);
+        return $runningSisa;
     }
 
     private function countCasesFromForm(string $formType, int $month, int $year, string $kategori): int
