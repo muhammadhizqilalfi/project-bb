@@ -19,16 +19,24 @@ class LaporanController extends Controller
 
         $count3A = $this->countCasesByPeriod('3A', $month, $year, $kategori);
         
-        // Hitung total data 3B dari database jika ada, jika tidak default 1[cite: 8]
+        // Hitung total data 3B dari database jika ada, jika tidak default 1
         $forms3BQuery = FormTemplate::where('form_type', '3B')->where('month', $month)->where('year', $year)->get();
         $count3B = $forms3BQuery->isNotEmpty() ? $forms3BQuery->count() : 1;
         
         $count3C = $this->countCasesByPeriod('3C', $month, $year, $kategori);
 
+        // Hitung total data Form 3D, 3E, 3F
+        $count3D = FormTemplate::where('form_type', '3D')->count();
+        $count3E = FormTemplate::where('form_type', '3E')->count();
+        $count3F = FormTemplate::where('form_type', '3F')->count();
+
         $counts = [
             'form3a' => $count3A,
             'form3b' => $count3B,
             'form3c' => $count3C,
+            'form3d' => $count3D,
+            'form3e' => $count3E,
+            'form3f' => $count3F,
         ];
 
         $cases = [];
@@ -36,8 +44,71 @@ class LaporanController extends Controller
         $ganjaGram = 0;
         $ekstasiPcs = 0;
 
-        if ($formType === '3B') {
-            // 1. Cek apakah ada record Form 3B tersimpan di DB untuk bulan & tahun pilihan[cite: 8]
+        if (in_array($formType, ['3D', '3E', '3F'])) {
+            $formsQuery = FormTemplate::where('form_type', $formType)->latest()->get();
+
+            foreach ($formsQuery as $form) {
+                $casesList = $form->cases ?? [];
+                if (is_string($casesList)) {
+                    $casesList = json_decode($casesList, true) ?? [];
+                }
+
+                foreach ($casesList as $index => $c) {
+                    $satuanKerja = $c['satuanKerja'] ?? $form->kejari ?? $c['kejari'] ?? 'Kejari Banda Aceh';
+
+                    if ($formType === '3D') {
+                        $rawItems = $c['items'] ?? [];
+                        $formattedItems = array_map(function ($it) {
+                            return [
+                                'nama_barang'            => $it['nama_barang'] ?? '-',
+                                'harga_taksiran'         => isset($it['harga_taksiran']) ? (float) $it['harga_taksiran'] : 0,
+                                'instansi_penilai'       => $it['instansi_penilai'] ?? '-',
+                                'tgl_penilaian'          => $it['tgl_penilaian'] ?? '-',
+                                'nilai_laku'             => isset($it['nilai_laku']) ? (float) $it['nilai_laku'] : 0,
+                                'tgl_pelaksanaan_lelang' => $it['tgl_pelaksanaan_lelang'] ?? $it['tgl_lelang'] ?? '-',
+                                'status_lelang'          => $it['status_lelang'] ?? '-',
+                                'keterangan'             => $it['keterangan'] ?? '-',
+                            ];
+                        }, $rawItems);
+
+                        $cases[] = [
+                            'id'             => (string) $form->id,
+                            'case_index'     => $index,
+                            'satuanKerja'    => $satuanKerja,
+                            'terpidana_nama' => $c['terpidana_nama'] ?? '-',
+                            'tgl_penyerahan' => $c['tgl_penyerahan'] ?? '-',
+                            'putusan_no'     => $c['putusan_no'] ?? '-',
+                            'putusan_tgl'    => $c['putusan_tgl'] ?? '-',
+                            'perkara'        => $c['perkara'] ?? '-',
+                            'items'          => $formattedItems,
+                        ];
+                    } else {
+                        // Form 3E & 3F
+                        $cases[] = [
+                            'id'             => (string) $form->id,
+                            'case_index'     => $index,
+                            'satuanKerja'    => $satuanKerja,
+                            'terpidana_nama' => $c['terpidana_nama'] ?? '-',
+                            'putusan_no'     => $c['putusan_no'] ?? '-',
+                            'putusan_tgl'    => $c['putusan_tgl'] ?? '-',
+                            'items'          => $c['items'] ?? [
+                                [
+                                    'nama_barang' => $c['rincian_barang'] ?? '-',
+                                    'jumlah'      => '',
+                                    'satuan'      => '',
+                                    'harga_jual'  => $c['harga_jual'] ?? 0
+                                ]
+                            ],
+                            'harga_jual'     => (float) ($c['harga_jual'] ?? 0),
+                            'tgl_penjualan'  => $c['tgl_penjualan'] ?? '-',
+                            'ntpn'           => $c['ntpn'] ?? '-',
+                            'keterangan'     => $c['keterangan'] ?? '-',
+                        ];
+                    }
+                }
+            }
+        } elseif ($formType === '3B') {
+            // 1. Cek apakah ada record Form 3B tersimpan di DB untuk bulan & tahun pilihan
             if ($forms3BQuery->isNotEmpty()) {
                 foreach ($forms3BQuery as $form) {
                     $allCases = $form->cases ?? ($form->latest_case_summary ? [$form->latest_case_summary] : []);
@@ -75,7 +146,7 @@ class LaporanController extends Controller
                     }
                 }
             } else {
-                // 2. Jika tidak ada data di DB, hitung kalkulasi otomatis dari Form 3A & 3C[cite: 8]
+                // 2. Jika tidak ada data di DB, hitung kalkulasi otomatis dari Form 3A & 3C
                 $sisaBulanLalu = $this->getSisaBulanLalu($month, $year, $kategori);
                 $masukBulanLaporan = $count3A;
                 $jumlahBulanLaporan = $sisaBulanLalu + $masukBulanLaporan;
@@ -96,6 +167,7 @@ class LaporanController extends Controller
                 ];
             }
         } else {
+            // Form 3A & 3C
             $formsQuery = FormTemplate::where('form_type', $formType)
                 ->where('month', $month)
                 ->where('year', $year)
@@ -307,7 +379,6 @@ class LaporanController extends Controller
         return $runningSisa;
     }
 
-    // Helper pencocokan fleksibel nama kategori tindak pidana
     private function matchCategory(string $raw, string $target): bool
     {
         $cleanRaw = strtoupper(trim($raw));
@@ -332,7 +403,9 @@ class LaporanController extends Controller
 
     public function exportDocx(Request $request, LaporanDocxService $docxService)
     {
-        if ($request->input('kategori', 'ALL') === 'ALL') {
+        $formType = strtoupper($request->input('formType', '3A'));
+
+        if (!in_array($formType, ['3D', '3E', '3F']) && $request->input('kategori', 'ALL') === 'ALL') {
             return back()->with(
                 'error',
                 'Silakan pilih kategori Tindak Pidana spesifik terlebih dahulu.'
@@ -360,15 +433,17 @@ class LaporanController extends Controller
 
     public function exportPdf(Request $request, LaporanDocxService $docxService)
     {
+        $formType = strtoupper($request->input('formType', '3A'));
         $kategori = $request->input('kategori', 'ALL');
-        if ($kategori === 'ALL') {
+
+        if (!in_array($formType, ['3D', '3E', '3F']) && $kategori === 'ALL') {
             return back()->with('error', 'Silakan pilih kategori spesifik terlebih dahulu.');
         }
 
         try {
             $data = $this->getLaporanData($request);
 
-            // 1. Generate dokumen Word (.docx) sementara[cite: 8]
+            // 1. Generate dokumen Word (.docx) sementara
             $phpWord = $docxService->build($data);
             $tempId = 'pdf_conv_' . uniqid();
             
@@ -383,7 +458,7 @@ class LaporanController extends Controller
                 return back()->with('error', 'Gagal membuat file dokumen Word sementara.');
             }
 
-            // 2. Eksekusi menggunakan Symfony Process[cite: 8]
+            // 2. Eksekusi menggunakan Symfony Process
             $libreOfficePath = 'soffice';
             $workingDir = null;
 
@@ -413,13 +488,12 @@ class LaporanController extends Controller
             $process->setTimeout(120);
             $process->run();
 
-
-            // 3. Pembersihan (Cleanup) file DOCX[cite: 8]
+            // 3. Pembersihan (Cleanup) file DOCX
             if (file_exists($tempDocxPath)) {
                 @unlink($tempDocxPath);
             }
 
-            // 4. Validasi hasil[cite: 8]
+            // 4. Validasi hasil
             if (!$process->isSuccessful() || !file_exists($tempPdfPath)) {
                 dd([
                     'Pesan Error'    => 'File PDF gagal dibuat oleh LibreOffice.',

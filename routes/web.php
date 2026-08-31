@@ -47,6 +47,39 @@ Route::middleware('auth')->group(function () {
     Route::get('/form3c/{id}/cases/create', [FormTemplateController::class, 'create3CCase']);
     Route::post('/form3c/{id}/cases', [FormTemplateController::class, 'store3CCase']);
 
+// Form 3D Routes
+    Route::get('/form3d', [FormTemplateController::class, 'index3D'])->name('form3d.index');
+    Route::post('/form3d/store-form', [FormTemplateController::class, 'store3DForm'])->name('form3d.storeForm');
+    Route::delete('/form3d/{formId}/delete-form', [FormTemplateController::class, 'destroy3DForm'])->name('form3d.destroyForm');
+
+    Route::get('/form3d/{formId}/cases/create', [FormTemplateController::class, 'create3DCase'])->name('form3d.createCase');
+    Route::post('/form3d/{formId}/cases', [FormTemplateController::class, 'store3DCase'])->name('form3d.storeCase');
+    Route::get('/form3d/{formId}/cases/{index}/edit', [FormTemplateController::class, 'edit3DCase'])->name('form3d.editCase');
+    Route::put('/form3d/{formId}/cases/{index}', [FormTemplateController::class, 'update3DCase'])->name('form3d.updateCase');
+    Route::delete('/form3d/{formId}/cases/{index}', [FormTemplateController::class, 'destroy3DCase'])->name('form3d.destroyCase');
+
+    // Form 3E Routes
+    Route::get('/form3e', [FormTemplateController::class, 'index3E'])->name('form3e.index');
+    Route::post('/form3e/store-form', [FormTemplateController::class, 'store3EForm'])->name('form3e.storeForm');
+    Route::delete('/form3e/{formId}/delete-form', [FormTemplateController::class, 'destroy3EForm'])->name('form3e.destroyForm');
+
+    Route::get('/form3e/{formId}/cases/create', [FormTemplateController::class, 'create3ECase'])->name('form3e.createCase');
+    Route::post('/form3e/{formId}/cases', [FormTemplateController::class, 'store3ECase'])->name('form3e.storeCase');
+    Route::get('/form3e/{formId}/cases/{index}/edit', [FormTemplateController::class, 'edit3ECase'])->name('form3e.editCase');
+    Route::put('/form3e/{formId}/cases/{index}', [FormTemplateController::class, 'update3ECase'])->name('form3e.updateCase');
+    Route::delete('/form3e/{formId}/cases/{index}', [FormTemplateController::class, 'destroy3ECase'])->name('form3e.destroyCase');
+
+    // Form 3F Routes
+    Route::get('/form3f', [FormTemplateController::class, 'index3F'])->name('form3f.index');
+    Route::post('/form3f/store-form', [FormTemplateController::class, 'store3FForm'])->name('form3f.storeForm');
+    Route::delete('/form3f/{formId}/delete-form', [FormTemplateController::class, 'destroy3FForm'])->name('form3f.destroyForm');
+
+    Route::get('/form3f/{formId}/cases/create', [FormTemplateController::class, 'create3FCase'])->name('form3f.createCase');
+    Route::post('/form3f/{formId}/cases', [FormTemplateController::class, 'store3FCase'])->name('form3f.storeCase');
+    Route::get('/form3f/{formId}/cases/{index}/edit', [FormTemplateController::class, 'edit3FCase'])->name('form3f.editCase');
+    Route::put('/form3f/{formId}/cases/{index}', [FormTemplateController::class, 'update3FCase'])->name('form3f.updateCase');
+    Route::delete('/form3f/{formId}/cases/{index}', [FormTemplateController::class, 'destroy3FCase'])->name('form3f.destroyCase');
+    
     // Laporan routes
     Route::get('/laporan', [LaporanController::class, 'Laporan'])->name('laporan');
     Route::get('/laporan/export-pdf', [LaporanController::class, 'exportPdf'])->name('laporan.exportPdf');

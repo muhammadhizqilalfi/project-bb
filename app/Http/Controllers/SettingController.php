@@ -43,7 +43,7 @@ class SettingController extends Controller
         $validated = $request->validate([
             'category' => 'required|string|max:255',
             'label' => 'required|string|max:255',
-            'formTarget' => 'required|in:3A,3C,Keduanya',
+            'formTarget' => 'required|in:3A,3C,3D,3E,3F,Keduanya',
         ]);
 
         DropdownOption::create([
@@ -60,7 +60,7 @@ class SettingController extends Controller
         $validated = $request->validate([
             'category' => 'required|string|max:255',
             'label' => 'required|string|max:255',
-            'formTarget' => 'required|in:3A,3C,Keduanya',
+            'formTarget' => 'required|in:3A,3C,3D,3E,3F,Keduanya',
         ]);
 
         $option = DropdownOption::findOrFail($id);

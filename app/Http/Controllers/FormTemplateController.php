@@ -29,7 +29,7 @@ class FormTemplateController extends Controller
         $year = (int) $request->input('year', 2026);
         $kategori = $request->input('kategori', 'ALL');
 
-        // 1. Cek apakah ada record Form 3B tersimpan di database (hasil Seeder / Input)
+        // 1. Cek apakah ada record Form 3B tersimpan di database
         $form3B = FormTemplate::where('form_type', '3B')
             ->where('month', $month)
             ->where('year', $year)
@@ -47,7 +47,6 @@ class FormTemplateController extends Controller
                 foreach ($rawCases as $c) {
                     $katCase = $c['kategoriTindakPidana'] ?? '';
                     
-                    // Filter kategori secara fleksibel
                     if ($kategori !== 'ALL' && !$this->matchCategory($katCase, $kategori)) {
                         continue;
                     }
@@ -118,7 +117,6 @@ class FormTemplateController extends Controller
     }
 
     // 3A
-
     public function create3AWizard()
     {
         return Inertia::render('Tabs/Form3AInput', [
@@ -338,7 +336,6 @@ class FormTemplateController extends Controller
     }
 
     // 3C
-
     public function store3CWizard(Request $request)
     {
         $validated = $request->validate([
@@ -545,12 +542,540 @@ class FormTemplateController extends Controller
         ]);
     }
 
+    // ==========================================
+    // FORM 3D (Lelang Barang Rampasan)
+    // ==========================================
+    public function index3D()
+    {
+        $forms = FormTemplate::where('form_type', '3D')
+            ->orderBy('year', 'desc')
+            ->orderBy('month', 'desc')
+            ->get();
+
+        return Inertia::render('Tabs/Form3D', [
+            'forms' => $forms,
+        ]);
+    }
+
+    public function store3DForm(Request $request)
+    {
+        $request->validate([
+            'month' => 'required|integer|min:1|max:12',
+            'year'  => 'required|integer|min:2000|max:2100',
+        ]);
+
+        $exists = FormTemplate::where('form_type', '3D')
+            ->where('month', $request->month)
+            ->where('year', $request->year)
+            ->first();
+
+        if ($exists) {
+            return back()->with('error', 'Form 3D untuk periode tersebut sudah ada.');
+        }
+
+        FormTemplate::create([
+            'form_type' => '3D',
+            'month'     => $request->month,
+            'year'      => $request->year,
+            'cases'     => [],
+        ]);
+
+        return back()->with('success', 'Form Induk 3D berhasil dibuat.');
+    }
+
+    public function destroy3DForm($formId)
+    {
+        $form = FormTemplate::findOrFail($formId);
+        $form->delete();
+        return back()->with('success', 'Form 3D berhasil dihapus.');
+    }
+
+    public function create3DCase($formId)
+    {
+        $form = FormTemplate::findOrFail($formId);
+
+        // Ambil opsi dari database dengan filter unique() agar tidak berulang
+        $instansiPenilai = DropdownOption::where('category', 'instansi_penilai')
+            ->whereIn('form_target', ['3D', 'Keduanya'])
+            ->pluck('label')
+            ->unique()
+            ->values()
+            ->toArray();
+
+        $statusLelang = DropdownOption::where('category', 'status_lelang')
+            ->whereIn('form_target', ['3D', 'Keduanya'])
+            ->pluck('label')
+            ->unique()
+            ->values()
+            ->toArray();
+
+        if (empty($instansiPenilai)) {
+            $instansiPenilai = ['KPKNL', 'KJPP'];
+        }
+        if (empty($statusLelang)) {
+            $statusLelang = ['LAKU', 'BELUM_LAKU', 'PROSES'];
+        }
+
+        // Tarik opsi keterangan_3d
+        $keteranganOptions = DropdownOption::where('category', 'keterangan_3d')->pluck('label')->unique()->values()->toArray();
+
+        return Inertia::render('Tabs/Form3DInput', [
+            'formId' => $form->id,
+            'month'  => $form->month,
+            'year'   => $form->year,
+            'dropdownOptions' => [
+                'instansi_penilai' => $instansiPenilai,
+                'status_lelang'    => $statusLelang,
+                'keterangan_options' => $keteranganOptions,
+            ],
+        ]);
+    }
+
+    public function store3DCase(Request $request, $formId)
+    {
+        $form = FormTemplate::findOrFail($formId);
+
+        $validated = $request->validate([
+            'satuanKerja'              => 'nullable|string',
+            'terpidana_nama'         => 'required|string',
+            'tgl_penyerahan'         => 'required|string',
+            'putusan_no'             => 'required|string',
+            'putusan_tgl'            => 'required|string',
+            'perkara'                => 'required|string',
+            'items'                  => 'required|array|min:1',
+            'items.*.nama_barang'      => 'required|string',
+            'items.*.harga_taksiran'   => 'nullable|numeric',
+            'items.*.instansi_penilai' => 'nullable|string',
+            'items.*.tgl_penilaian'    => 'nullable|string',
+            'items.*.nilai_laku'       => 'nullable|numeric',
+            'items.*.status_lelang'    => 'nullable|string',
+            'items.*.keterangan'       => 'nullable|string',
+        ]);
+
+        $cases = $form->cases ?? [];
+        if (is_string($cases)) {
+            $cases = json_decode($cases, true);
+        }
+
+        $cases[] = $validated;
+        $form->update(['cases' => $cases]);
+
+        return redirect()->route('form3d.index')->with('success', 'Kasus Form 3D berhasil ditambahkan.');
+    }
+
+    public function edit3DCase($formId, $index)
+    {
+        $form = FormTemplate::findOrFail($formId);
+        $cases = $form->cases ?? [];
+        if (is_string($cases)) {
+            $cases = json_decode($cases, true);
+        }
+
+        if (!isset($cases[$index])) {
+            return redirect()->route('form3d.index')->with('error', 'Data kasus tidak ditemukan.');
+        }
+
+        $instansiPenilai = DropdownOption::where('category', 'instansi_penilai')
+            ->whereIn('form_target', ['3D', 'Keduanya'])
+            ->pluck('label')
+            ->unique()
+            ->values()
+            ->toArray();
+
+        $statusLelang = DropdownOption::where('category', 'status_lelang')
+            ->whereIn('form_target', ['3D', 'Keduanya'])
+            ->pluck('label')
+            ->unique()
+            ->values()
+            ->toArray();
+
+        if (empty($instansiPenilai)) {
+            $instansiPenilai = ['KPKNL', 'KJPP'];
+        }
+        if (empty($statusLelang)) {
+            $statusLelang = ['LAKU', 'BELUM_LAKU', 'PROSES'];
+        }
+
+        // Tarik opsi keterangan_3d
+        $keteranganOptions = DropdownOption::where('category', 'keterangan_3d')->pluck('label')->unique()->values()->toArray();
+        
+        return Inertia::render('Tabs/Form3DInput', [
+            'formId'    => $form->id,
+            'caseIndex' => (int) $index,
+            'caseData'  => $cases[$index],
+            'month'     => $form->month,
+            'year'      => $form->year,
+            'dropdownOptions' => [
+                'instansi_penilai' => $instansiPenilai,
+                'status_lelang'    => $statusLelang,
+                'keterangan_options' => $keteranganOptions,
+            ],
+        ]);
+    }
+
+    public function update3DCase(Request $request, $formId, $index)
+    {
+        $form = FormTemplate::findOrFail($formId);
+        $cases = $form->cases ?? [];
+        if (is_string($cases)) {
+            $cases = json_decode($cases, true);
+        }
+
+        $validated = $request->validate([
+            'satuanKerja'              => 'nullable|string',
+            'terpidana_nama'         => 'required|string',
+            'tgl_penyerahan'         => 'required|string',
+            'putusan_no'             => 'required|string',
+            'putusan_tgl'            => 'required|string',
+            'perkara'                => 'required|string',
+            'items'                  => 'required|array|min:1',
+            'items.*.nama_barang'      => 'required|string',
+            'items.*.harga_taksiran'   => 'nullable|numeric',
+            'items.*.instansi_penilai' => 'nullable|string',
+            'items.*.tgl_penilaian'    => 'nullable|string',
+            'items.*.nilai_laku'       => 'nullable|numeric',
+            'items.*.status_lelang'    => 'nullable|string',
+            'items.*.keterangan'       => 'nullable|string',
+        ]);
+
+        $cases[$index] = $validated;
+        $form->update(['cases' => array_values($cases)]);
+
+        return redirect()->route('form3d.index')->with('success', 'Kasus Form 3D berhasil diperbarui.');
+    }
+
+    public function destroy3DCase($formId, $index)
+    {
+        $form = FormTemplate::findOrFail($formId);
+        $cases = $form->cases ?? [];
+        if (is_string($cases)) {
+            $cases = json_decode($cases, true);
+        }
+
+        if (isset($cases[$index])) {
+            array_splice($cases, $index, 1);
+            $form->update(['cases' => array_values($cases)]);
+        }
+
+        return back()->with('success', 'Kasus Form 3D berhasil dihapus.');
+    }
+
+    // ==========================================
+    // FORM 3E (Lelang Barang Rampasan Negara)
+    // ==========================================
+    public function index3E()
+    {
+        $forms = FormTemplate::where('form_type', '3E')
+            ->orderBy('year', 'desc')
+            ->orderBy('month', 'desc')
+            ->get();
+
+        return Inertia::render('Tabs/Form3E', ['forms' => $forms]);
+    }
+
+    public function store3EForm(Request $request)
+    {
+        $request->validate([
+            'month' => 'required|integer|min:1|max:12',
+            'year'  => 'required|integer|min:2000|max:2100',
+        ]);
+
+        $exists = FormTemplate::where('form_type', '3E')
+            ->where('month', $request->month)
+            ->where('year', $request->year)
+            ->first();
+
+        if ($exists) {
+            return back()->with('error', 'Form 3E untuk periode tersebut sudah ada.');
+        }
+
+        FormTemplate::create([
+            'form_type' => '3E',
+            'month'     => $request->month,
+            'year'      => $request->year,
+            'cases'     => [],
+        ]);
+
+        return back()->with('success', 'Form Induk 3E berhasil dibuat.');
+    }
+
+    public function destroy3EForm($formId)
+    {
+        $form = FormTemplate::findOrFail($formId);
+        $form->delete();
+        return back()->with('success', 'Form 3E berhasil dihapus.');
+    }
+
+    public function create3ECase($formId)
+    {
+        $form = FormTemplate::findOrFail($formId);
+        $keteranganOptions = DropdownOption::where('category', 'keterangan_3e')->pluck('label')->unique()->values()->toArray();
+        
+        return Inertia::render('Tabs/Form3EInput', [
+            'formId' => $form->id,
+            'month'  => $form->month,
+            'year'   => $form->year,
+            'dropdownOptions' => [
+                'keterangan_options' => $keteranganOptions
+                ],
+        ]);
+    }
+
+    public function store3ECase(Request $request, $formId)
+    {
+        $form = FormTemplate::findOrFail($formId);
+        $validated = $request->validate([
+            'satuanKerja'    => 'nullable|string',
+            'terpidana_nama' => 'required|string',
+            'putusan_no'     => 'required|string',
+            'putusan_tgl'    => 'required|string',
+            'items'          => 'required|array|min:1',
+            'items.*.nama_barang' => 'required|string',
+            'items.*.jumlah'      => 'nullable|numeric',
+            'items.*.satuan'      => 'nullable|string',
+            'items.*.keterangan'  => 'nullable|string',
+            'items.*.harga_jual'   => 'required|numeric',    
+            'tgl_penjualan'  => 'required|string',
+            'ntpn'           => 'nullable|string',
+            'keterangan'     => 'nullable|string',
+        ]);
+
+        $cases = $form->cases ?? [];
+        if (is_string($cases)) $cases = json_decode($cases, true);
+
+        $cases[] = $validated;
+        $form->update(['cases' => $cases]);
+
+        return redirect()->route('form3e.index')->with('success', 'Kasus Form 3E berhasil ditambahkan.');
+    }
+
+    public function edit3ECase($formId, $index)
+    {
+        $form = FormTemplate::findOrFail($formId);
+        $cases = $form->cases ?? [];
+        if (is_string($cases)) $cases = json_decode($cases, true);
+
+        if (!isset($cases[$index])) {
+            return redirect()->route('form3e.index')->with('error', 'Kasus tidak ditemukan.');
+        }
+
+        $keteranganOptions = DropdownOption::where('category', 'keterangan_3e')->pluck('label')->unique()->values()->toArray();
+
+        return Inertia::render('Tabs/Form3EInput', [
+            'formId'    => $form->id,
+            'caseIndex' => (int) $index,
+            'caseData'  => $cases[$index],
+            'month'     => $form->month,
+            'year'      => $form->year,
+            'dropdownOptions' => [
+                'keterangan_options' => DropdownOption::where('category', 'keterangan_3e')->pluck('label')->unique()->values()->toArray()
+            ]
+        ]);
+    }
+
+    public function update3ECase(Request $request, $formId, $index)
+    {
+        $form = FormTemplate::findOrFail($formId);
+        $cases = $form->cases ?? [];
+        if (is_string($cases)) $cases = json_decode($cases, true);
+
+        $validated = $request->validate([
+            'satuanKerja'    => 'nullable|string',
+            'terpidana_nama' => 'required|string',
+            'putusan_no'     => 'required|string',
+            'putusan_tgl'    => 'required|string',
+            'items'          => 'required|array|min:1',
+            'items.*.nama_barang' => 'required|string',
+            'items.*.jumlah'      => 'nullable|numeric',
+            'items.*.satuan'      => 'nullable|string',
+            'items.*.keterangan'  => 'nullable|string',
+            'items.*.harga_jual'   => 'required|numeric',
+            'tgl_penjualan'  => 'required|string',
+            'ntpn'           => 'nullable|string',
+            'keterangan'     => 'nullable|string',
+        ]);
+
+        $cases[$index] = $validated;
+        $form->update(['cases' => array_values($cases)]);
+
+        return redirect()->route('form3e.index')->with('success', 'Kasus Form 3E berhasil diperbarui.');
+    }
+
+    public function destroy3ECase($formId, $index)
+    {
+        $form = FormTemplate::findOrFail($formId);
+        $cases = $form->cases ?? [];
+        if (is_string($cases)) $cases = json_decode($cases, true);
+
+        if (isset($cases[$index])) {
+            array_splice($cases, $index, 1);
+            $form->update(['cases' => array_values($cases)]);
+        }
+
+        return back()->with('success', 'Kasus Form 3E berhasil dihapus.');
+    }
+
+    // ==========================================
+    // FORM 3F (Penjualan Langsung Barang Rampasan)
+    // ==========================================
+    public function index3F()
+    {
+        $forms = FormTemplate::where('form_type', '3F')
+            ->orderBy('year', 'desc')
+            ->orderBy('month', 'desc')
+            ->get();
+
+        return Inertia::render('Tabs/Form3F', ['forms' => $forms]);
+    }
+
+    public function store3FForm(Request $request)
+    {
+        $request->validate([
+            'month' => 'required|integer|min:1|max:12',
+            'year'  => 'required|integer|min:2000|max:2100',
+        ]);
+
+        $exists = FormTemplate::where('form_type', '3F')
+            ->where('month', $request->month)
+            ->where('year', $request->year)
+            ->first();
+
+        if ($exists) {
+            return back()->with('error', 'Form 3F untuk periode tersebut sudah ada.');
+        }
+
+        FormTemplate::create([
+            'form_type' => '3F',
+            'month'     => $request->month,
+            'year'      => $request->year,
+            'cases'     => [],
+        ]);
+
+        return back()->with('success', 'Form Induk 3F berhasil dibuat.');
+    }
+
+    public function destroy3FForm($formId)
+    {
+        $form = FormTemplate::findOrFail($formId);
+        $form->delete();
+        return back()->with('success', 'Form 3F berhasil dihapus.');
+    }
+
+    public function create3FCase($formId)
+    {
+        $form = FormTemplate::findOrFail($formId);
+        $keteranganOptions = DropdownOption::where('category', 'keterangan_3f')->pluck('label')->unique()->values()->toArray();
+
+        return Inertia::render('Tabs/Form3FInput', [
+            'formId' => $form->id,
+            'month'  => $form->month,
+            'year'   => $form->year,
+            'dropdownOptions' => [
+                'keterangan_options' => $keteranganOptions
+            ]
+        ]);
+    }
+
+    public function store3FCase(Request $request, $formId)
+    {
+        $form = FormTemplate::findOrFail($formId);
+        $validated = $request->validate([
+            'satuanKerja'    => 'nullable|string',
+            'terpidana_nama' => 'required|string',
+            'putusan_no'     => 'required|string',
+            'putusan_tgl'    => 'required|string',
+            'items'          => 'required|array|min:1',
+            'items.*.nama_barang' => 'required|string',
+            'items.*.jumlah'      => 'nullable|numeric',
+            'items.*.satuan'      => 'nullable|string',
+            'items.*.keterangan'  => 'nullable|string', 
+            'items.*.harga_jual'   => 'required|numeric',
+            'tgl_penjualan'  => 'required|string',
+            'ntpn'           => 'nullable|string',
+            'keterangan'     => 'nullable|string',
+        ]);
+
+        $cases = $form->cases ?? [];
+        if (is_string($cases)) $cases = json_decode($cases, true);
+
+        $cases[] = $validated;
+        $form->update(['cases' => $cases]);
+
+        return redirect()->route('form3f.index')->with('success', 'Kasus Form 3F berhasil ditambahkan.');
+    }
+
+    public function edit3FCase($formId, $index)
+    {
+        $form = FormTemplate::findOrFail($formId);
+        $cases = $form->cases ?? [];
+        if (is_string($cases)) $cases = json_decode($cases, true);
+
+        if (!isset($cases[$index])) {
+            return redirect()->route('form3f.index')->with('error', 'Kasus tidak ditemukan.');
+        }
+
+        $keteranganOptions = DropdownOption::where('category', 'keterangan_3f')->pluck('label')->unique()->values()->toArray();
+
+        return Inertia::render('Tabs/Form3FInput', [
+            'formId'    => $form->id,
+            'caseIndex' => (int) $index,
+            'caseData'  => $cases[$index],
+            'month'     => $form->month,
+            'year'      => $form->year,
+            'dropdownOptions' => [
+                'keterangan_options' => DropdownOption::where('category', 'keterangan_3f')->pluck('label')->unique()->values()->toArray()
+            ]
+        ]);
+    }
+
+    public function update3FCase(Request $request, $formId, $index)
+    {
+        $form = FormTemplate::findOrFail($formId);
+        $cases = $form->cases ?? [];
+        if (is_string($cases)) $cases = json_decode($cases, true);
+
+        $validated = $request->validate([
+            'satuanKerja'    => 'nullable|string',
+            'terpidana_nama' => 'required|string',
+            'putusan_no'     => 'required|string',
+            'putusan_tgl'    => 'required|string',
+            'items'          => 'required|array|min:1',
+            'items.*.nama_barang' => 'required|string',
+            'items.*.jumlah'      => 'nullable|numeric',
+            'items.*.satuan'      => 'nullable|string',
+            'items.*.keterangan'  => 'nullable|string',
+            'items.*.harga_jual'   => 'required|numeric',
+            'tgl_penjualan'  => 'required|string',
+            'ntpn'           => 'nullable|string',
+            'keterangan'     => 'nullable|string',
+        ]);
+
+        $cases[$index] = $validated;
+        $form->update(['cases' => array_values($cases)]);
+
+        return redirect()->route('form3f.index')->with('success', 'Kasus Form 3F berhasil diperbarui.');
+    }
+
+    public function destroy3FCase($formId, $index)
+    {
+        $form = FormTemplate::findOrFail($formId);
+        $cases = $form->cases ?? [];
+        if (is_string($cases)) $cases = json_decode($cases, true);
+
+        if (isset($cases[$index])) {
+            array_splice($cases, $index, 1);
+            $form->update(['cases' => array_values($cases)]);
+        }
+
+        return back()->with('success', 'Kasus Form 3F berhasil dihapus.');
+    }
+
     private function getDropdownOptionsForForm(string $formType): array
     {
         return DropdownOption::whereIn('form_target', [$formType, 'Keduanya'])
             ->get()
             ->groupBy('category')
-            ->map(fn ($items) => $items->pluck('label')->values()->all())
+            ->map(fn ($items) => $items->pluck('label')->unique()->values()->all())
             ->toArray();
     }
 
@@ -641,7 +1166,6 @@ class FormTemplateController extends Controller
 
     private function calculateSisaBulanLalu(int $targetMonth, int $targetYear, string $kategori): int
     {
-        // 1. Cari Form 3B paling akhir di DB yang tersimpan SEBELUM periode target
         $latest3B = FormTemplate::where('form_type', '3B')
             ->where(function ($q) use ($targetYear, $targetMonth) {
                 $q->where('year', '<', $targetYear)
@@ -672,14 +1196,12 @@ class FormTemplateController extends Controller
                 }
             }
 
-            // Maju 1 bulan setelah Form 3B terakhir ditemukan
             $curM++;
             if ($curM > 12) {
                 $curM = 1;
                 $curY++;
             }
         } else {
-            // Jika tidak ada Form 3B sama sekali sebelum target, mulai dari form paling awal di DB
             $earliestForm = FormTemplate::orderBy('year', 'asc')->orderBy('month', 'asc')->first();
             if (!$earliestForm) {
                 return 0;
@@ -688,7 +1210,6 @@ class FormTemplateController extends Controller
             $curM = (int) $earliestForm->month;
         }
 
-        // 2. Loop simulasi saldo berjalan dari (curY, curM) sampai bulan sebelum target
         while ($curY < $targetYear || ($curY === $targetYear && $curM < $targetMonth)) {
             $current3B = FormTemplate::where('form_type', '3B')
                 ->where('month', $curM)
