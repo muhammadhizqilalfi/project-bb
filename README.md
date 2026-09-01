@@ -148,7 +148,7 @@ cd project-bb
 
 NOTE: Sesuaikan dengan Sistem Operasi yang digunakan
 
-3. **Copy atau konfigurasi file `.env`
+3. **Copy atau konfigurasi file `.env`**
 
 4. **Jalankan Container Docker**:
 ```bash
@@ -157,16 +157,20 @@ docker-compose up -d --build
 ```
 
 5. **Inisialisasi Database & Optimasi Laravel**:
-```bash
-docker exec app php artisan key:generate
-docker exec app php artisan migrate:fresh --seed
-docker exec app php artisan config:cache
-docker exec app php artisan route:cache
-docker exec app php artisan view:cache
-docker exec app php artisan storage:link
 
+```bash
+docker exec slbb-app php artisan key:generate --force
+docker exec slbb-app php artisan migrate --seed --force
+docker exec slbb-app php artisan storage:link
+docker exec slbb-app php artisan optimize
+docker exec slbb-app php artisan view:cache
 ```
 
+6. **Membuat Akun Admin**
+```bash
+docker exec slbb-app php artisan make:user <Nama> <NIP> <Password>
+# Contoh: docker exec slbb-app php artisan make:user Admin 1234567890 passadmin123
+```
 
 NOTE: Jika setelah langkah ini masih gagal, maka jalankan command dibawah ini:
 

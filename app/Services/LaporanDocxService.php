@@ -44,6 +44,16 @@ class LaporanDocxService
     private const FORM_3C_TABLE_FONT_SIZE = 7.5;
     private const FORM_3C_ROW_HEIGHT_CM = 0.3;
 
+    // Pengaturan Form 3D
+    private const FORM_3D_TABLE_FONT_SIZE = 7.5;
+    private const FORM_3D_ROW_HEIGHT_CM = 0.3;
+
+    // Pengaturan Form 3E & 3F
+    private const FORM_3E_TABLE_FONT_SIZE = 9;
+    private const FORM_3E_ROW_HEIGHT_CM = 0.4;
+    private const FORM_3F_TABLE_FONT_SIZE = 9;
+    private const FORM_3F_ROW_HEIGHT_CM = 0.4;
+
     // Download file DOCX
     public function download(array $data, string $fileName)
     {
@@ -161,7 +171,7 @@ class LaporanDocxService
             $titleRun->addText('BULAN ' . $monthName . ' ' . $year, $titleFontStyle);
             $titleRun->addTextBreak();
             $titleRun->addText(': T.P. ' . ($data['filters']['kategori'] ?? '-'), $titleFontStyle);
-        } else {
+        } elseif ($formType === '3C') {
             // Form 3C
             $titleLine1 = ($kategori === 'KORUPSI')
                 ? 'LAPORAN BARANG BUKTI PERKARA TINDAK PIDANA KHUSUS YANG SUDAH MEMPEROLEH'
@@ -175,6 +185,18 @@ class LaporanDocxService
             $titleRun->addText('BULAN ' . $monthName . ' ' . $year, $titleFontStyle);
             $titleRun->addTextBreak();
             $titleRun->addText(': T.P. ' . ($data['filters']['kategori'] ?? '-'), $titleFontStyle);
+        } elseif ($formType === '3D') {
+            $titleRun->addText('LAPORAN BARANG RAMPASAN YANG LAKU DILELANG', $titleFontStyle);
+            $titleRun->addTextBreak();
+            $titleRun->addText('PERIODE ' . ($monthName ? $monthName . ' ' : '') . $year, $titleFontStyle);
+        } elseif ($formType === '3E') {
+            $titleRun->addText('LAPORAN BULANAN LELANG BARANG RAMPASAN NEGARA', $titleFontStyle);
+            $titleRun->addTextBreak();
+            $titleRun->addText('PERIODE ' . ($monthName ? $monthName . ' ' : '') . $year, $titleFontStyle);
+        } elseif ($formType === '3F') {
+            $titleRun->addText('LAPORAN BULANAN PENJUALAN LANGSUNG BARANG RAMPASAN NEGARA', $titleFontStyle);
+            $titleRun->addTextBreak();
+            $titleRun->addText('PERIODE ' . ($monthName ? $monthName . ' ' : '') . $year, $titleFontStyle);
         }
 
         // Spasi sebelum Tabel Data
@@ -187,6 +209,12 @@ class LaporanDocxService
             $this->addForm3BTable($section, $data['cases'] ?? [], $tableWidth);
         } elseif ($formType === '3C') {
             $this->addForm3CTable($section, $data['cases'] ?? [], $tableWidth);
+        } elseif ($formType === '3D') {
+            $this->addForm3DTable($section, $data['cases'] ?? [], $tableWidth);
+        } elseif ($formType === '3E') {
+            $this->addForm3ETable($section, $data['cases'] ?? [], $tableWidth);
+        } elseif ($formType === '3F') {
+            $this->addForm3FTable($section, $data['cases'] ?? [], $tableWidth);
         }
 
         // Spasi sebelum Tanda Tangan
@@ -285,7 +313,7 @@ class LaporanDocxService
         );
     }
 
-    // Tabel Form 3A (11 Kolom)
+    // Tabel Form 3A (11 Kolom - Tetap Original)
     private function addForm3ATable(
         Section $section,
         array $cases,
@@ -415,13 +443,12 @@ class LaporanDocxService
         }
     }
 
-    // Tabel Form 3B (7 Kolom dengan Multilevel Header Presisi Gambar Acuan)
+    // Tabel Form 3B (7 Kolom - Tetap Original)
     private function addForm3BTable(
         Section $section,
         array $cases,
         int $tableWidth
     ): void {
-        // Persentase Lebar 7 Kolom
         $widths = [6, 30, 13, 13, 13, 12, 13];
         $twips = $this->columnWidths($widths, $tableWidth);
 
@@ -446,67 +473,46 @@ class LaporanDocxService
             'bgColor'    => 'FFFFFF',
         ];
 
-        // BARIS HEADER 1 (Tingkat Atas)
         $row1 = $this->addTableRow($table, self::FORM_3B_ROW_HEIGHT_CM, true);
 
-        // 1. No. Urut (Vertical Merge Start)
         $cell = $row1->addCell($twips[0], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_RESTART]));
         $this->addCellText($cell, "No.\nUrut", $headerStyle, 'center', 'center');
 
-        // 2. Kejaksaan (Vertical Merge Start)
         $cell = $row1->addCell($twips[1], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_RESTART]));
         $this->addCellText($cell, 'Kejaksaan', $headerStyle, 'center', 'center');
 
-        // 3-5. Sel Kosong Penggabung di atas Kolom 3, 4, 5 (Horizontal Span 3 Kolom)
         $groupWidth = $twips[2] + $twips[3] + $twips[4];
         $cell = $row1->addCell($groupWidth, array_merge($headerCellStyle, ['gridSpan' => 3]));
         $this->addCellText($cell, ' ', $headerStyle, 'center', 'center');
 
-        // 6. Sisa Bulan Laporan (Vertical Merge Start)
         $cell = $row1->addCell($twips[5], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_RESTART]));
         $this->addCellText($cell, "Sisa Bulan\nLaporan", $headerStyle, 'center', 'center');
 
-        // 7. Keterangan (Vertical Merge Start)
         $cell = $row1->addCell($twips[6], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_RESTART]));
         $this->addCellText($cell, 'Keterangan', $headerStyle, 'center', 'center');
 
-
-        // BARIS HEADER 2 (Sub-Header)
         $row2 = $this->addTableRow($table, self::FORM_3B_ROW_HEIGHT_CM, true);
-
-        // 1. No. Urut (Vertical Merge Continue)
         $row2->addCell($twips[0], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_CONTINUE]));
-
-        // 2. Kejaksaan (Vertical Merge Continue)
         $row2->addCell($twips[1], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_CONTINUE]));
 
-        // 3. Sisa Bulan Lalu
         $cell = $row2->addCell($twips[2], $headerCellStyle);
         $this->addCellText($cell, "Sisa Bulan\nLalu", $headerStyle, 'center', 'center');
 
-        // 4. Masuk Bulan Laporan
         $cell = $row2->addCell($twips[3], $headerCellStyle);
         $this->addCellText($cell, "Masuk Bulan\nLaporan", $headerStyle, 'center', 'center');
 
-        // 5. Jumlah Bulan Laporan
         $cell = $row2->addCell($twips[4], $headerCellStyle);
         $this->addCellText($cell, "Jumlah Bulan\nLaporan", $headerStyle, 'center', 'center');
 
-        // 6. Sisa Bulan Laporan (Vertical Merge Continue)
         $row2->addCell($twips[5], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_CONTINUE]));
-
-        // 7. Keterangan (Vertical Merge Continue)
         $row2->addCell($twips[6], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_CONTINUE]));
 
-
-        // BARIS HEADER 3 (Nomor Urut Kolom 1-7)
         $row3 = $this->addTableRow($table, self::FORM_3B_ROW_HEIGHT_CM, true);
         for ($i = 1; $i <= 7; $i++) {
             $cell = $row3->addCell($twips[$i - 1], $headerCellStyle);
             $this->addCellText($cell, (string) $i, $headerStyle, 'center', 'center');
         }
 
-        // Data Kosong (NIHIL)
         if (empty($cases)) {
             $row = $this->addTableRow($table, self::FORM_3B_ROW_HEIGHT_CM, false);
             $cell = $row->addCell($tableWidth, $headerCellStyle);
@@ -515,22 +521,22 @@ class LaporanDocxService
             return;
         }
 
-        // Perulangan Data Form 3B
         foreach ($cases as $idx => $case) {
             $row = $this->addTableRow($table, self::FORM_3B_ROW_HEIGHT_CM, false);
+            // Form 3B tetap menggunakan style original (left/top)
             $cellStyle = ['borderSize' => 6, 'borderColor' => '000000', 'valign' => 'top'];
 
-            $this->addPlainCell($row, $twips[0], ($idx + 1) . '.', 'center', 'top', self::FORM_3B_TABLE_FONT_SIZE, $cellStyle);
-            $this->addPlainCell($row, $twips[1], $case['satuanKerja'] ?? 'Kejari Banda Aceh', 'left', 'top', self::FORM_3B_TABLE_FONT_SIZE, $cellStyle);
-            $this->addPlainCell($row, $twips[2], (string) ($case['sisaBulanLalu'] ?? '0'), 'center', 'top', self::FORM_3B_TABLE_FONT_SIZE, $cellStyle);
-            $this->addPlainCell($row, $twips[3], (string) ($case['masukBulanLaporan'] ?? '0'), 'center', 'top', self::FORM_3B_TABLE_FONT_SIZE, $cellStyle);
-            $this->addPlainCell($row, $twips[4], (string) ($case['jumlahBulanLaporan'] ?? '0'), 'center', 'top', self::FORM_3B_TABLE_FONT_SIZE, $cellStyle);
-            $this->addPlainCell($row, $twips[5], (string) ($case['sisaBulanLaporan'] ?? '0'), 'center', 'top', self::FORM_3B_TABLE_FONT_SIZE, $cellStyle);
-            $this->addPlainCell($row, $twips[6], $case['keterangan'] ?? '-', 'center', 'top', self::FORM_3B_TABLE_FONT_SIZE, $cellStyle);
+            $this->addPlainCell($row, $twips[0], ($idx + 1) . '.', 'center', 'top', self::FORM_3B_TABLE_FONT_SIZE, $cellStyle, 'left');
+            $this->addPlainCell($row, $twips[1], $case['satuanKerja'] ?? 'Kejari Banda Aceh', 'left', 'top', self::FORM_3B_TABLE_FONT_SIZE, $cellStyle, 'left');
+            $this->addPlainCell($row, $twips[2], (string) ($case['sisaBulanLalu'] ?? '0'), 'center', 'top', self::FORM_3B_TABLE_FONT_SIZE, $cellStyle, 'center');
+            $this->addPlainCell($row, $twips[3], (string) ($case['masukBulanLaporan'] ?? '0'), 'center', 'top', self::FORM_3B_TABLE_FONT_SIZE, $cellStyle, 'center');
+            $this->addPlainCell($row, $twips[4], (string) ($case['jumlahBulanLaporan'] ?? '0'), 'center', 'top', self::FORM_3B_TABLE_FONT_SIZE, $cellStyle, 'center');
+            $this->addPlainCell($row, $twips[5], (string) ($case['sisaBulanLaporan'] ?? '0'), 'center', 'top', self::FORM_3B_TABLE_FONT_SIZE, $cellStyle, 'center');
+            $this->addPlainCell($row, $twips[6], $case['keterangan'] ?? '-', 'center', 'top', self::FORM_3B_TABLE_FONT_SIZE, $cellStyle, 'left');
         }
     }
 
-    // Tabel Form 3C (12 Kolom)
+    // Tabel Form 3C (12 Kolom - Tetap Original)
     private function addForm3CTable(
         Section $section,
         array $cases,
@@ -569,7 +575,6 @@ class LaporanDocxService
             'bgColor'    => 'FFFFFF',
         ];
 
-        // Baris Header Kolom
         $headers = [
             'No. Urut',
             'Kejaksaan',
@@ -591,14 +596,12 @@ class LaporanDocxService
             $this->addCellText($cell, $header, $headerStyle, 'center', 'center');
         }
 
-        // Baris Nomor Urut Kolom (1-12)
         $row = $this->addTableRow($table, self::FORM_3C_ROW_HEIGHT_CM, true);
         for ($i = 1; $i <= 12; $i++) {
             $cell = $row->addCell($twips[$i - 1], $headerCellStyle);
             $this->addCellText($cell, (string) $i, $headerStyle, 'center', 'center');
         }
 
-        // Data Kosong (NIHIL)
         if (empty($cases)) {
             $row = $this->addTableRow($table, self::FORM_3C_ROW_HEIGHT_CM, false);
             $cell = $row->addCell($tableWidth, $headerCellStyle);
@@ -607,7 +610,6 @@ class LaporanDocxService
             return;
         }
 
-        // Perulangan Data Perkara
         foreach ($cases as $idx => $case) {
             $bbList = !empty($case['barangBuktiList']) ? $case['barangBuktiList'] : [null];
             $totalBb = count($bbList);
@@ -624,28 +626,28 @@ class LaporanDocxService
 
                 $mergeState = $bIdx === 0 ? CellStyle::VMERGE_RESTART : CellStyle::VMERGE_CONTINUE;
 
-                $this->addMergedCell($row, $twips[0], $bIdx === 0 ? ($idx + 1) . '.' : '', $mergeState, 'center', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle);
-                $this->addMergedCell($row, $twips[1], $bIdx === 0 ? ($case['satuanKerja'] ?? '-') : '', $mergeState, 'center', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle);
+                $this->addMergedCell($row, $twips[0], $bIdx === 0 ? ($idx + 1) . '.' : '', $mergeState, 'center', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle, 'center');
+                $this->addMergedCell($row, $twips[1], $bIdx === 0 ? ($case['satuanKerja'] ?? '-') : '', $mergeState, 'center', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle, 'center');
 
                 $satuanText = (!empty($bb['satuan']) && trim($bb['satuan']) !== '-') ? trim($bb['satuan']) . ' ' : ((!empty($bb['jenisSatuan']) && trim($bb['jenisSatuan']) !== '-') ? trim($bb['jenisSatuan']) . ' ' : '');
                 $uraianText = $bb['jenisBarangBukti'] ?? $bb['uraianBarangBukti'] ?? '-';
                 $jenis = $bb
                     ? '- ' . $this->formatJumlah($bb['jumlah'] ?? $bb['jumlahSatuan'] ?? null) . ' ' . $satuanText . $uraianText
                     : '-';
-                $this->addPlainCell($row, $twips[2], $jenis, 'left', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle);
+                $this->addPlainCell($row, $twips[2], $jenis, 'left', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle, 'left');
 
-                $this->addMergedCell($row, $twips[3], $bIdx === 0 ? ($case['pasalDidakwakan'] ?? '-') : '', $mergeState, 'left', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle);
+                $this->addMergedCell($row, $twips[3], $bIdx === 0 ? ($case['pasalDidakwakan'] ?? '-') : '', $mergeState, 'left', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle, 'left');
 
                 $register = $bIdx === 0 ? $this->withDate($case['noRegBendaSitaan'] ?? '-', $case['tglPenerimaan'] ?? null) : '';
-                $this->addMergedCell($row, $twips[4], $register, $mergeState, 'center', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle);
+                $this->addMergedCell($row, $twips[4], $register, $mergeState, 'center', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle, 'center');
 
                 $kadarText = ($bb && !empty($bb['macamJenisKadar']) && $bb['macamJenisKadar'] !== '-') ? '• ' . $bb['macamJenisKadar'] : '-';
-                $this->addPlainCell($row, $twips[5], $kadarText, 'left', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle);
+                $this->addPlainCell($row, $twips[5], $kadarText, 'left', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle, 'left');
 
-                $this->addPlainCell($row, $twips[6], '• ' . $this->formatJumlah($bb['jumlah'] ?? $bb['jumlahSatuan'] ?? null), 'left', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle);
+                $this->addPlainCell($row, $twips[6], '• ' . $this->formatJumlah($bb['jumlah'] ?? $bb['jumlahSatuan'] ?? null), 'left', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle, 'left');
 
                 $jenisSatuanText = ($bb && (!empty($bb['satuan']) || !empty($bb['jenisSatuan']))) ? '• ' . ($bb['satuan'] ?? $bb['jenisSatuan']) : '-';
-                $this->addPlainCell($row, $twips[7], $jenisSatuanText, 'left', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle);
+                $this->addPlainCell($row, $twips[7], $jenisSatuanText, 'left', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle, 'left');
 
                 $currentLoc = !empty($bb['tempatPenyimpanan']) ? trim($bb['tempatPenyimpanan']) : '-';
                 $prevLoc    = ($bIdx > 0 && !empty($bbList[$bIdx - 1]['tempatPenyimpanan'])) ? trim($bbList[$bIdx - 1]['tempatPenyimpanan']) : null;
@@ -662,16 +664,315 @@ class LaporanDocxService
                     'borderBottomColor' => '000000',
                 ] : [];
 
-                $this->addMergedCell($row, $twips[8], $locText, $locMergeState, 'center', 'center', self::FORM_3C_TABLE_FONT_SIZE, $locBorderStyle);
+                $this->addMergedCell($row, $twips[8], $locText, $locMergeState, 'center', 'center', self::FORM_3C_TABLE_FONT_SIZE, $locBorderStyle, 'center');
 
                 $kep = $bIdx === 0 ? $this->withDate($case['noKepPengadilan'] ?? '-', $case['tglKepPengadilan'] ?? null) : '';
-                $this->addMergedCell($row, $twips[9], $kep, $mergeState, 'center', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle);
+                $this->addMergedCell($row, $twips[9], $kep, $mergeState, 'center', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle, 'center');
 
                 $amar = $this->amarPutusan($bbList, $bIdx);
-                $this->addPlainCell($row, $twips[10], $amar, 'left', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle);
+                $this->addPlainCell($row, $twips[10], $amar, 'left', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle, 'left');
 
                 $tgl = $bIdx === 0 ? $this->formatDate($case['tglPelaksanaanPutusan'] ?? null) : '';
-                $this->addMergedCell($row, $twips[11], $tgl, $mergeState, 'center', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle);
+                $this->addMergedCell($row, $twips[11], $tgl, $mergeState, 'center', 'top', self::FORM_3C_TABLE_FONT_SIZE, $bbBorderStyle, 'center');
+            }
+        }
+    }
+
+    // Tabel Form 3D (15 Kolom - Disesuaikan Persis Acuan Gambar Terbaru)
+    private function addForm3DTable(
+        Section $section,
+        array $cases,
+        int $tableWidth
+    ): void {
+        // Proporsi lebar 15 kolom
+        $widths = [3, 6, 8, 8, 6, 6, 6, 3, 9, 8, 7, 6, 7, 7, 6];
+        $twips = $this->columnWidths($widths, $tableWidth);
+
+        $table = $section->addTable([
+            'borderTopSize'     => 6,
+            'borderTopColor'    => '000000',
+            'borderBottomSize'  => 6,
+            'borderBottomColor' => '000000',
+            'borderLeftSize'    => 6,
+            'borderLeftColor'   => '000000',
+            'borderRightSize'   => 6,
+            'borderRightColor'  => '000000',
+            'borderInsideVSize' => 6,
+            'borderInsideVColor'=> '000000',
+            'borderInsideHSize' => 6,
+            'borderInsideHColor'=> '000000',
+            'cellMargin'        => 30,
+            'layout'            => TableStyle::LAYOUT_FIXED,
+            'width'             => $tableWidth,
+            'unit'              => TblWidth::TWIP,
+        ]);
+
+        $headerStyle = [
+            'name' => self::FONT_NAME,
+            'bold' => true,
+            'size' => self::FORM_3D_TABLE_FONT_SIZE,
+        ];
+
+        $headerCellStyle = [
+            'borderSize'  => 6,
+            'borderColor' => '000000',
+            'valign'      => 'center',
+            'bgColor'     => 'FFFFFF',
+        ];
+
+        // ==========================================
+        // HEADER BARIS 1 (Sesuai Gambar Acuan Terbaru)
+        // ==========================================
+        $row1 = $this->addTableRow($table, self::FORM_3D_ROW_HEIGHT_CM, true);
+        $row1->addCell($twips[0], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_RESTART]))
+             ->addText("No.\nUrut", $headerStyle, ['alignment' => 'center']);
+        $row1->addCell($twips[1], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_RESTART]))
+             ->addText("Kejari", $headerStyle, ['alignment' => 'center']);
+        $row1->addCell($twips[2], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_RESTART]))
+             ->addText("Nama Terpidana", $headerStyle, ['alignment' => 'center']);
+        $row1->addCell($twips[3], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_RESTART]))
+             ->addText("Tanggal Penyerahan dari Satker ke PPA", $headerStyle, ['alignment' => 'center']);
+
+        $groupPutusanWidth = $twips[4] + $twips[5] + $twips[6];
+        $row1->addCell($groupPutusanWidth, array_merge($headerCellStyle, ['gridSpan' => 3]))
+             ->addText("Putusan Inkraht", $headerStyle, ['alignment' => 'center']);
+
+        $groupBarangWidth = $twips[7] + $twips[8];
+        $row1->addCell($groupBarangWidth, array_merge($headerCellStyle, ['gridSpan' => 2]))
+             ->addText("Nama/Jenis Jumlah Barang Rampasan", $headerStyle, ['alignment' => 'center']);
+
+        $groupPenilaianWidth = $twips[9] + $twips[10] + $twips[11];
+        $row1->addCell($groupPenilaianWidth, array_merge($headerCellStyle, ['gridSpan' => 3]))
+             ->addText("Harga Taksiran/Limit, Instansi yang Memberikan", $headerStyle, ['alignment' => 'center']);
+
+        $row1->addCell($twips[12], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_RESTART]))
+             ->addText("Nilai Laku Lelang", $headerStyle, ['alignment' => 'center']);
+        $row1->addCell($twips[13], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_RESTART]))
+             ->addText("Belum Dilelang/Belum Laku Dilelang", $headerStyle, ['alignment' => 'center']);
+        $row1->addCell($twips[14], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_RESTART]))
+             ->addText("Ket", $headerStyle, ['alignment' => 'center']);
+
+        // ==========================================
+        // HEADER BARIS 2 (Sub-Header)
+        // ==========================================
+        $row2 = $this->addTableRow($table, self::FORM_3D_ROW_HEIGHT_CM, true);
+        $row2->addCell($twips[0], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_CONTINUE]));
+        $row2->addCell($twips[1], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_CONTINUE]));
+        $row2->addCell($twips[2], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_CONTINUE]));
+        $row2->addCell($twips[3], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_CONTINUE]));
+
+        // Sub-Header Putusan Inkraht
+        $row2->addCell($twips[4], $headerCellStyle)->addText("Nomor", $headerStyle, ['alignment' => 'center']);
+        $row2->addCell($twips[5], $headerCellStyle)->addText("Tanggal", $headerStyle, ['alignment' => 'center']);
+        $row2->addCell($twips[6], $headerCellStyle)->addText("Perkara", $headerStyle, ['alignment' => 'center']);
+
+        // Sub-Header Barang Rampasan
+        $row2->addCell($twips[7], $headerCellStyle)->addText("No.", $headerStyle, ['alignment' => 'center']);
+        $row2->addCell($twips[8], $headerCellStyle)->addText("Nama/Jenis", $headerStyle, ['alignment' => 'center']);
+
+        // Sub-Header Penilaian
+        $row2->addCell($twips[9], $headerCellStyle)->addText("Harga Taksiran/ Limit (Rp)", $headerStyle, ['alignment' => 'center']);
+        $row2->addCell($twips[10], $headerCellStyle)->addText("Nama Instansi Penilai", $headerStyle, ['alignment' => 'center']);
+        $row2->addCell($twips[11], $headerCellStyle)->addText("Tanggal Penilaian Terakhir", $headerStyle, ['alignment' => 'center']);
+
+        $row2->addCell($twips[12], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_CONTINUE]));
+        $row2->addCell($twips[13], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_CONTINUE]));
+        $row2->addCell($twips[14], array_merge($headerCellStyle, ['vMerge' => CellStyle::VMERGE_CONTINUE]));
+
+        // ==========================================
+        // HEADER BARIS 3 (Penomoran Kolom Angka Romawi I-XV)
+        // ==========================================
+        $romans = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV'];
+        $row3 = $this->addTableRow($table, self::FORM_3D_ROW_HEIGHT_CM, true);
+        foreach ($romans as $i => $roman) {
+            $row3->addCell($twips[$i], $headerCellStyle)->addText($roman, $headerStyle, ['alignment' => 'center']);
+        }
+
+        // ==========================================
+        // DATA KOSONG (NIHIL)
+        // ==========================================
+        if (empty($cases)) {
+            $row = $this->addTableRow($table, self::FORM_3D_ROW_HEIGHT_CM, false);
+            $cell = $row->addCell($tableWidth, $headerCellStyle);
+            $cell->getStyle()->setGridSpan(15);
+            $this->addCellText($cell, 'NIHIL', ['name' => self::FONT_NAME, 'bold' => true, 'size' => 28], 'center', 'center');
+            return;
+        }
+
+        // ==========================================
+        // BARIS DATA
+        // ==========================================
+        $no = 1;
+        foreach ($cases as $c) {
+            $items = !empty($c['items']) ? $c['items'] : [[]];
+            $totalItems = count($items);
+
+            foreach ($items as $iIdx => $item) {
+                $row = $this->addTableRow($table, self::FORM_3D_ROW_HEIGHT_CM, false);
+                
+                $itemBorderStyle = [
+                    'borderSize'        => 6, 
+                    'borderColor'       => '000000',
+                    'borderBottomSize'  => 6,
+                    'borderBottomColor' => '000000'
+                ];
+                
+                $mergeState = ($iIdx === 0) ? CellStyle::VMERGE_RESTART : CellStyle::VMERGE_CONTINUE;
+
+                // I. No. Urut (Center)
+                $this->addMergedCell($row, $twips[0], $iIdx === 0 ? (string) ($no++) : '', $mergeState, 'center', 'top', self::FORM_3D_TABLE_FONT_SIZE, $itemBorderStyle, 'center');
+                // II. Kejari (Center)
+                $this->addMergedCell($row, $twips[1], $iIdx === 0 ? ($c['satuanKerja'] ?? $c['kejari'] ?? 'Kejari Banda Aceh') : '', $mergeState, 'center', 'top', self::FORM_3D_TABLE_FONT_SIZE, $itemBorderStyle, 'center');
+                // III. Nama Terpidana (Left)
+                $this->addMergedCell($row, $twips[2], $iIdx === 0 ? ($c['terpidana_nama'] ?? '-') : '', $mergeState, 'left', 'top', self::FORM_3D_TABLE_FONT_SIZE, $itemBorderStyle, 'left');
+                // IV. Tanggal Penyerahan dari Satker ke PPA (Center)
+                $this->addMergedCell($row, $twips[3], $iIdx === 0 ? ($c['tgl_penyerahan'] ?? '-') : '', $mergeState, 'center', 'top', self::FORM_3D_TABLE_FONT_SIZE, $itemBorderStyle, 'center');
+                // V. Putusan Inkraht - Nomor (Left)
+                $this->addMergedCell($row, $twips[4], $iIdx === 0 ? ($c['putusan_no'] ?? '-') : '', $mergeState, 'left', 'top', self::FORM_3D_TABLE_FONT_SIZE, $itemBorderStyle, 'left');
+                // VI. Putusan Inkraht - Tanggal (Center)
+                $this->addMergedCell($row, $twips[5], $iIdx === 0 ? ($c['putusan_tgl'] ?? '-') : '', $mergeState, 'center', 'top', self::FORM_3D_TABLE_FONT_SIZE, $itemBorderStyle, 'center');
+                // VII. Putusan Inkraht - Perkara (Left)
+                $this->addMergedCell($row, $twips[6], $iIdx === 0 ? ($c['perkara'] ?? '-') : '', $mergeState, 'left', 'top', self::FORM_3D_TABLE_FONT_SIZE, $itemBorderStyle, 'left');
+
+                // VIII. Barang Rampasan - No. Sub Item (Center)
+                $this->addPlainCell($row, $twips[7], (string) ($iIdx + 1), 'center', 'top', self::FORM_3D_TABLE_FONT_SIZE, $itemBorderStyle, 'center');
+                // IX. Barang Rampasan - Nama/Jenis (Left)
+                $this->addPlainCell($row, $twips[8], $item['nama_barang'] ?? '-', 'left', 'top', self::FORM_3D_TABLE_FONT_SIZE, $itemBorderStyle, 'left');
+
+                // X. Harga Taksiran/ Limit (Rp) (Right)
+                $this->addPlainCell($row, $twips[9], isset($item['harga_taksiran']) ? number_format($item['harga_taksiran'], 0, ',', '.') : '-', 'right', 'top', self::FORM_3D_TABLE_FONT_SIZE, $itemBorderStyle, 'right');
+                // XI. Nama Instansi Penilai (Left)
+                $this->addPlainCell($row, $twips[10], $item['instansi_penilai'] ?? '-', 'left', 'top', self::FORM_3D_TABLE_FONT_SIZE, $itemBorderStyle, 'left');
+                // XII. Tanggal Penilaian Terakhir (Center)
+                $this->addPlainCell($row, $twips[11], $item['tgl_penilaian'] ?? '-', 'center', 'top', self::FORM_3D_TABLE_FONT_SIZE, $itemBorderStyle, 'center');
+
+                // XIII. Nilai Laku Lelang (Right)
+                $this->addPlainCell($row, $twips[12], isset($item['nilai_laku']) ? number_format($item['nilai_laku'], 0, ',', '.') : '-', 'right', 'top', self::FORM_3D_TABLE_FONT_SIZE, $itemBorderStyle, 'right');
+                // XIV. Belum Dilelang/Belum Laku Dilelang (Center)
+                $this->addPlainCell($row, $twips[13], ($item['status_lelang'] ?? '') === 'BELUM_LAKU' ? 'Ya' : '-', 'center', 'top', self::FORM_3D_TABLE_FONT_SIZE, $itemBorderStyle, 'center');
+                // XV. Ket (Left)
+                $this->addPlainCell($row, $twips[14], $item['keterangan'] ?? '-', 'left', 'top', self::FORM_3D_TABLE_FONT_SIZE, $itemBorderStyle, 'left');
+            }
+        }
+    }
+
+    // Tabel Form 3E (9 Kolom Lelang Rampasan)
+    private function addForm3ETable(
+        Section $section,
+        array $cases,
+        int $tableWidth
+    ): void {
+        $this->addSimple9ColumnTable($section, $cases, $tableWidth, self::FORM_3E_TABLE_FONT_SIZE, self::FORM_3E_ROW_HEIGHT_CM);
+    }
+
+    // Tabel Form 3F (9 Kolom Penjualan Langsung Rampasan)
+    private function addForm3FTable(
+        Section $section,
+        array $cases,
+        int $tableWidth
+    ): void {
+        $this->addSimple9ColumnTable($section, $cases, $tableWidth, self::FORM_3F_TABLE_FONT_SIZE, self::FORM_3F_ROW_HEIGHT_CM);
+    }
+
+    // Helper Builder 9 Kolom Standar Form 3E & 3F
+    private function addSimple9ColumnTable(
+        Section $section,
+        array $cases,
+        int $tableWidth,
+        float $fontSize,
+        float $rowHeightCm
+    ): void {
+        $widths = [4, 10, 14, 12, 10, 20, 10, 10, 10];
+        $twips = $this->columnWidths($widths, $tableWidth);
+
+        $table = $section->addTable([
+            'borderTopSize'     => 6,
+            'borderTopColor'    => '000000',
+            'borderBottomSize'  => 6,
+            'borderBottomColor' => '000000',
+            'borderLeftSize'    => 6,
+            'borderLeftColor'   => '000000',
+            'borderRightSize'   => 6,
+            'borderRightColor'  => '000000',
+            'borderInsideVSize' => 6,
+            'borderInsideVColor'=> '000000',
+            'borderInsideHSize' => 6,
+            'borderInsideHColor'=> '000000',
+            'cellMargin'        => 35,
+            'layout'            => TableStyle::LAYOUT_FIXED,
+            'width'             => $tableWidth,
+            'unit'              => TblWidth::TWIP,
+        ]);
+
+        $headerStyle = [
+            'name' => self::FONT_NAME,
+            'bold' => true,
+            'size' => $fontSize,
+        ];
+
+        $headerCellStyle = [
+            'borderSize'  => 6,
+            'borderColor' => '000000',
+            'valign'      => 'center',
+            'bgColor'     => 'FFFFFF',
+        ];
+
+        $headers = ['NO', 'KEJARI', 'NAMA TERPIDANA', 'NO PUTUSAN', 'TGL PUTUSAN', 'RINCIAN BARANG RAMPASAN', 'HARGA JUAL ITEM', 'NTPN / TGL PENJUALAN', 'KETERANGAN'];
+        $row1 = $this->addTableRow($table, $rowHeightCm, true);
+        foreach ($headers as $i => $h) {
+            $row1->addCell($twips[$i], $headerCellStyle)->addText($h, $headerStyle, ['alignment' => 'center']);
+        }
+
+        $row2 = $this->addTableRow($table, $rowHeightCm, true);
+        for ($i = 1; $i <= 9; $i++) {
+            $row2->addCell($twips[$i - 1], $headerCellStyle)->addText((string) $i, $headerStyle, ['alignment' => 'center']);
+        }
+
+        if (empty($cases)) {
+            $row = $this->addTableRow($table, $rowHeightCm, false);
+            $cell = $row->addCell($tableWidth, $headerCellStyle);
+            $cell->getStyle()->setGridSpan(9);
+            $this->addCellText($cell, 'NIHIL', ['name' => self::FONT_NAME, 'bold' => true, 'size' => 28], 'center', 'center');
+            return;
+        }
+
+        foreach ($cases as $idx => $c) {
+            $items = !empty($c['items']) ? $c['items'] : [[
+                'nama_barang' => $c['rincian_barang'] ?? '-',
+                'jumlah'      => '',
+                'satuan'      => '',
+                'harga_jual'  => $c['harga_jual'] ?? 0,
+            ]];
+            $totalItems = count($items);
+
+            foreach ($items as $sIdx => $sub) {
+                $row = $this->addTableRow($table, $rowHeightCm, false);
+                
+                $itemBorderStyle = [
+                    'borderSize'        => 6, 
+                    'borderColor'       => '000000',
+                    'borderBottomSize'  => 6,
+                    'borderBottomColor' => '000000'
+                ];
+                
+                $mergeState = ($sIdx === 0) ? CellStyle::VMERGE_RESTART : CellStyle::VMERGE_CONTINUE;
+
+                $this->addMergedCell($row, $twips[0], $sIdx === 0 ? ($idx + 1) . '.' : '', $mergeState, 'center', 'top', $fontSize, $itemBorderStyle, 'center');
+                $this->addMergedCell($row, $twips[1], $sIdx === 0 ? ($c['satuanKerja'] ?? $c['kejari'] ?? 'Kejari Banda Aceh') : '', $mergeState, 'center', 'top', $fontSize, $itemBorderStyle, 'center');
+                $this->addMergedCell($row, $twips[2], $sIdx === 0 ? ($c['terpidana_nama'] ?? '-') : '', $mergeState, 'left', 'top', $fontSize, $itemBorderStyle, 'left');
+                $this->addMergedCell($row, $twips[3], $sIdx === 0 ? ($c['putusan_no'] ?? '-') : '', $mergeState, 'left', 'top', $fontSize, $itemBorderStyle, 'left');
+                $this->addMergedCell($row, $twips[4], $sIdx === 0 ? ($c['putusan_tgl'] ?? '-') : '', $mergeState, 'center', 'top', $fontSize, $itemBorderStyle, 'center');
+
+                $jmlText = !empty($sub['jumlah']) ? ' (' . $sub['jumlah'] . ' ' . ($sub['satuan'] ?? '') . ')' : '';
+                $barangText = '- ' . ($sub['nama_barang'] ?? '-') . $jmlText;
+                $this->addPlainCell($row, $twips[5], $barangText, 'left', 'top', $fontSize, $itemBorderStyle, 'left');
+
+                $this->addPlainCell($row, $twips[6], 'Rp ' . number_format($sub['harga_jual'] ?? 0, 0, ',', '.'), 'right', 'top', $fontSize, $itemBorderStyle, 'right');
+
+                $ntpnTglText = ($c['ntpn'] ?? '-') . "\nTgl: " . ($c['tgl_penjualan'] ?? '-');
+                $this->addMergedCell($row, $twips[7], $ntpnTglText, $mergeState, 'center', 'top', $fontSize, $itemBorderStyle, 'center');
+
+                $this->addMergedCell($row, $twips[8], $sIdx === 0 ? ($c['keterangan'] ?? '-') : '', $mergeState, 'left', 'top', $fontSize, $itemBorderStyle, 'left');
             }
         }
     }
@@ -780,7 +1081,7 @@ class LaporanDocxService
         );
     }
 
-    // Helper: Cell Biasa
+    // Helper: Cell Biasa (Menerima parameter alignment kustom)
     private function addPlainCell(
         $row,
         int $width,
@@ -788,17 +1089,22 @@ class LaporanDocxService
         string $align,
         string $valign,
         float $fontSize,
-        array $cellStyleOverrides = []
+        array $cellStyleOverrides = [],
+        string $forcedAlign = 'left'
     ): Cell {
-        $style = array_merge(['valign' => $valign], $cellStyleOverrides);
+        $style = array_merge([
+            'valign'      => $valign,
+            'borderSize'  => 6,
+            'borderColor' => '000000',
+        ], $cellStyleOverrides);
 
         $cell = $row->addCell($width, $style);
-        $this->addCellText($cell, $text, ['name' => self::FONT_NAME, 'size' => $fontSize, 'bold' => false], $align, $valign);
+        $this->addCellText($cell, $text, ['name' => self::FONT_NAME, 'size' => $fontSize, 'bold' => false], $forcedAlign, $valign);
 
         return $cell;
     }
 
-    // Helper: Cell Merged Vertikal
+    // Helper: Cell Merged Vertikal (Menerima parameter alignment kustom)
     private function addMergedCell(
         $row,
         int $width,
@@ -807,17 +1113,20 @@ class LaporanDocxService
         string $align,
         string $valign,
         float $fontSize,
-        array $cellStyleOverrides = []
+        array $cellStyleOverrides = [],
+        string $forcedAlign = 'left'
     ): Cell {
         $style = array_merge([
-            'vMerge' => $mergeState,
-            'valign' => $valign,
+            'vMerge'      => $mergeState,
+            'valign'      => $valign,
+            'borderSize'  => 6,
+            'borderColor' => '000000',
         ], $cellStyleOverrides);
 
         $cell = $row->addCell($width, $style);
 
         if ($mergeState === CellStyle::VMERGE_RESTART) {
-            $this->addCellText($cell, $text, ['name' => self::FONT_NAME, 'size' => $fontSize, 'bold' => false], $align, $valign);
+            $this->addCellText($cell, $text, ['name' => self::FONT_NAME, 'size' => $fontSize, 'bold' => false], $forcedAlign, $valign);
         }
 
         return $cell;

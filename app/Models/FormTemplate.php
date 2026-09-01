@@ -16,6 +16,7 @@ class FormTemplate extends Model
         'name',
         'month',
         'year',
+        'satuanKerja' => 'required|string|max:255',
         'cases',
         'latest_case_summary',
         'latest_case_saved_at',

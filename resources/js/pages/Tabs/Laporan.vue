@@ -4,6 +4,8 @@ import { ref, computed } from 'vue';
 import AuthenticatedLayout from '@/Layouts/Layout.vue';
 import { FileText, Calendar, Filter, Edit3, Trash2, FileDown, ChevronDown, FileCode } from 'lucide-vue-next';
 
+type FormType = '3A' | '3B' | '3C' | '3D' | '3E' | '3F';
+
 interface BarangBuktiItem {
   jenisBarangBukti?: string;
   namaBarangBukti?: string;
@@ -19,6 +21,23 @@ interface BarangBuktiItem {
   macamJenisKadar?: string;
   amarPutusan?: string;
   uraianPutusan?: string;
+}
+
+interface Item3D {
+  nama_barang?: string;
+  harga_taksiran?: number;
+  instansi_penilai?: string;
+  tgl_penilaian?: string;
+  nilai_laku?: number;
+  status_lelang?: string;
+  keterangan?: string;
+}
+
+interface Item3E_3F {
+  nama_barang?: string;
+  jumlah?: number | string;
+  satuan?: string;
+  harga_jual?: number;
 }
 
 interface CaseItem {
@@ -47,11 +66,25 @@ interface CaseItem {
   noKepPengadilan?: string;
   tglKepPengadilan?: string;
   amarPutusan?: string;
+
+  // 3D Fields
+  terpidana_nama?: string;
+  tgl_penyerahan?: string;
+  putusan_no?: string;
+  putusan_tgl?: string;
+  perkara?: string;
+  items?: Item3D[];
+
+  // 3E & 3F Fields
+  rincian_barang?: string;
+  harga_jual?: number;
+  tgl_penjualan?: string;
+  ntpn?: string;
 }
 
 interface Props {
   filters: {
-    formType: '3A' | '3B' | '3C';
+    formType: FormType;
     month: number;
     year: number;
     kategori?: string;
@@ -60,6 +93,9 @@ interface Props {
     form3a: number;
     form3b: number;
     form3c: number;
+    form3d: number;
+    form3e: number;
+    form3f: number;
   };
   cases: CaseItem[];
 }
@@ -69,7 +105,7 @@ const props = defineProps<Props>();
 const activeMenu = ref('LAPORAN');
 
 // State Filter
-const selectedForm = ref<'3A' | '3B' | '3C'>(props.filters.formType || '3A');
+const selectedForm = ref<FormType>(props.filters.formType || '3A');
 const selectedMonth = ref<number>(props.filters.month || new Date().getMonth() + 1);
 const selectedYear = ref<number>(props.filters.year || new Date().getFullYear());
 const selectedKategori = ref<string>(props.filters.kategori || 'ALL');
@@ -99,7 +135,18 @@ const kategoriPidanaOptions = [
   { value: 'KORUPSI', label: 'KORUPSI' }
 ];
 
-// Helper Mengubah Angka ke Teks Terbilang
+const isExportDisabled = computed(() => {
+  if (['3D', '3E', '3F'].includes(selectedForm.value)) {
+    return false;
+  }
+  return selectedKategori.value === 'ALL';
+});
+
+const formatRupiah = (val?: number) => {
+  if (val === undefined || val === null) return 'Rp 0';
+  return 'Rp ' + Number(val).toLocaleString('id-ID');
+};
+
 const angkaKeTeks = (num: number): string => {
   if (num === 0) return 'Nol';
   const satuan = ['', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima', 'Enam', 'Tujuh', 'Delapan', 'Sembilan', 'Sepuluh', 'Sebelas'];
@@ -114,7 +161,6 @@ const angkaKeTeks = (num: number): string => {
   return String(num);
 };
 
-// Format Jumlah + Terbilang
 const formatJumlahTerbilang = (val: any): string => {
   if (val === undefined || val === null || val === '') return '-';
   const num = typeof val === 'number' ? val : parseFloat(String(val).replace(/,/g, '.'));
@@ -130,6 +176,23 @@ const getBbList = (list?: BarangBuktiItem[]): BarangBuktiItem[] => {
     return [{} as BarangBuktiItem];
   }
   return list;
+};
+
+const getItems3DList = (list?: Item3D[]): Item3D[] => {
+  if (!list || list.length === 0) {
+    return [{} as Item3D];
+  }
+  return list;
+};
+
+const getItems3E_3FList = (item: CaseItem): any[] => {
+  if (item.items && Array.isArray(item.items) && item.items.length > 0) {
+    return item.items;
+  }
+  if (item.rincian_barang) {
+    return [{ nama_barang: item.rincian_barang, jumlah: '', satuan: '', harga_jual: item.harga_jual || 0 }];
+  }
+  return [{ nama_barang: '-', jumlah: '', satuan: '', harga_jual: 0 }];
 };
 
 const isSdaAmarPutusan = (list: BarangBuktiItem[] | undefined, index: number): boolean => {
@@ -175,31 +238,39 @@ const applyFilters = () => {
   });
 };
 
-const changeFormTab = (type: '3A' | '3B' | '3C') => {
+const changeFormTab = (type: FormType) => {
   selectedForm.value = type;
   applyFilters();
 };
 
 const editCase = (id: string, index?: number) => {
-  const query = index !== undefined ? `?index=${index}` : '';
-  if (selectedForm.value === '3A') {
-    router.get(`/form3a/${id}/edit${query}`);
+  const form = selectedForm.value.toLowerCase();
+  if (['3d', '3e', '3f'].includes(form)) {
+    router.get(`/form${form}/${id}/cases/${index ?? 0}/edit`);
   } else {
-    router.get(`/form${selectedForm.value.toLowerCase()}/${id}/edit${query}`);
+    const query = index !== undefined ? `?index=${index}` : '';
+    router.get(`/form${form}/${id}/edit${query}`);
   }
 };
 
 const deleteCase = (id: string, index?: number) => {
-  if (confirm('Apakah Anda yakin ingin menghapus data perkara ini?')) {
-    const query = index !== undefined ? `?index=${index}` : '';
-    router.delete(`/form${selectedForm.value.toLowerCase()}/${id}${query}`, {
-      preserveScroll: true,
-    });
+  if (confirm('Apakah Anda yakin ingin menghapus data kasus ini?')) {
+    const form = selectedForm.value.toLowerCase();
+    if (['3d', '3e', '3f'].includes(form)) {
+      router.delete(`/form${form}/${id}/cases/${index ?? 0}`, {
+        preserveScroll: true,
+      });
+    } else {
+      const query = index !== undefined ? `?index=${index}` : '';
+      router.delete(`/form${form}/${id}${query}`, {
+        preserveScroll: true,
+      });
+    }
   }
 };
 
 const exportFormPdf = () => {
-  if (selectedKategori.value === 'ALL') {
+  if (isExportDisabled.value) {
     alert('Silahkan pilih salah satu kategori Tindak Pidana terlebih dahulu sebelum mengekspor laporan.');
     return;
   }
@@ -211,7 +282,7 @@ const exportFormPdf = () => {
 };
 
 const exportFormDocx = () => {
-  if (selectedKategori.value === 'ALL') {
+  if (isExportDisabled.value) {
     alert('Silahkan pilih salah satu kategori Tindak Pidana terlebih dahulu sebelum mengekspor laporan.');
     return;
   }
@@ -241,11 +312,11 @@ const exportFormDocx = () => {
         </div>
 
         <div class="flex flex-wrap items-center gap-3 bg-white p-2 rounded-xl shadow-xs border border-slate-200">
-          <div class="flex items-center gap-2 px-2 text-slate-500 border-r border-slate-200">
+          <div v-if="!['3D', '3E', '3F'].includes(selectedForm)" class="flex items-center gap-2 px-2 text-slate-500 border-r border-slate-200">
             <Filter class="w-4 h-4 text-slate-600" />
             <span class="text-xs font-bold uppercase tracking-wider">Tindak Pidana:</span>
           </div>
-          <select v-model="selectedKategori" @change="applyFilters"
+          <select v-if="!['3D', '3E', '3F'].includes(selectedForm)" v-model="selectedKategori" @change="applyFilters"
             class="bg-[#F4F6F8] border border-transparent rounded-lg px-3 py-1.5 text-xs font-bold text-slate-800 outline-none focus:bg-white focus:border-slate-300">
             <option v-for="k in kategoriPidanaOptions" :key="k.value" :value="k.value">{{ k.label }}</option>
           </select>
@@ -267,48 +338,77 @@ const exportFormDocx = () => {
         </div>
       </div>
 
-      <!-- TABS FORM & DROPDOWN EKSPOR (PDF & DOCX) -->
+      <!-- TABS FORM & DROPDOWN EKSPOR -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div class="flex items-center gap-2 bg-slate-200/60 p-1 rounded-xl w-fit">
+        <div class="flex flex-wrap items-center gap-1.5 bg-slate-200/60 p-1 rounded-xl w-fit">
           <button type="button" @click="changeFormTab('3A')" :class="[
-            'px-5 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer',
+            'px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer',
             selectedForm === '3A' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
           ]">
-            <span>Laporan Form 3A</span>
-            <span class="bg-slate-100 text-slate-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-slate-200">
-              {{ String(counts.form3a).padStart(2, '0') }}
+            <span>Form 3A</span>
+            <span class="bg-slate-100 text-slate-800 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full border border-slate-200">
+              {{ String(counts.form3a || 0).padStart(2, '0') }}
             </span>
           </button>
 
           <button type="button" @click="changeFormTab('3B')" :class="[
-            'px-5 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer',
+            'px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer',
             selectedForm === '3B' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
           ]">
-            <span>Laporan Form 3B</span>
-            <span class="bg-slate-100 text-slate-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-slate-200">
-              {{ String(counts.form3b).padStart(2, '0') }}
+            <span>Form 3B</span>
+            <span class="bg-slate-100 text-slate-800 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full border border-slate-200">
+              {{ String(counts.form3b || 0).padStart(2, '0') }}
             </span>
           </button>
 
           <button type="button" @click="changeFormTab('3C')" :class="[
-            'px-5 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer',
+            'px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer',
             selectedForm === '3C' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
           ]">
-            <span>Laporan Form 3C</span>
-            <span class="bg-slate-100 text-slate-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full border border-slate-200">
-              {{ String(counts.form3c).padStart(2, '0') }}
+            <span>Form 3C</span>
+            <span class="bg-slate-100 text-slate-800 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full border border-slate-200">
+              {{ String(counts.form3c || 0).padStart(2, '0') }}
+            </span>
+          </button>
+
+          <button type="button" @click="changeFormTab('3D')" :class="[
+            'px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer',
+            selectedForm === '3D' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+          ]">
+            <span>Form 3D</span>
+            <span class="bg-slate-100 text-slate-800 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full border border-slate-200">
+              {{ String(counts.form3d || 0).padStart(2, '0') }}
+            </span>
+          </button>
+
+          <button type="button" @click="changeFormTab('3E')" :class="[
+            'px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer',
+            selectedForm === '3E' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+          ]">
+            <span>Form 3E</span>
+            <span class="bg-slate-100 text-slate-800 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full border border-slate-200">
+              {{ String(counts.form3e || 0).padStart(2, '0') }}
+            </span>
+          </button>
+
+          <button type="button" @click="changeFormTab('3F')" :class="[
+            'px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer',
+            selectedForm === '3F' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+          ]">
+            <span>Form 3F</span>
+            <span class="bg-slate-100 text-slate-800 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full border border-slate-200">
+              {{ String(counts.form3f || 0).padStart(2, '0') }}
             </span>
           </button>
         </div>
 
         <div class="relative w-fit">
-
-          <button type="button" @click="isExportOpen = !isExportOpen" :disabled="selectedKategori === 'ALL'" :class="[
+          <button type="button" @click="isExportOpen = !isExportOpen" :disabled="isExportDisabled" :class="[
             'text-xs font-extrabold px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all cursor-pointer shadow-xs border w-fit',
-            selectedKategori === 'ALL'
+            isExportDisabled
               ? 'bg-slate-200 text-slate-400 border-slate-300 cursor-not-allowed'
               : 'bg-[#FFD000] hover:bg-yellow-400 text-slate-950 border-amber-300'
-          ]" :title="selectedKategori === 'ALL' ? 'Pilih kategori Tindak Pidana terlebih dahulu untuk mengekspor' : ''">
+          ]">
             <FileDown class="w-4 h-4 stroke-[2.5]" />
             <span>Ekspor Laporan Form {{ selectedForm }}</span>
 
@@ -316,7 +416,7 @@ const exportFormDocx = () => {
               :class="{ 'rotate-180': isExportOpen }" />
           </button>
 
-          <div v-if="isExportOpen && selectedKategori !== 'ALL'" @click.outside="isExportOpen = false"
+          <div v-if="isExportOpen && !isExportDisabled" @click.outside="isExportOpen = false"
             class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50">
 
             <button type="button" @click="exportFormPdf(); isExportOpen = false"
@@ -338,7 +438,7 @@ const exportFormDocx = () => {
       <div class="bg-white rounded-2xl shadow-xs border border-slate-300 overflow-hidden">
         <div class="overflow-x-auto">
 
-          <!-- TEMPLATE PREVIEW FORM 3A -->
+          <!-- PREVIEW FORM 3A -->
           <table v-if="selectedForm === '3A'" class="w-full text-left border-collapse text-xs">
             <thead class="bg-slate-50 text-slate-900 border-b border-slate-300 font-bold text-[11px] uppercase tracking-wider text-center">
               <tr class="divide-x divide-slate-300 border-b border-slate-300">
@@ -435,7 +535,7 @@ const exportFormDocx = () => {
             </tbody>
           </table>
 
-          <!-- TEMPLATE PREVIEW FORM 3B -->
+          <!-- PREVIEW FORM 3B -->
           <table v-if="selectedForm === '3B'" class="w-full text-left border-collapse text-xs">
             <thead class="bg-slate-50 text-slate-900 border-b border-slate-300 font-bold text-[11px] uppercase tracking-wider text-center">
               <tr class="divide-x divide-slate-300 border-b border-slate-300">
@@ -485,7 +585,7 @@ const exportFormDocx = () => {
             </tbody>
           </table>
 
-          <!-- TEMPLATE PREVIEW FORM 3C -->
+          <!-- PREVIEW FORM 3C -->
           <table v-if="selectedForm === '3C'" class="w-full text-left border-collapse text-xs">
             <thead class="bg-slate-50 text-slate-900 border-b border-slate-300 font-bold text-[11px] uppercase tracking-wider text-center">
               <tr class="divide-x divide-slate-300 border-b border-slate-300">
@@ -595,11 +695,173 @@ const exportFormDocx = () => {
             </tbody>
           </table>
 
+          <!-- PREVIEW FORM 3D (Disesuaikan Persis Acuan Gambar Terbaru) -->
+          <table v-if="selectedForm === '3D'" class="w-full text-left border-collapse text-xs">
+            <thead class="bg-slate-50 text-slate-900 border-b border-slate-300 font-bold text-[11px] uppercase tracking-wider text-center">
+              <tr class="divide-x divide-slate-300 border-b border-slate-300">
+                <th rowspan="2" class="p-2 w-10 align-middle">No. Urut</th>
+                <th rowspan="2" class="p-2 align-middle">Kejari</th>
+                <th rowspan="2" class="p-2 align-middle">Nama Terpidana</th>
+                <th rowspan="2" class="p-2 align-middle">Tanggal Penyerahan dari Satker ke PPA</th>
+                <th colspan="3" class="p-1.5 border-b border-slate-300">Putusan Inkraht</th>
+                <th colspan="2" class="p-1.5 border-b border-slate-300">Nama/Jenis Jumlah Barang Rampasan</th>
+                <th colspan="3" class="p-1.5 border-b border-slate-300">Harga Taksiran/Limit, Instansi yang Memberikan</th>
+                <th rowspan="2" class="p-2 align-middle">Nilai Laku Lelang</th>
+                <th rowspan="2" class="p-2 align-middle">Belum Dilelang/Belum Laku Dilelang</th>
+                <th rowspan="2" class="p-2 align-middle">Ket</th>
+                <th rowspan="2" class="p-2 w-16 align-middle">Aksi</th>
+              </tr>
+              <tr class="divide-x divide-slate-300 border-b border-slate-300 text-[10px]">
+                <th class="p-1.5">Nomor</th>
+                <th class="p-1.5">Tanggal</th>
+                <th class="p-1.5">Perkara</th>
+                <th class="p-1.5">No.</th>
+                <th class="p-1.5">Nama/Jenis</th>
+                <th class="p-1.5">Harga Taksiran/ Limit (Rp)</th>
+                <th class="p-1.5">Nama Instansi Penilai</th>
+                <th class="p-1.5">Tanggal Penilaian Terakhir</th>
+              </tr>
+              <tr class="bg-slate-100 divide-x divide-slate-300 text-[10px] text-slate-500 font-semibold border-b border-slate-300">
+                <td class="p-1">I</td>
+                <td class="p-1">II</td>
+                <td class="p-1">III</td>
+                <td class="p-1">IV</td>
+                <td class="p-1">V</td>
+                <td class="p-1">VI</td>
+                <td class="p-1">VII</td>
+                <td class="p-1">VIII</td>
+                <td class="p-1">IX</td>
+                <td class="p-1">X</td>
+                <td class="p-1">XI</td>
+                <td class="p-1">XII</td>
+                <td class="p-1">XIII</td>
+                <td class="p-1">XIV</td>
+                <td class="p-1">XV</td>
+                <td class="p-1">-</td>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 text-slate-800">
+              <template v-for="(item, idx) in cases" :key="item.id">
+                <tr v-for="(sub, sIdx) in getItems3DList(item.items)" :key="sIdx"
+                  class="hover:bg-slate-50 transition-colors divide-x divide-slate-200"
+                  :class="{ 'border-b-2 border-slate-300': sIdx === getItems3DList(item.items).length - 1 }">
+                  
+                  <td v-if="sIdx === 0" :rowspan="getItems3DList(item.items).length" class="p-2 font-bold text-center align-top">{{ idx + 1 }}</td>
+                  <td v-if="sIdx === 0" :rowspan="getItems3DList(item.items).length" class="p-2 text-center align-top">{{ item.satuanKerja || 'Kejari Banda Aceh' }}</td>
+                  <td v-if="sIdx === 0" :rowspan="getItems3DList(item.items).length" class="p-2 font-semibold align-top">{{ item.terpidana_nama || '-' }}</td>
+                  <td v-if="sIdx === 0" :rowspan="getItems3DList(item.items).length" class="p-2 text-center align-top">{{ item.tgl_penyerahan || '-' }}</td>
+                  <td v-if="sIdx === 0" :rowspan="getItems3DList(item.items).length" class="p-2 align-top">{{ item.putusan_no || '-' }}</td>
+                  <td v-if="sIdx === 0" :rowspan="getItems3DList(item.items).length" class="p-2 text-center align-top">{{ item.putusan_tgl || '-' }}</td>
+                  <td v-if="sIdx === 0" :rowspan="getItems3DList(item.items).length" class="p-2 align-top">{{ item.perkara || '-' }}</td>
+
+                  <!-- VIII. Barang Rampasan - No. Sub Item -->
+                  <td class="p-2 text-center font-semibold">{{ sIdx + 1 }}</td>
+                  <!-- IX. Barang Rampasan - Nama/Jenis -->
+                  <td class="p-2 font-medium">{{ sub.nama_barang || '-' }}</td>
+
+                  <!-- X. Harga Taksiran/ Limit (Rp) -->
+                  <td class="p-2 text-right">{{ formatRupiah(sub.harga_taksiran) }}</td>
+                  <!-- XI. Nama Instansi Penilai -->
+                  <td class="p-2 text-left">{{ sub.instansi_penilai || '-' }}</td>
+                  <!-- XII. Tanggal Penilaian Terakhir -->
+                  <td class="p-2 text-center">{{ sub.tgl_penilaian || '-' }}</td>
+
+                  <!-- XIII. Nilai Laku Lelang -->
+                  <td class="p-2 text-right font-semibold text-emerald-700">{{ formatRupiah(sub.nilai_laku) }}</td>
+                  <!-- XIV. Belum Dilelang/Belum Laku Dilelang -->
+                  <td class="p-2 text-center font-bold">{{ sub.status_lelang === 'BELUM_LAKU' ? 'Ya' : '-' }}</td>
+                  <!-- XV. Ket -->
+                  <td class="p-2 text-slate-600 italic">{{ sub.keterangan || '-' }}</td>
+
+                  <td v-if="sIdx === 0" :rowspan="getItems3DList(item.items).length" class="p-2 text-center align-top">
+                    <div class="flex items-center justify-center gap-1">
+                      <button type="button" @click="editCase(item.id, (item as any).case_index)" class="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded cursor-pointer">
+                        <Edit3 class="w-4 h-4" />
+                      </button>
+                      <button type="button" @click="deleteCase(item.id, (item as any).case_index)" class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer">
+                        <Trash2 class="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+
+          <!-- PREVIEW FORM 3E & 3F (DENGAN HARGA JUAL PER ITEM) -->
+          <table v-if="selectedForm === '3E' || selectedForm === '3F'" class="w-full text-left border-collapse text-xs">
+            <thead class="bg-slate-50 text-slate-900 border-b border-slate-300 font-bold text-[11px] uppercase tracking-wider text-center">
+              <tr class="divide-x divide-slate-300 border-b border-slate-300">
+                <th class="p-3 w-12">No</th>
+                <th class="p-3">Kejari</th>
+                <th class="p-3">Nama Terpidana</th>
+                <th class="p-3">No Putusan</th>
+                <th class="p-3">Tgl Putusan</th>
+                <th class="p-3">Rincian Barang Rampasan</th>
+                <th class="p-3">Harga Jual Item</th>
+                <th class="p-3">NTPN / Tgl Penjualan</th>
+                <th class="p-3">Keterangan</th>
+                <th class="p-3 w-20">Aksi</th>
+              </tr>
+              <tr class="bg-slate-100 divide-x divide-slate-300 text-[10px] text-slate-500 font-semibold border-b border-slate-300">
+                <td class="p-1">1</td><td class="p-1">2</td><td class="p-1">3</td><td class="p-1">4</td>
+                <td class="p-1">5</td><td class="p-1">6</td><td class="p-1">7</td><td class="p-1">8</td>
+                <td class="p-1">9</td><td class="p-1">-</td>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 text-slate-800">
+              <template v-for="(item, idx) in cases" :key="item.id">
+                <tr v-for="(sub, sIdx) in getItems3E_3FList(item)" :key="sIdx"
+                  class="hover:bg-slate-50 transition-colors divide-x divide-slate-200"
+                  :class="{ 'border-b-2 border-slate-300': sIdx === getItems3E_3FList(item).length - 1 }">
+                  
+                  <td v-if="sIdx === 0" :rowspan="getItems3E_3FList(item).length" class="p-3 font-bold text-center align-top">{{ idx + 1 }}.</td>
+                  <td v-if="sIdx === 0" :rowspan="getItems3E_3FList(item).length" class="p-3 text-center font-semibold align-top">{{ item.satuanKerja || 'Kejari Banda Aceh' }}</td>
+                  <td v-if="sIdx === 0" :rowspan="getItems3E_3FList(item).length" class="p-3 font-semibold align-top">{{ item.terpidana_nama || '-' }}</td>
+                  <td v-if="sIdx === 0" :rowspan="getItems3E_3FList(item).length" class="p-3 text-center align-top">{{ item.putusan_no || '-' }}</td>
+                  <td v-if="sIdx === 0" :rowspan="getItems3E_3FList(item).length" class="p-3 text-center align-top">{{ item.putusan_tgl || '-' }}</td>
+                  
+                  <!-- Kolom Rincian Barang -->
+                  <td class="p-3">
+                    <div class="font-medium">
+                      - {{ sub.nama_barang || '-' }} 
+                      <span v-if="sub.jumlah" class="text-slate-500 font-semibold">({{ sub.jumlah }} {{ sub.satuan || '' }})</span>
+                    </div>
+                  </td>
+
+                  <!-- Kolom Harga Jual Per Item -->
+                  <td class="p-3 text-right font-bold text-emerald-700 align-middle">
+                    {{ formatRupiah(sub.harga_jual) }}
+                  </td>
+
+                  <!-- Kolom NTPN di atas, Tanggal Penjualan di bawah -->
+                  <td v-if="sIdx === 0" :rowspan="getItems3E_3FList(item).length" class="p-3 text-center align-top">
+                    <div class="font-bold text-slate-800">{{ item.ntpn || '-' }}</div>
+                    <div class="text-[10px] text-slate-500 mt-0.5">Tgl: {{ item.tgl_penjualan || '-' }}</div>
+                  </td>
+
+                  <td v-if="sIdx === 0" :rowspan="getItems3E_3FList(item).length" class="p-3 text-slate-600 italic text-center align-top">{{ item.keterangan || '-' }}</td>
+                  
+                  <td v-if="sIdx === 0" :rowspan="getItems3E_3FList(item).length" class="p-3 text-center align-top">
+                    <div class="flex items-center justify-center gap-1">
+                      <button type="button" @click="editCase(item.id, (item as any).case_index)" class="p-1 text-slate-600 hover:text-slate-900 hover:bg-slate-200 rounded cursor-pointer">
+                        <Edit3 class="w-4 h-4" />
+                      </button>
+                      <button type="button" @click="deleteCase(item.id, (item as any).case_index)" class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded cursor-pointer">
+                        <Trash2 class="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+
           <!-- EMPTY STATE -->
           <div v-if="cases.length === 0" class="p-12 text-center text-slate-400">
             <FileText class="w-10 h-10 mx-auto stroke-1 text-slate-300 mb-2" />
-            <p class="text-xs font-bold text-slate-600">Tidak ada laporan data perkara ditemukan pada periode/kategori ini.</p>
-            <p class="text-[11px] text-slate-400 mt-0.5">Silakan ubah filter tindak pidana, bulan, tahun, atau pilihan form di atas.</p>
+            <p class="text-xs font-bold text-slate-600">Tidak ada data laporan ditemukan pada periode ini.</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Silakan pilih opsi form lain atau ubah filter periode di atas.</p>
           </div>
 
         </div>
@@ -608,7 +870,7 @@ const exportFormDocx = () => {
         <div class="p-4 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500 bg-slate-50">
           <span>Menampilkan {{ cases.length }} Laporan Form {{ selectedForm }}</span>
           <div class="font-semibold text-slate-700">
-            Periode: {{monthOptions.find(m => m.value === selectedMonth)?.label}} {{ selectedYear }}
+            Periode: {{ monthOptions.find(m => m.value === selectedMonth)?.label }} {{ selectedYear }}
           </div>
         </div>
 

@@ -73,6 +73,36 @@
                         ]">
                             FORM 3C
                         </Link>
+
+                        <!-- FORM 3D -->
+                        <Link href="/form3d" :class="[
+                            'block py-2 px-2.5 text-xs font-bold rounded transition-colors',
+                            isSubMenuActive('/form3d')
+                                ? 'bg-[#FFD000] text-slate-950 shadow-xs'
+                                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                        ]">
+                            FORM 3D
+                        </Link>
+
+                        <!-- FORM 3E -->
+                        <Link href="/form3e" :class="[
+                            'block py-2 px-2.5 text-xs font-bold rounded transition-colors',
+                            isSubMenuActive('/form3e')
+                                ? 'bg-[#FFD000] text-slate-950 shadow-xs'
+                                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                        ]">
+                            FORM 3E
+                        </Link>
+
+                        <!-- FORM 3F -->
+                        <Link href="/form3f" :class="[
+                            'block py-2 px-2.5 text-xs font-bold rounded transition-colors',
+                            isSubMenuActive('/form3f')
+                                ? 'bg-[#FFD000] text-slate-950 shadow-xs'
+                                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+                        ]">
+                            FORM 3F
+                        </Link>
                     </div>
                 </Transition>
             </div>
@@ -110,7 +140,6 @@ import {
     FileText,
     BarChart3,
     Sliders,
-    Users,
     ChevronDown
 } from 'lucide-vue-next';
 
@@ -121,12 +150,18 @@ const activeMenu = computed(() => {
 
     if (url.startsWith('/laporan')) return 'LAPORAN';
     if (url.startsWith('/settings')) return 'PENGATURAN FORM';
-    if (url.startsWith('/form3a') || url.startsWith('/form3b') || url.startsWith('/form3c')) return 'FORM';
+    if (
+        url.startsWith('/form3a') || 
+        url.startsWith('/form3b') || 
+        url.startsWith('/form3c') ||
+        url.startsWith('/form3d') ||
+        url.startsWith('/form3e') ||
+        url.startsWith('/form3f')
+    ) return 'FORM';
 
     return 'BERANDA';
 });
 
-// Pengecekan aktif untuk sub-menu individu
 const isSubMenuActive = (path) => {
     return page.url.startsWith(path);
 };

@@ -1,4 +1,6 @@
 .git
+.gitignore
+.gitattributes
 .github
 .idea
 .vscode
@@ -14,5 +16,12 @@ storage/framework/views/*
 .env
 .env.*
 *.log
+.editorconfig
+.prettierrc
+.prettierignore
+phpstan.neon
+phpunit.xml
+pint.json
 npm-debug.log
 yarn-error.log
+README.md

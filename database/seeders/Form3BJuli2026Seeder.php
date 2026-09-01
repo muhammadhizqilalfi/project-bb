@@ -9,7 +9,6 @@ class Form3BJuli2026Seeder extends Seeder
 {
     public function run(): void
     {
-        // Menyimpan data rekapitulasi Form 3B Juli 2026 per jenis tindak pidana
         FormTemplate::updateOrCreate(
             [
                 'form_type' => '3B',

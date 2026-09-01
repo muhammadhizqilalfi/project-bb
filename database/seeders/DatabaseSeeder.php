@@ -14,17 +14,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Administrator',
-            'nip' => '12345678901',
-            'password' => Hash::make('admin123'),
-        ]);
 
         $this->call([
             DropdownOptionSeeder::class,
-            Form3BJuli2026Seeder::class, // Ditambahkan di sini
+            Form3BJuli2026Seeder::class,
         ]);
     }
 }

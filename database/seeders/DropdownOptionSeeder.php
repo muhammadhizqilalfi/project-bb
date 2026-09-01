@@ -43,6 +43,17 @@ class DropdownOptionSeeder extends Seeder
             ['category' => 'keterangan_tahap', 'label' => 'Tahap Persidangan', 'form_target' => '3A'],
             ['category' => 'keterangan_tahap', 'label' => 'Tahap II', 'form_target' => '3A'],
             ['category' => 'keterangan_tahap', 'label' => 'Tahap Pelimpahan', 'form_target' => '3A'],
+
+            // Dropdown Opsi Form 3D
+            ['category' => 'status_lelang', 'label' => 'LAKU', 'form_target' => '3D'],
+            ['category' => 'status_lelang', 'label' => 'BELUM_LAKU', 'form_target' => '3D'],
+            ['category' => 'status_lelang', 'label' => 'PROSES', 'form_target' => '3D'],
+            ['category' => 'instansi_penilai', 'label' => 'KPKNL', 'form_target' => '3D'],
+            ['category' => 'instansi_penilai', 'label' => 'KJPP', 'form_target' => '3D'],
+
+            // Dropdown Opsi Form 3E & 3F
+            ['category' => 'jenis_lelang', 'label' => 'Lelang Eksekusi Rampasan', 'form_target' => '3E'],
+            ['category' => 'metode_penjualan', 'label' => 'Penjualan Langsung PPA', 'form_target' => '3F'],
         ];
 
         foreach ($options as $opt) {
