@@ -25,10 +25,10 @@ class LaporanController extends Controller
         
         $count3C = $this->countCasesByPeriod('3C', $month, $year, $kategori);
 
-        // Hitung total data Form 3D, 3E, 3F
-        $count3D = FormTemplate::where('form_type', '3D')->count();
-        $count3E = FormTemplate::where('form_type', '3E')->count();
-        $count3F = FormTemplate::where('form_type', '3F')->count();
+        // Hitung total data Form 3D, 3E, 3F terfilter berdasarkan bulan dan tahun
+        $count3D = FormTemplate::where('form_type', '3D')->where('month', $month)->where('year', $year)->count();
+        $count3E = FormTemplate::where('form_type', '3E')->where('month', $month)->where('year', $year)->count();
+        $count3F = FormTemplate::where('form_type', '3F')->where('month', $month)->where('year', $year)->count();
 
         $counts = [
             'form3a' => $count3A,
@@ -45,7 +45,11 @@ class LaporanController extends Controller
         $ekstasiPcs = 0;
 
         if (in_array($formType, ['3D', '3E', '3F'])) {
-            $formsQuery = FormTemplate::where('form_type', $formType)->latest()->get();
+            $formsQuery = FormTemplate::where('form_type', $formType)
+                ->where('month', $month)
+                ->where('year', $year)
+                ->latest()
+                ->get();
 
             foreach ($formsQuery as $form) {
                 $casesList = $form->cases ?? [];
