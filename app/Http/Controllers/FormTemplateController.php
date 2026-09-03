@@ -573,8 +573,16 @@ class FormTemplateController extends Controller
             return back()->with('error', 'Form 3D untuk periode tersebut sudah ada.');
         }
 
+        $monthNames = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+        $namaBulan = $monthNames[(int)$request->month] ?? '';
+
         FormTemplate::create([
             'form_type' => '3D',
+            'name'      => "FORM 3D {$namaBulan} {$request->year}",
             'month'     => $request->month,
             'year'      => $request->year,
             'cases'     => [],
@@ -789,8 +797,16 @@ class FormTemplateController extends Controller
             return back()->with('error', 'Form 3E untuk periode tersebut sudah ada.');
         }
 
+        $monthNames = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+        $namaBulan = $monthNames[(int)$request->month] ?? '';
+
         FormTemplate::create([
             'form_type' => '3E',
+            'name'      => "FORM 3E {$namaBulan} {$request->year}",
             'month'     => $request->month,
             'year'      => $request->year,
             'cases'     => [],
@@ -944,8 +960,16 @@ class FormTemplateController extends Controller
             return back()->with('error', 'Form 3F untuk periode tersebut sudah ada.');
         }
 
+        $monthNames = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+        $namaBulan = $monthNames[(int)$request->month] ?? '';
+
         FormTemplate::create([
             'form_type' => '3F',
+            'name'      => "FORM 3F {$namaBulan} {$request->year}",
             'month'     => $request->month,
             'year'      => $request->year,
             'cases'     => [],
