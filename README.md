@@ -158,6 +158,12 @@ docker-compose up -d --build
 
 5. **Inisialisasi Database & Optimasi Laravel**:
 
+Inisialisasi file database fisik & atur hak akses di host server
+```bash
+touch database/database.sqlite
+chmod -R 775 database/
+```
+
 ```bash
 docker exec slbb-app php artisan key:generate --force
 docker exec slbb-app php artisan migrate --seed --force
